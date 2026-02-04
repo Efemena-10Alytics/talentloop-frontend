@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import { Fade } from "react-awesome-reveal";
 
 export default function InterviewPrepSection() {
   const [selectedCompany, setSelectedCompany] = useState("Google");
@@ -11,19 +12,27 @@ export default function InterviewPrepSection() {
   const [role, setRole] = useState("");
 
   return (
-    <section className="relative bg-[#0B0D0F] min-h-screen py-7 lg:py-20">
-      <div className="max-w-7xl mx-auto px-3 lg:px-6">
+    <section 
+          style={{
+          background: "url('/Group 17.svg')",
+          backgroundSize: "contain",
+          backgroundPosition: "center",
+        }}
+    className="relative bg-[#0B0D0F] min-h-screen py-7 lg:py-20">
+      <div className="max-w-[1400px] mx-auto px-3 lg:px-6">
         <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 items-center">
           {/* Left Side - Content */}
           <div className="flex-1 space-y-8">
             {/* Heading */}
             <div className="space-y-4">
-              <h1 className="text-4xl lg:text-5xl font-mona-sans font-bold leading-tight">
-                <span className="text-white">INTERVIEW PREP: AI or</span>
-                <br />
-                <span className="text-white">HUMAN, </span>
-                <span className="text-[#A2CE3A]">YOUR CHOICE</span>
-              </h1>
+              <Fade direction="down" triggerOnce duration={2000}>
+                <h1 className="text-4xl lg:text-5xl font-mona-sans font-bold leading-tight">
+                  <span className="text-white">INTERVIEW PREP: AI or</span>
+                  <br />
+                  <span className="text-white">HUMAN, </span>
+                  <span className="text-[#A2CE3A]">YOUR CHOICE</span>
+                </h1>
+              </Fade>
               <p className="text-white text-lg font-sora">
                 Interview Prep That Actually Prepares You
               </p>
@@ -114,9 +123,11 @@ export default function InterviewPrepSection() {
             <div className="bg-[#141619] border border-[#A2CE3A]/30 rounded-[18px] p-6 lg:p-8">
               {/* Header */}
               <div className="mb-6 flex flex-col items-center">
-                <h2 className="text-2xl lg:text-3xl font-mona-sans font-bold text-white mb-2">
-                  Mock Interview
-                </h2>
+                <Fade direction="down" triggerOnce duration={2000}>
+                  <h2 className="text-2xl lg:text-3xl font-mona-sans font-bold text-white mb-2">
+                    Mock Interview
+                  </h2>
+                </Fade>
                 <p className="text-sm text-[#ACACAC] font-sora">
                   Configure your AI Copilot for Practice Sessions
                 </p>

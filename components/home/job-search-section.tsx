@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { Fade } from "react-awesome-reveal";
 
 const StarPattern = () => (
   <svg
@@ -25,8 +26,8 @@ const StarPattern = () => (
 
 export default function JobSearchCTASection() {
   return (
-    <section className="relative bg-black py-12 lg:py-16 overflow-hidden">
-      <div className="max-w-7xl mx-auto px-3 lg:px-6">
+    <section className="relative bg-black py-7 lg:py-16 overflow-hidden">
+      <div className="max-w-[1400px] mx-auto px-3 lg:px-6">
         {/* Main Container */}
         <div className="relative bg-[#E8FFB1] rounded-[32px] lg:rounded-[48px] overflow-hidden">
           {/* Decorative Star Patterns */}
@@ -44,16 +45,18 @@ export default function JobSearchCTASection() {
           </div>
 
           {/* Content Grid */}
-          <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center p-8 lg:p-16">
+          <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-12 items-center p-4 lg:p-16">
             {/* Left Side - Content */}
-            <div className="space-y-6 lg:space-y-8">
+            <div className="space-y-3 lg:space-y-8">
               {/* Main Heading */}
-              <h1 className="text-3xl lg:text-4xl xl:text-5xl font-mona-sans font-bold leading-tight text-[#054711]">
-                Your Job Search Should Work as Hard as You Do.
-              </h1>
+              <Fade direction="down" triggerOnce duration={2000}>
+                <h1 className="text-2xl lg:text-4xl xl:text-5xl font-mona-sans font-bold leading-tight text-[#054711]">
+                  Your Job Search Should Work as Hard as You Do.
+                </h1>
+              </Fade>
 
               {/* Subheading */}
-              <p className="text-lg lg:text-xl xl:text-2xl font-sora leading-relaxed">
+              <p className="text-base lg:text-xl xl:text-2xl font-sora leading-relaxed">
                 <span className="text-[#A2CE3A] font-semibold">
                   TalentLoop.ai
                 </span>{" "}
@@ -64,13 +67,13 @@ export default function JobSearchCTASection() {
               </p>
 
               {/* CTA Button */}
-              <button className="px-10 py-4 lg:px-12 lg:py-5 bg-[#054711] rounded-full text-white font-mona-sans text-base lg:text-lg font-semibold hover:bg-[#043610] transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105">
+              <button className="w-full lg:w-fit px-10 py-4 lg:px-12 lg:py-5 bg-[#054711] rounded-full text-white font-mona-sans text-base lg:text-lg font-semibold hover:bg-[#043610] transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105">
                 Subscribe to this
               </button>
             </div>
 
             {/* Right Side - Image */}
-            <div className="relative">
+            <div className="relative hidden lg:block">
               <div className="relative aspect-[4/3] lg:aspect-square rounded-[24px] overflow-hidden shadow-2xl">
                 <Image
                   src="/homepage/Frame 1321318255.svg"

@@ -2,6 +2,7 @@
 
 import { Dot } from "lucide-react";
 import Image from "next/image";
+import { Fade } from "react-awesome-reveal";
 
 const CheckIcon = () => (
   <svg
@@ -49,21 +50,25 @@ const StatCard = ({
 
 export default function ReportingTransparencySection() {
   return (
-    <section className="relative bg-[#0B0D0F] py-16 lg:py-20">
-      <div className="max-w-7xl mx-auto px-3 lg:px-6">
+    <section className="relative bg-[#0B0D0F] py-7 lg:py-20">
+      <div className="max-w-[1400px] mx-auto px-3 lg:px-6">
         <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 items-center">
           {/* Left Side - Content */}
           <div className="flex-1 space-y-6 lg:space-y-8">
             {/* Heading */}
             <div className="space-y-4">
-              <h1 className="text-4xl lg:text-5xl xl:text-6xl font-mona-sans font-bold text-white leading-tight">
-                REPORTING &<br />
-                TRANSPARENCY
-              </h1>
-              <h2 className="text-xl lg:text-2xl font-mona-sans font-semibold text-white">
-                Know Exactly What's Happening<br />
-                — Every Week
-              </h2>
+              <Fade direction="down" triggerOnce duration={2000}>
+                <h1 className="text-4xl lg:text-5xl xl:text-6xl font-mona-sans font-bold text-white leading-tight">
+                  REPORTING &<br />
+                  TRANSPARENCY
+                </h1>
+              </Fade>
+              <Fade direction="down" triggerOnce duration={2000}>
+                <h2 className="text-xl lg:text-2xl font-mona-sans font-semibold text-white">
+                  Know Exactly What's Happening<br />
+                  — Every Week
+                </h2>
+              </Fade>
             </div>
 
             {/* Dashboard Info */}

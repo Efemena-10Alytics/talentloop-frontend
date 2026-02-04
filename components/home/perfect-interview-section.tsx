@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { Fade } from "react-awesome-reveal";
 import CoachCard from "../coach-card";
 
 const coachesData = [
@@ -166,53 +167,71 @@ export default function PerfectInterviewSection() {
   useEffect(() => {
     const topRowContainer = topRowRef.current;
     const bottomRowContainer = bottomRowRef.current;
-    
-    let topScrollInterval: NodeJS.Timeout;
-    let bottomScrollInterval: NodeJS.Timeout;
 
-    // Top row - slower scroll
-    const startTopRowScrolling = () => {
-      topScrollInterval = setInterval(() => {
-        if (topRowContainer) {
-          topRowContainer.scrollLeft += 1;
+    if (!topRowContainer || !bottomRowContainer) return;
 
-          // Reset scroll when reaching the end
-          if (
-            topRowContainer.scrollLeft >=
-            topRowContainer.scrollWidth - topRowContainer.clientWidth
-          ) {
-            topRowContainer.scrollLeft = 0;
-          }
+    // Animation frame for smoother scrolling
+    let topAnimationFrame: number;
+    let bottomAnimationFrame: number;
+
+    // Speed of scrolling (pixels per frame)
+    const scrollSpeed = 0.5;
+
+    // Top row - scrolls LEFT
+    const animateTopRow = () => {
+      if (topRowContainer) {
+        topRowContainer.scrollLeft -= scrollSpeed;
+
+        // When we've scrolled past the first set, jump back
+        const maxScroll = topRowContainer.scrollWidth / 3;
+        if (topRowContainer.scrollLeft <= 0) {
+          topRowContainer.scrollLeft = maxScroll;
         }
-      }, 20); // Slower speed
+
+        topAnimationFrame = requestAnimationFrame(animateTopRow);
+      }
     };
 
-    // Bottom row - faster scroll
-    const startBottomRowScrolling = () => {
-      bottomScrollInterval = setInterval(() => {
-        if (bottomRowContainer) {
-          bottomRowContainer.scrollLeft += 1;
+    // Bottom row - scrolls RIGHT
+    const animateBottomRow = () => {
+      if (bottomRowContainer) {
+        bottomRowContainer.scrollLeft += scrollSpeed;
 
-          // Reset scroll when reaching the end
-          if (
-            bottomRowContainer.scrollLeft >=
-            bottomRowContainer.scrollWidth - bottomRowContainer.clientWidth
-          ) {
-            bottomRowContainer.scrollLeft = 0;
-          }
+        // When we've scrolled past the first set, jump back
+        const maxScroll = bottomRowContainer.scrollWidth / 3;
+        if (bottomRowContainer.scrollLeft >= maxScroll) {
+          bottomRowContainer.scrollLeft = 0;
         }
-      }, 15); // Faster speed
+
+        bottomAnimationFrame = requestAnimationFrame(animateBottomRow);
+      }
     };
 
-    startTopRowScrolling();
-    startBottomRowScrolling();
+    // Initialize scroll positions and start animations
+    const initializeScrolling = () => {
+      // Set initial positions
+      if (topRowContainer) {
+        topRowContainer.scrollLeft = topRowContainer.scrollWidth / 3;
+      }
+      if (bottomRowContainer) {
+        bottomRowContainer.scrollLeft = 0;
+      }
+
+      // Start animations
+      topAnimationFrame = requestAnimationFrame(animateTopRow);
+      bottomAnimationFrame = requestAnimationFrame(animateBottomRow);
+    };
+
+    // Wait for layout to be ready
+    const timeoutId = setTimeout(initializeScrolling, 100);
 
     return () => {
-      if (topScrollInterval) {
-        clearInterval(topScrollInterval);
+      clearTimeout(timeoutId);
+      if (topAnimationFrame) {
+        cancelAnimationFrame(topAnimationFrame);
       }
-      if (bottomScrollInterval) {
-        clearInterval(bottomScrollInterval);
+      if (bottomAnimationFrame) {
+        cancelAnimationFrame(bottomAnimationFrame);
       }
     };
   }, []);
@@ -222,21 +241,25 @@ export default function PerfectInterviewSection() {
   const bottomRowCoaches = coachesData.slice(Math.ceil(coachesData.length / 2));
 
   return (
-    <section className="bg-[#0B0D0F] py-7 lg:py-16 overflow-hidden">
-      <div className="max-w-7xl mx-auto px-6">
+    <section className="relative bg-[#0B0D0F] py-7 lg:py-16 overflow-hidden">
+      <img className="absolute -top-20 -right-[520px] w-full h-[800px] object-contain" src="/Group 8.png" alt="" />
+      <div className="max-w-[1400px] mx-auto px-6">
         {/* Header */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-12">
-          <h2
-            className="text-3xl lg:text-5xl font-mona-sans font-bold"
-            style={{
-              background: "linear-gradient(to bottom, #FFFFFF 0%, #A2CE3A 100%)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              backgroundClip: "text",
-            }}
-          >
-            Select Your Perfect Interview Coach
-          </h2>
+          <Fade direction="down" triggerOnce duration={2000}>
+            <h2
+              className="text-3xl lg:text-5xl font-mona-sans font-bold"
+              style={{
+                background: "linear-gradient(to bottom, #FFFFFF 0%, #A2CE3A 100%)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
+              }}
+            >
+              Select Your Perfect Interview Coach
+            </h2>
+          </Fade>
+
           <button className="w-fit px-6 py-3 bg-[#A2CE3A] rounded-[100px] text-[#121212] font-mona-sans text-sm font-semibold hover:bg-[#92BE2A] transition-colors flex items-center gap-2">
             View More
             <svg
@@ -255,30 +278,49 @@ export default function PerfectInterviewSection() {
           </button>
         </div>
 
-        {/* Top Row - Slower Scrolling */}
+        {/* Top Row - Scrolls LEFT */}
         <div
           ref={topRowRef}
-          className="flex gap-6 overflow-x-hidden scroll-smooth mb-6"
-          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+          className="flex gap-6 overflow-x-scroll mb-6"
+          style={{ 
+            scrollbarWidth: "none", 
+            msOverflowStyle: "none",
+            scrollBehavior: "auto" // Important: disable smooth scrolling for programmatic control
+          }}
         >
-          {/* Duplicate cards for infinite scroll effect */}
-          {[...topRowCoaches, ...topRowCoaches].map((coach, index) => (
-            <CoachCard key={`top-${index}`} {...coach} />
+          {/* Triplicate cards for infinite scroll effect */}
+          {[...topRowCoaches, ...topRowCoaches, ...topRowCoaches].map((coach, index) => (
+            <div key={`top-${index}`} className="flex-shrink-0">
+              <CoachCard {...coach} />
+            </div>
           ))}
         </div>
 
-        {/* Bottom Row - Faster Scrolling */}
+        {/* Bottom Row - Scrolls RIGHT */}
         <div
           ref={bottomRowRef}
-          className="flex gap-6 overflow-x-hidden scroll-smooth"
-          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+          className="flex gap-6 overflow-x-scroll"
+          style={{ 
+            scrollbarWidth: "none", 
+            msOverflowStyle: "none",
+            scrollBehavior: "auto" // Important: disable smooth scrolling for programmatic control
+          }}
         >
-          {/* Duplicate cards for infinite scroll effect */}
-          {[...bottomRowCoaches, ...bottomRowCoaches].map((coach, index) => (
-            <CoachCard key={`bottom-${index}`} {...coach} />
+          {/* Triplicate cards for infinite scroll effect */}
+          {[...bottomRowCoaches, ...bottomRowCoaches, ...bottomRowCoaches].map((coach, index) => (
+            <div key={`bottom-${index}`} className="flex-shrink-0">
+              <CoachCard {...coach} />
+            </div>
           ))}
         </div>
       </div>
+
+      {/* Hide scrollbar */}
+      <style jsx>{`
+        div[class*="overflow-x-scroll"]::-webkit-scrollbar {
+          display: none;
+        }
+      `}</style>
     </section>
   );
 }

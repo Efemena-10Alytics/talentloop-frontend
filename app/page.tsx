@@ -5,6 +5,7 @@ import InterviewPrepSection from "@/components/home/interview-prep-section";
 import JobSearchCTASection from "@/components/home/job-search-section";
 import PerfectInterviewSection from "@/components/home/perfect-interview-section";
 import WhoTalentLoopIsFor from "@/components/home/testimonials-section";
+import WhyTalentLoopDifferent from "@/components/home/Why-talentloop-different";
 import { Navbar } from "@/components/navbar";
 import ReportingTransparencySection from "@/components/transparency-section";
 
@@ -18,6 +19,7 @@ export default function Home() {
       <AIChatInputSection />
       <InterviewPrepSection />
       <WhoTalentLoopIsFor />
+      <WhyTalentLoopDifferent />
       <div className="bg-black">
       <ReportingTransparencySection />
       <JobSearchCTASection />

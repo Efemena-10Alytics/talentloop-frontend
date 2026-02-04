@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Navbar } from "../navbar";
+import { Fade } from "react-awesome-reveal";
 
 const SVG1 = () => {
   return (
@@ -66,7 +66,7 @@ export default function HeroSection() {
       >
         <div className="max-w-[1400px] mx-auto px-3 lg:px-6">
           <div
-            className="relative p-2 lg:p-10 lg:pb-0 rounded-3xl overflow-hidden flex flex-col lg:flex-row lg:justify-between gap-12"
+            className="relative p-4 lg:p-10 lg:pb-0 rounded-3xl overflow-hidden flex flex-col lg:flex-row lg:justify-between gap-12"
             style={{
               background:
                 "url('/homepage/medium-shot-smiley-woman-recording-lesson (1) 1.svg')",
@@ -74,6 +74,12 @@ export default function HeroSection() {
               backgroundPosition: "center",
             }}
           >
+            <img
+              src="/homepage/Frame 1321318297.png"
+              alt=""
+              className="absolute bottom-10 lg:left-[30%] z-10 hidden h-20 lg:block object-contain"
+            />
+
             <video
               autoPlay
               loop
@@ -92,7 +98,8 @@ export default function HeroSection() {
             {/* Left Side - Content */}
             <div className="z-10 space-y-5 lg:space-y-8">
               {/* Heading */}
-              <h1 className="text-4xl lg:text-5xl font-mona-sans font-bold leading-tight">
+              <Fade direction="down" triggerOnce duration={2000}>
+              <h1 className="text-3xl lg:text-5xl font-mona-sans font-bold leading-tight">
                 <span className="text-white">Get </span>
                 <span className="text-[#A2CE3A]">Interview Prepped</span>
                 <br />
@@ -102,13 +109,17 @@ export default function HeroSection() {
                 <span className="text-[#A2CE3A]">Job Application</span>
                 <span className="text-white"> For You.</span>
               </h1>
+              </Fade>
 
               {/* Subheading */}
-              <p className="text-[#FFFFFF] text-lg font-sora max-w-xl">
-                The AI Job Search Platform That Doesn’t Just Apply for You!!! It
-                Actively Makes You a Better Candidate.
-              </p>
+                            <Fade direction="down" triggerOnce delay={1000} duration={2000}>
+                <p className="text-[#FFFFFF] text-lg font-sora max-w-xl">
+                  The AI Job Search Platform That Doesn’t Just Apply for You!!! It
+                  Actively Makes You a Better Candidate.
+                </p>
+              </Fade>
 
+                            <Fade direction="down" triggerOnce delay={2000} duration={2000}>
               {/* Buttons */}
               <div className="flex flex-col lg:flex-row gap-4">
                 <button className="px-8 py-3.5 bg-[#A2CE3A] rounded-[100px] text-[#121212] font-mona-sans text-base font-semibold hover:bg-[#92BE2A] transition-colors">
@@ -118,12 +129,24 @@ export default function HeroSection() {
                   Interview Coach Sign In
                 </button>
               </div>
+                            </Fade>
 
-              <img
-                src="/homepage/img1.svg"
-                alt=""
-                className="hidden lg:block h-[180px] w-full lg:w-[200px] rounded-xl object-cover"
-              />
+              <div className="absolute bottom-10 lg:left-10 hidden lg:block h-[180px] w-full lg:w-[200px] rounded-xl overflow-hidden">
+                <video
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  className="absolute inset-0 w-full h-full object-cover z-0 brightness-75"
+                >
+                  <source
+                    src="/homepage/grok-video-706a8285-b08a-41cb-88c7-f5fe6371771c.mp4"
+                    type="video/mp4"
+                  />
+                  {/* Fallback message if video doesn't load */}
+                  Your browser does not support the video tag.
+                </video>
+              </div>
             </div>
 
             {/* Right Side - Mock Interview Score Card */}
