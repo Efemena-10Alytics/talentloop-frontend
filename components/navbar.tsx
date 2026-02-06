@@ -13,7 +13,7 @@ export function Navbar() {
       const heroHeight = window.innerHeight; // Assuming hero section is full viewport height
       const scrollPosition = window.scrollY;
 
-      setIsScrolled(scrollPosition > heroHeight * 0.4); 
+      setIsScrolled(scrollPosition > heroHeight * 0.1); 
     };
 
     window.addEventListener("scroll", handleScroll);
@@ -37,7 +37,7 @@ export function Navbar() {
         />
         
         {/* Content layer */}
-        <div className="relative mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-6 py-6">
+        <div className="relative mx-auto flex w-full max-w-[1400px] items-center justify-between gap-4 px-6 py-6">
           <div className="flex items-center gap-3">
             <img
               src="/logo.svg"
@@ -57,7 +57,7 @@ export function Navbar() {
             ))}
           </nav>
 
-          <button className="rounded-full bg-[#A2CE3A] px-6 py-2 text-sm font-semibold text-[#121212] transition-transform hover:scale-[1.02] font-mona-sans">
+          <button className="rounded-full bg-[#A2CE3A] px-9 py-2 text-sm font-semibold text-[#121212] transition-transform hover:scale-[1.02] font-mona-sans">
             Sign Up
           </button>
         </div>

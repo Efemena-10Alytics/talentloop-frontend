@@ -7,14 +7,13 @@ import { motion } from "framer-motion";
 
 export default function InterviewPrepSection() {
   const [selectedCompany, setSelectedCompany] = useState("");
-  const [selectedInterviewType, setSelectedInterviewType] =
-    useState("");
+  const [selectedInterviewType, setSelectedInterviewType] = useState("");
   const [selectedDifficulty, setSelectedDifficulty] = useState("");
   const [selectInterviewer, setSelectInterviewer] = useState("");
   const [role, setRole] = useState("");
 
   return (
-    <motion.section 
+    <motion.section
       initial={{ opacity: 0, y: 80 }}
       whileInView={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.9, ease: "easeOut" }}
@@ -79,10 +78,13 @@ export default function InterviewPrepSection() {
                 </svg>
               </div>
 
-              <div className="relative flex flex-col lg:flex-row items-center justify-around gap-8">
+              <div
+                onClick={() => setSelectInterviewer("ai")}
+                className="relative flex flex-col lg:flex-row items-center justify-around gap-8"
+              >
                 {/* AI Copilot */}
-                <div className="flex flex-col items-center gap-4">
-                  <div className="relative">
+                <div className="group flex flex-col items-center gap-4">
+                  <div className="relative transition-all duration-300 cursor-pointer hover:bg-[#A2CE3A]/10 hover:border hover:border-[#A2CE3A] p-2">
                     <div className="w-40 h-40 lg:w-48 lg:h-48 rounded-full bg-gradient-to-br from-[#A2CE3A]/20 to-transparent p-1 border-2 border-white">
                       <div className="w-full h-full rounded-full bg-[#141619] flex items-center justify-center overflow-hidden">
                         {/* AI Robot Icon/Image */}
@@ -94,9 +96,9 @@ export default function InterviewPrepSection() {
                       </div>
                     </div>
                   </div>
-                  <button 
-                  onClick={() => setSelectInterviewer('ai')}
-                  className={`px-8 py-3 ${selectInterviewer === 'ai' ? 'bg-[#A2CE3A] text-black' : 'bg-[#1A1D21] text-white'} border border-white/20 rounded-[8px font-mona-sans text-base font-semibold hover:bg-[#2A2D31] transition-colors`}>
+                  <button
+                    className={`px-8 py-3 ${selectInterviewer === "ai" ? "bg-[#A2CE3A] text-black" : "bg-[#1A1D21] text-white"} group-hover:bg-[#A2CE3A] group-hover:text-black border border-white/20 rounded-[8px font-mona-sans text-base font-semibold hover:bg-[#2A2D31] transition-colors`}
+                  >
                     AI Copilot
                   </button>
                 </div>
@@ -107,8 +109,11 @@ export default function InterviewPrepSection() {
                 </div>
 
                 {/* Human Coach */}
-                <div className="flex flex-col items-center gap-4">
-                  <div className="relative">
+                <div
+                  onClick={() => setSelectInterviewer("human")}
+                  className="group flex flex-col items-center gap-4"
+                >
+                  <div className="relative transition-all duration-300 cursor-pointer hover:bg-[#A2CE3A]/10 hover:border hover:border-[#A2CE3A] p-2">
                     <div className="w-40 h-40 lg:w-48 lg:h-48 rounded-full bg-gradient-to-br from-[#A2CE3A]/20 to-transparent p-1 border-2 border-white">
                       <div className="w-full h-full rounded-full bg-[#141619] flex items-center justify-center overflow-hidden">
                         <img
@@ -119,9 +124,9 @@ export default function InterviewPrepSection() {
                       </div>
                     </div>
                   </div>
-                  <button 
-                  onClick={() => setSelectInterviewer('human')}
-                  className={`px-8 py-3 ${selectInterviewer === 'human' ? 'bg-[#A2CE3A] text-black' : 'bg-[#1A1D21] text-white'} border border-white/20 rounded-[8px font-mona-sans text-base font-semibold hover:bg-[#2A2D31] transition-colors`}>
+                  <button
+                    className={`px-8 py-3 ${selectInterviewer === "human" ? "bg-[#A2CE3A] text-black" : "bg-[#1A1D21] text-white"} group-hover:bg-[#A2CE3A] group-hover:text-black border border-white/20 rounded-[8px font-mona-sans text-base font-semibold hover:bg-[#2A2D31] transition-colors`}
+                  >
                     Human Coach
                   </button>
                 </div>

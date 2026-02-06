@@ -125,14 +125,14 @@ export default function ReportingTransparencySection() {
           </div>
 
           {/* Right Side - Image with Stats Overlay */}
-          <div className="flex-1 w-full lg:max-w-[550px] relative">
+          <div className="flex-1 w-full relative">
             <div className="relative rounded-[24px] overflow-hidden">
               {/* Main Image */}
-              <div className="relative aspect-[4/3] lg:aspect-[16/10]">
+              <div className="relative">
                 <img
                   src="/homepage/Group 20.png"
                   alt="Professional working on laptop"
-                  className="object-cover"
+                  className="object-contain lg:h-[800px] h-full w-full"
                 />
               </div>
             </div>
