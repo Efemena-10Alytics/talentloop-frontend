@@ -1,4 +1,5 @@
 
+<<<<<<< HEAD
       <div className="bg-[#0B0D0F66] border border-[#A2CE3AB2] rounded-[18px] p-3 lg:p-6 backdrop-blur-sm">
                 {/* Tabs */}
                 <div className="w-full">
@@ -110,3 +111,5 @@
                   </div>
                 </div>
               </div>
+=======
+>>>>>>> 191aa8aebefc4c49f7a7eb87b2df1cd8ff431ccc

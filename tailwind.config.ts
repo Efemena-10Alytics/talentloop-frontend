@@ -18,10 +18,13 @@ const config: Config = {
       },
     },
     extend: {
+<<<<<<< HEAD
       fontFamily: {
         "mona-sans": ["var(--font-mona-sans)", "sans-serif"],
         sora: ["var(--font-sora)", "sans-serif"],
       },
+=======
+>>>>>>> 191aa8aebefc4c49f7a7eb87b2df1cd8ff431ccc
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
