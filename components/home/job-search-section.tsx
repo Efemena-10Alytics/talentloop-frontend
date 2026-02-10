@@ -32,7 +32,7 @@ export default function JobSearchCTASection() {
       whileInView={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.85, ease: "easeOut" }}
       viewport={{ once: true, amount: 0.25 }}
-      className="relative bg-black py-7 lg:py-10 overflow-hidden"
+      className="relative bg-black py-7 lg:py-0 overflow-hidden"
     >
       <div className="max-w-[1400px] mx-auto px-3 lg:px-6 lg:mb-40">
         {/* Main Container */}

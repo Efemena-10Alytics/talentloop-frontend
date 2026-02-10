@@ -77,9 +77,9 @@ export default function WhyTalentLoopDifferent() {
       whileInView={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.9, ease: "easeOut" }}
       viewport={{ once: true, amount: 0.25 }}
-      className="relative bg-[#0B0D0F] py-7 lg:py-10 overflow-hidden"
+      className="relative bg-[#0B0D0F] py-7 lg:pt-10 overflow-hidden"
     >
-      <div className="max-w-7xl mx-auto px-3 lg:px-6">
+      <div className="max-w-[1400px] mx-auto px-3 lg:px-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           {/* Left Side - Content */}
           <div className="space-y-6 lg:space-y-8">

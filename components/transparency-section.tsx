@@ -132,7 +132,7 @@ export default function ReportingTransparencySection() {
                 <img
                   src="/homepage/Group 20.png"
                   alt="Professional working on laptop"
-                  className="object-contain lg:h-[800px] h-full w-full"
+                  className="object-contain lg:h-[500px] h-full w-full"
                 />
               </div>
             </div>

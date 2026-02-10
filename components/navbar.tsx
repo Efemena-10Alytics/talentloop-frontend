@@ -1,8 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useEffect } from "react";
 
-const navLinks = ["Find Interview Coach", "Auto Apply", "AI Copilot"];
+const navLinks = [{text: "Find Interview Coach", link:"/coaches"}, {text: "Auto Apply", link:"/auto-apply"}, {text: "AI Copilot", link:"/ai-copilot"}];
 
 export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -39,21 +40,24 @@ export function Navbar() {
         {/* Content layer */}
         <div className="relative mx-auto flex w-full max-w-[1400px] items-center justify-between gap-4 px-6 py-6">
           <div className="flex items-center gap-3">
+            <a href="/">
             <img
               src="/logo.svg"
               alt="Talentloop logo"
               className="h-12 w-auto object-contain"
             />
+            </a>
           </div>
 
           <nav className="hidden items-center gap-3 lg:flex">
             {navLinks.map((link) => (
-              <button
-                key={link}
+              <Link
+                href={link.link}
+                key={link.text}
                 className="rounded-full bg-[#FFFFFF26] px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#FFFFFF33] font-mona-sans"
               >
-                {link}
-              </button>
+                {link.text}
+              </Link>
             ))}
           </nav>
 

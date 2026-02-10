@@ -107,7 +107,7 @@ export default function WhoTalentLoopIsFor() {
               </Fade>
             </div>
 
-            <div className="relative w-[1000px] px-3 lg:px-6">
+            <div className="relative w-[320px] md:w-[2xl] lg:w-[1170px] 2xl:w-[1400px] px-3 lg:px-6">
               {/* Content Container */}
               <div className="relative bg-[#000000]/40 backdrop-blur-3xl border-2 border-white/10 rounded-[32px] py-3 lg:pt-20 lg:pb-7 overflow-hidden">
                 {/* Dark Gradient Overlay */}
@@ -123,7 +123,7 @@ export default function WhoTalentLoopIsFor() {
                   {/* Main Heading */}
                   <div className="text-center w-full mb-12 lg:mb-16 space-y-4 ">
                     <Fade direction="down" triggerOnce duration={2000}>
-                      <h1 className="text-4xl lg:text-5xl xl:text-5xl font-mona-sans font-bold text-white">
+                      <h1 className="text-xl lg:text-5xl xl:text-5xl font-mona-sans font-bold text-white">
                         WHO TALENTLOOP.AI 
                         <br />
                         IS FOR
