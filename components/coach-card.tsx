@@ -69,7 +69,9 @@ export default function CoachCard({
   avatars,
 }: CoachCardProps) {
   return (
-    <div className="min-w-[280px] flex-shrink-0">
+    <div 
+    onClick={() => window.location.href = "/coaches/1"}
+    className="min-w-[280px] flex-shrink-0">
       <div className="">
         {/* Image Section */}
         <div className="border border-white rounded-[16px] overflow-hidden relative h-[320px]">

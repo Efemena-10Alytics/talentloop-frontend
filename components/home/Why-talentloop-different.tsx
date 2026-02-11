@@ -77,7 +77,7 @@ export default function WhyTalentLoopDifferent() {
       whileInView={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.9, ease: "easeOut" }}
       viewport={{ once: true, amount: 0.25 }}
-      className="relative bg-[#0B0D0F] py-7 lg:pt-10 overflow-hidden"
+      className="relative bg-[#0B0D0F] py-7 lg:pt-10 lg:mt-7 overflow-hidden"
     >
       <div className="max-w-[1400px] mx-auto px-3 lg:px-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
@@ -86,9 +86,7 @@ export default function WhyTalentLoopDifferent() {
             {/* Main Heading */}
             <Fade direction="down" triggerOnce duration={2000}>
               <h1 className="text-3xl lg:text-4xl xl:text-5xl font-mona-sans font-bold text-white leading-tight">
-                WHY TALENTLOOP.AI IS
-                <br />
-                DIFFERENT
+                WHY TALENTLOOP.AI IS DIFFERENT
               </h1>
             </Fade>
 
@@ -122,27 +120,28 @@ export default function WhyTalentLoopDifferent() {
             <div className="relative">
               <div className="bg-[#FFFFFF1A] backdrop-blur-lg border border-[#FFFFFF] rounded-[24px] p-6 lg:p-8 transition-all duration-500">
                 {/* Icon and Title with AnimatePresence */}
-                <AnimatePresence mode="wait">
+
+                <div className="flex items-center gap-4 mb-6">
+                  <TargetIcon />
                   <motion.div
                     key={activeBarIndex}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -20 }}
                     transition={{ duration: 0.5 }}
-                    className="flex items-center gap-4 mb-6"
+                    className=""
                   >
-                    <TargetIcon />
                     <h3 className="text-xl lg:text-2xl font-mona-sans font-semibold text-white">
                       {currentFeature.title}
                     </h3>
                   </motion.div>
-                </AnimatePresence>
+                </div>
 
                 {/* Progress Bars */}
                 <div className="flex gap-3 lg:gap-4">
                   {progressBarColors.map((color, index) => {
                     const shouldFill = index <= activeBarIndex;
-                    
+
                     return (
                       <div
                         key={index}

@@ -93,7 +93,7 @@ export default function HeroSection() {
           <img
             src="/homepage/Frame 1321318297.png"
             alt=""
-            className="absolute bottom-10 lg:left-[30%] z-10 hidden h-20 lg:block object-contain"
+            className="absolute bottom-[84px] lg:left-[30%] z-10 hidden h-20 lg:block object-contain"
           />
 
           <video
@@ -114,15 +114,15 @@ export default function HeroSection() {
           <div className="z-10 space-y-5 lg:space-y-8">
             {/* Heading */}
             <Fade direction="down" triggerOnce duration={2000}>
-              <h1 className="text-3xl lg:text-5xl font-mona-sans font-bold leading-tight">
-                <span className="text-white">Get </span>
-                <span className="text-[#A2CE3A]">Interview Prepped</span>
+              <h1 className="text-3xl lg:text-5xl font-mona-sans font-bold">
+                <span className="text-white leading-tight ">Get </span>
+                <span className="text-[#A2CE3A] leading-tight ">Interview Prepped</span>
                 <br />
-                <span className="text-white">and Let </span>
-                <span className="text-[#A2CE3A]">AI Do Your</span>
+                <span className="text-white leading-tight ">and Let </span>
+                <span className="text-[#A2CE3A] leading-tight ">AI Do Your</span>
                 <br />
-                <span className="text-[#A2CE3A]">Job Application</span>
-                <span className="text-white"> For You.</span>
+                <span className="text-[#A2CE3A] leading-tight ">Job Application</span>
+                <span className="text-white leading-tight "> For You.</span>
               </h1>
             </Fade>
 
@@ -146,7 +146,7 @@ export default function HeroSection() {
               </div>
             </Fade>
 
-            <div className="absolute bottom-10 lg:left-10 hidden lg:block h-[180px] w-full lg:w-[200px] rounded-xl overflow-hidden">
+            <div className="absolute bottom-[84px] lg:left-10 hidden lg:block h-[180px] w-full lg:w-[200px] rounded-xl overflow-hidden">
               <video
                 autoPlay
                 loop
@@ -188,7 +188,7 @@ export default function HeroSection() {
                     ease: [0.43, 0.13, 0.23, 0.96]
                   }
                 }}
-                className="w-full h-[600px] rounded-[18px] overflow-hidden object-contain"
+                className="w-full h-[580px] rounded-[18px] overflow-hidden object-contain"
                 style={{ transformStyle: 'preserve-3d' }}
               />
             </AnimatePresence>
