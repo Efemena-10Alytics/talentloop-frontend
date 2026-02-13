@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import PhoneInput from "react-phone-number-input";
@@ -17,8 +17,8 @@ const BackArrowSVG = () => (
 const UploadSVG = () => (
 <svg width="101" height="101" viewBox="0 0 101 101" fill="none" xmlns="http://www.w3.org/2000/svg">
 <rect x="1.00498" y="1.00498" width="98.4879" height="98.4879" rx="49.2439" fill="#F3F5F7"/>
-<rect x="1.00498" y="1.00498" width="98.4879" height="98.4879" rx="49.2439" stroke="#D0D5DD" stroke-width="2.00996" stroke-dasharray="8.04 8.04"/>
-<path d="M50.2489 38.1895V54.2691M50.2489 38.1895L56.9488 44.8893M50.2489 38.1895L43.5491 44.8893M62.3087 54.2691V59.629C62.3087 60.3398 62.0263 61.0214 61.5238 61.524C61.0212 62.0266 60.3395 62.3089 59.6287 62.3089H40.8692C40.1584 62.3089 39.4767 62.0266 38.9741 61.524C38.4716 61.0214 38.1892 60.3398 38.1892 59.629V54.2691" stroke="#67777E" stroke-width="2.00996" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="1.00498" y="1.00498" width="98.4879" height="98.4879" rx="49.2439" stroke="#D0D5DD" strokeWidth="2.00996" strokeDasharray="8.04 8.04"/>
+<path d="M50.2489 38.1895V54.2691M50.2489 38.1895L56.9488 44.8893M50.2489 38.1895L43.5491 44.8893M62.3087 54.2691V59.629C62.3087 60.3398 62.0263 61.0214 61.5238 61.524C61.0212 62.0266 60.3395 62.3089 59.6287 62.3089H40.8692C40.1584 62.3089 39.4767 62.0266 38.9741 61.524C38.4716 61.0214 38.1892 60.3398 38.1892 59.629V54.2691" stroke="#67777E" strokeWidth="2.00996" strokeLinecap="round" strokeLinejoin="round"/>
 </svg>
 
 );
@@ -101,9 +101,16 @@ function Dropdown({ label, placeholder, options, value, onChange }: {
 
 /* ─── Main Component ─── */
 export default function CompleteProfilePage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#0B0D0F]" />}>
+      <CompleteProfileContent />
+    </Suspense>
+  );
+}
+
+function CompleteProfileContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const type = searchParams.get("type") || "coach";
 
   const [step, setStep] = useState(0);
 
