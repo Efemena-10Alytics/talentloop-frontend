@@ -72,3 +72,25 @@ body {
 .animate-marquee-slow {
   animation: marquee 28s linear infinite;
 }
+
+/* Phone Input Custom Styles */
+.phone-input-custom .PhoneInputInput {
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 0.875rem;
+  color: #121212;
+}
+.phone-input-custom .PhoneInputInput::placeholder {
+  color: #ACACAC;
+}
+.phone-input-custom .PhoneInputCountry {
+  margin-right: 8px;
+}
+.phone-input-custom .PhoneInputCountryIcon {
+  width: 24px;
+  height: 18px;
+}
+.phone-input-custom .PhoneInputCountrySelectArrow {
+  opacity: 0.5;
+}

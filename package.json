@@ -20,6 +20,7 @@
     "react": "19.2.3",
     "react-awesome-reveal": "^4.3.1",
     "react-dom": "19.2.3",
+    "react-phone-number-input": "^3.4.14",
     "react-player": "^3.4.0",
     "react-video-player": "^1.0.0",
     "tailwind-merge": "^2.5.2"
