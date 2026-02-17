@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useRef, Suspense } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useState, useRef } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import PhoneInput from "react-phone-number-input";
 import "react-phone-number-input/style.css";
@@ -101,15 +101,6 @@ function Dropdown({ label, placeholder, options, value, onChange }: {
 
 /* ─── Main Component ─── */
 export default function CompleteProfilePage() {
-  return (
-    <Suspense fallback={<div className="min-h-screen bg-[#0B0D0F]" />}>
-      <CompleteProfileContent />
-    </Suspense>
-  );
-}
-
-function CompleteProfileContent() {
-  const searchParams = useSearchParams();
   const router = useRouter();
 
   const [step, setStep] = useState(0);
@@ -151,6 +142,29 @@ function CompleteProfileContent() {
 
   const goNext = () => setStep((s) => Math.min(s + 1, 3));
   const goBack = () => setStep((s) => Math.max(s - 1, 0));
+
+  const [submitting, setSubmitting] = useState(false);
+  const handleSubmitApplication = async () => {
+    setSubmitting(true);
+    try {
+      // TODO: replace with real API endpoint
+      await fetch("/api/coach/apply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username, location, phone, gender,
+          languages: selectedLanguages,
+          jobTitle, industry, fieldsCoached, experience, companies, linkedin,
+          interviewTypes, targetLevels, bio,
+        }),
+      }).catch(() => {});
+      router.push("/manage-your-profile");
+    } catch {
+      router.push("/manage-your-profile");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#0B0D0F] relative overflow-hidden">
@@ -428,8 +442,8 @@ function CompleteProfileContent() {
                 <button onClick={goBack} className="flex-1 py-3 rounded-[8px] font-mona-sans text-base font-bold transition-colors cursor-pointer" style={{ backgroundColor: "#ECF8C7", color: "#054711" }}>
                   Back
                 </button>
-                <button className="flex-[1.4] py-3 bg-[#A2CE3A] rounded-[8px] text-[#121212] font-mona-sans text-base font-bold hover:bg-[#92BE2A] transition-colors cursor-pointer">
-                  Submit Application
+                <button onClick={handleSubmitApplication} disabled={submitting} className="flex-[1.4] py-3 bg-[#A2CE3A] rounded-[8px] text-[#121212] font-mona-sans text-base font-bold hover:bg-[#92BE2A] transition-colors cursor-pointer disabled:opacity-60">
+                  {submitting ? "Submitting..." : "Submit Application"}
                 </button>
               </div>
             </div>
