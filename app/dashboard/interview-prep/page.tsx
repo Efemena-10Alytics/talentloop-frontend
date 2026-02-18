@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 /* ─── SVG Icons ─── */
 const RealTimeAssistantSVG = () => (
@@ -80,6 +81,7 @@ const StarSVG = () => (
 
 /* ─── AI Copilot Tab Content ─── */
 function AICopilotTab() {
+  const router = useRouter();
   const practiceCards = [
     {
       icon: <StartMockSVG />,
@@ -105,9 +107,9 @@ function AICopilotTab() {
   ];
 
   const recentInterviews = [
-    { company: "Meta", role: "Frontend Engineer", type: "Technical", score: 78, feedback: "Strong technical knowledge, work on communication clarity", daysAgo: "2 days ago" },
-    { company: "Meta", role: "Frontend Engineer", type: "Technical", score: 78, feedback: "Strong technical knowledge, work on communication clarity", daysAgo: "2 days ago" },
-    { company: "Meta", role: "Frontend Engineer", type: "Technical", score: 78, feedback: "Strong technical knowledge, work on communication clarity", daysAgo: "2 days ago" },
+    { id: "1", company: "Meta", role: "Frontend Engineer", type: "Technical", score: 78, feedback: "Strong technical knowledge, work on communication clarity", daysAgo: "2 days ago" },
+    { id: "2", company: "Meta", role: "Frontend Engineer", type: "Technical", score: 78, feedback: "Strong technical knowledge, work on communication clarity", daysAgo: "2 days ago" },
+    { id: "3", company: "Meta", role: "Frontend Engineer", type: "Technical", score: 78, feedback: "Strong technical knowledge, work on communication clarity", daysAgo: "2 days ago" },
   ];
 
   return (
@@ -142,7 +144,10 @@ function AICopilotTab() {
                   <span className="px-3 py-0.5 rounded-full bg-[#A2CE3A]/15 text-[#A2CE3A] text-xs font-mona-sans font-medium">{interview.type}</span>
                 </div>
                 <p className="text-white/50 font-mona-sans text-sm">{interview.feedback}</p>
-                <button className="mt-3 flex items-center gap-2 text-[#A2CE3A] font-mona-sans text-sm font-semibold cursor-pointer hover:opacity-80 transition-opacity">
+                <button
+                  onClick={() => router.push(`/dashboard/interview-prep/mock-interview/${interview.id}/report`)}
+                  className="mt-3 flex items-center gap-2 text-[#A2CE3A] font-mona-sans text-sm font-semibold cursor-pointer hover:opacity-80 transition-opacity"
+                >
                   View Full Report <ViewReportArrowSVG />
                 </button>
               </div>
