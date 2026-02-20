@@ -168,10 +168,16 @@ export default function CompleteProfilePage() {
 
   return (
     <div className="min-h-screen bg-[#0B0D0F] relative overflow-hidden">
-      {/* Background decoration */}
-      <div className="absolute bottom-0 left-0 w-[300px] h-[300px] lg:w-[500px] lg:h-[500px] opacity-20 pointer-events-none">
-        <img src="/LooperGroup.svg" alt="" className="w-full h-full object-contain" />
-      </div>
+      {/* Background */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage: "url('/img2.png')",
+          backgroundRepeat: "no-repeat",
+          backgroundPosition: "center",
+          backgroundSize: "cover",
+        }}
+      />
 
       {/* Top Bar */}
       <div className="relative z-10 flex items-center justify-between px-4 lg:px-10 py-5">
@@ -208,7 +214,7 @@ export default function CompleteProfilePage() {
 
       {/* Form Card */}
       <div className="relative z-10 flex justify-center px-4 pb-10">
-        <div className="lg:scale-[80%] w-full max-w-[700px] bg-[#141619] border border-white/10 rounded-[18px] p-6 lg:p-10">
+        <div className="lg:scale-[80%] w-full max-w-[700px] bg-[#141619] border border-white/10 rounded-[18px] p-6 lg:p-10" style={{ backgroundImage: "url('/img3.png')", backgroundRepeat: "no-repeat", backgroundPosition: "center", backgroundSize: "cover" }}>
 
           {/* ─── Step 1: Basic Info ─── */}
           {step === 0 && (

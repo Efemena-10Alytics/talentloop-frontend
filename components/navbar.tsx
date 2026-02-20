@@ -61,9 +61,9 @@ export function Navbar() {
             ))}
           </nav>
 
-          <button className="rounded-full bg-[#A2CE3A] px-9 py-2 text-sm font-semibold text-[#121212] transition-transform hover:scale-[1.02] font-mona-sans">
+          <a href="/signup" className="rounded-full bg-[#A2CE3A] px-9 py-2 text-sm font-semibold text-[#121212] transition-transform hover:scale-[1.02] font-mona-sans">
             Sign Up
-          </button>
+          </a>
         </div>
       </div>
     </div>

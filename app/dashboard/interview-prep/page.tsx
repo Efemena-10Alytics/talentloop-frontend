@@ -79,6 +79,12 @@ const StarSVG = () => (
   </svg>
 );
 
+  const recentInterviews = [
+    { id: "1", company: "Meta", role: "Frontend Engineer", type: "Technical", score: 78, feedback: "Strong technical knowledge, work on communication clarity", daysAgo: "2 days ago" },
+    { id: "2", company: "Meta", role: "Frontend Engineer", type: "Technical", score: 78, feedback: "Strong technical knowledge, work on communication clarity", daysAgo: "2 days ago" },
+    { id: "3", company: "Meta", role: "Frontend Engineer", type: "Technical", score: 78, feedback: "Strong technical knowledge, work on communication clarity", daysAgo: "2 days ago" },
+  ];
+
 /* ─── AI Copilot Tab Content ─── */
 function AICopilotTab() {
   const router = useRouter();
@@ -104,12 +110,6 @@ function AICopilotTab() {
       buttonText: "Start Session",
       buttonColor: "bg-[#E040FB] text-white",
     },
-  ];
-
-  const recentInterviews = [
-    { id: "1", company: "Meta", role: "Frontend Engineer", type: "Technical", score: 78, feedback: "Strong technical knowledge, work on communication clarity", daysAgo: "2 days ago" },
-    { id: "2", company: "Meta", role: "Frontend Engineer", type: "Technical", score: 78, feedback: "Strong technical knowledge, work on communication clarity", daysAgo: "2 days ago" },
-    { id: "3", company: "Meta", role: "Frontend Engineer", type: "Technical", score: 78, feedback: "Strong technical knowledge, work on communication clarity", daysAgo: "2 days ago" },
   ];
 
   return (
@@ -168,6 +168,7 @@ function AICopilotTab() {
 
 /* ─── Human Interview Coaches Tab Content ─── */
 function HumanCoachesTab() {
+    const router = useRouter();
   const coaches = [
     {
       name: "Sarah Johnson",
@@ -244,6 +245,38 @@ function HumanCoachesTab() {
           <button className="px-6 py-2.5 rounded-[10px] border border-[#A2CE3A] text-[#A2CE3A] font-mona-sans font-semibold text-sm cursor-pointer hover:bg-[#A2CE3A]/10 transition-colors">
             Join Session
           </button>
+        </div>
+      </div>
+
+      
+      {/* Recent Mock Interviews */}
+      <div>
+        <h2 className="text-white font-mona-sans font-bold text-xl mb-4">Recent Mock Interviews</h2>
+        <div className="space-y-4">
+          {recentInterviews.map((interview, i) => (
+            <div key={i} className="bg-[#FFFFFF0A] backdrop-blur-sm border border-white/10 rounded-[16px] p-5 flex items-start justify-between">
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-1">
+                  <span className="text-white font-mona-sans font-bold text-base">{interview.company} – {interview.role}</span>
+                  <span className="px-3 py-0.5 rounded-full bg-[#A2CE3A]/15 text-[#A2CE3A] text-xs font-mona-sans font-medium">{interview.type}</span>
+                </div>
+                <p className="text-white/50 font-mona-sans text-sm">{interview.feedback}</p>
+                <button
+                  onClick={() => router.push(`/dashboard/interview-prep/mock-interview/${interview.id}/report`)}
+                  className="mt-3 flex items-center gap-2 text-[#A2CE3A] font-mona-sans text-sm font-semibold cursor-pointer hover:opacity-80 transition-opacity"
+                >
+                  View Full Report <ViewReportArrowSVG />
+                </button>
+              </div>
+              <div className="flex flex-col items-end gap-1 ml-6">
+                <div className="flex items-center gap-2">
+                  <RecentMockIconSVG />
+                  <span className="text-white font-mona-sans font-bold text-2xl">{interview.score}</span>
+                </div>
+                <span className="text-white/40 font-mona-sans text-xs">{interview.daysAgo}</span>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>

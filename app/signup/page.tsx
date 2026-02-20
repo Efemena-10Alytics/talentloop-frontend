@@ -193,15 +193,15 @@ function SignUpContent() {
   }, [type, nextSlide]);
 
   return (
-    <div className="min-h-screen bg-[#0B0D0F] relative overflow-hidden">
+    <div className="min-h-screen lg:max-h-screen bg-[#0B0D0F] relative overflow-hidden">
       {/* Background decoration */}
       <div
-        className="absolute inset-0 pointer-events-none opacity-30"
+        className="absolute inset-0 pointer-events-none"
         style={{
-          backgroundImage: "url('/LooperGroup.svg')",
+          backgroundImage: "url('/img2.png')",
           backgroundRepeat: "no-repeat",
-          backgroundPosition: "bottom left",
-          backgroundSize: "60%",
+          backgroundPosition: "center",
+          backgroundSize: "cover",
         }}
       />
 
@@ -285,7 +285,7 @@ function SignUpContent() {
 
         {/* ─── Right Side: Sign Up Form / Email Verification ─── */}
         <div className="flex-1 w-full max-w-[520px]">
-          <div className="lg:scale-[80%] bg-[#141619] border border-white/10 rounded-[18px] p-6 lg:p-8 h-full lg:max-h-[800px] overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+          <div className="lg:scale-[80%] bg-[#141619] border border-white/10 rounded-[18px] p-6 lg:p-8 h-full lg:max-h-[800px] overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent" style={{ backgroundImage: "url('/img3.png')", backgroundRepeat: "no-repeat", backgroundPosition: "center", backgroundSize: "cover" }}>
 
             {/* ─── Email Verification View ─── */}
             {isEmailVerification ? (

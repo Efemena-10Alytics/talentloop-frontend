@@ -116,10 +116,16 @@ export default function EditProfilePage() {
 
   return (
     <div className="min-h-screen bg-[#0B0D0F] relative overflow-hidden">
-      {/* Background LooperGroup */}
-      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] lg:w-[600px] lg:h-[600px] opacity-20 pointer-events-none">
-        <img src="/LooperGroup.svg" alt="" className="w-full h-full object-contain" />
-      </div>
+      {/* Background */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage: "url('/img2.png')",
+          backgroundRepeat: "no-repeat",
+          backgroundPosition: "center",
+          backgroundSize: "cover",
+        }}
+      />
 
       <Navbar1 />
 
