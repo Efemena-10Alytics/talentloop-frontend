@@ -45,21 +45,21 @@ const CancelSVG = () => (
 /* ─── Data ─── */
 
 const upcomingSessions = [
-  { id: 1, name: "Alex Johnson", avatar: "/coaches/coach1.jpg", date: "Jan 16, 2026", time: "3:00 PM", badge: "Technical", badgeColor: "bg-[#A2CE3A]/15 text-[#A2CE3A]" },
-  { id: 2, name: "Maria James", avatar: "/coaches/coach1.jpg", date: "Jan 16, 2026", time: "4:00 PM", badge: "Behavioral", badgeColor: "bg-[#A2CE3A]/15 text-[#A2CE3A]" },
-  { id: 3, name: "Alex Johnson", avatar: "/coaches/coach1.jpg", date: "Jan 16, 2026", time: "3:00 PM", badge: "Technical", badgeColor: "bg-[#A2CE3A]/15 text-[#A2CE3A]" },
-  { id: 4, name: "Alex Johnson", avatar: "/coaches/coach1.jpg", date: "Jan 16, 2026", time: "3:00 PM", badge: "Technical", badgeColor: "bg-[#A2CE3A]/15 text-[#A2CE3A]" },
-  { id: 5, name: "Alex Johnson", avatar: "/coaches/coach1.jpg", date: "Jan 16, 2026", time: "3:00 PM", badge: "Technical", badgeColor: "bg-[#A2CE3A]/15 text-[#A2CE3A]" },
+  { id: 1, name: "Alex Johnson", avatar: "/human-coach.svg", date: "Jan 16, 2026", time: "3:00 PM", badge: "Technical", badgeColor: "bg-[#A2CE3A]/15 text-[#A2CE3A]" },
+  { id: 2, name: "Maria James", avatar: "/human-coach.svg", date: "Jan 16, 2026", time: "4:00 PM", badge: "Behavioral", badgeColor: "bg-[#A2CE3A]/15 text-[#A2CE3A]" },
+  { id: 3, name: "Alex Johnson", avatar: "/human-coach.svg", date: "Jan 16, 2026", time: "3:00 PM", badge: "Technical", badgeColor: "bg-[#A2CE3A]/15 text-[#A2CE3A]" },
+  { id: 4, name: "Alex Johnson", avatar: "/human-coach.svg", date: "Jan 16, 2026", time: "3:00 PM", badge: "Technical", badgeColor: "bg-[#A2CE3A]/15 text-[#A2CE3A]" },
+  { id: 5, name: "Alex Johnson", avatar: "/human-coach.svg", date: "Jan 16, 2026", time: "3:00 PM", badge: "Technical", badgeColor: "bg-[#A2CE3A]/15 text-[#A2CE3A]" },
 ];
 
 const completedSessions = [
-  { id: 1, name: "Alex Johnson", avatar: "/coaches/coach1.jpg", date: "Jan 16, 2026", time: "3:00 PM", badge: "Technical", badgeColor: "bg-[#A2CE3A]/15 text-[#A2CE3A]" },
-  { id: 2, name: "Alex Johnson", avatar: "/coaches/coach1.jpg", date: "Jan 16, 2026", time: "3:00 PM", badge: "Technical", badgeColor: "bg-[#A2CE3A]/15 text-[#A2CE3A]" },
-  { id: 3, name: "Alex Johnson", avatar: "/coaches/coach1.jpg", date: "Jan 16, 2026", time: "3:00 PM", badge: "Technical", badgeColor: "bg-[#A2CE3A]/15 text-[#A2CE3A]" },
+  { id: 1, name: "Alex Johnson", avatar: "/human-coach.svg", date: "Jan 16, 2026", time: "3:00 PM", badge: "Technical", badgeColor: "bg-[#A2CE3A]/15 text-[#A2CE3A]" },
+  { id: 2, name: "Alex Johnson", avatar: "/human-coach.svg", date: "Jan 16, 2026", time: "3:00 PM", badge: "Technical", badgeColor: "bg-[#A2CE3A]/15 text-[#A2CE3A]" },
+  { id: 3, name: "Alex Johnson", avatar: "/human-coach.svg", date: "Jan 16, 2026", time: "3:00 PM", badge: "Technical", badgeColor: "bg-[#A2CE3A]/15 text-[#A2CE3A]" },
 ];
 
 const cancelledSessions = [
-  { id: 1, name: "Alex Johnson", avatar: "/coaches/coach1.jpg", date: "Jan 16, 2026", time: "3:00 PM", badge: "Technical", badgeColor: "bg-[#A2CE3A]/15 text-[#A2CE3A]" },
+  { id: 1, name: "Alex Johnson", avatar: "/human-coach.svg", date: "Jan 16, 2026", time: "3:00 PM", badge: "Technical", badgeColor: "bg-[#A2CE3A]/15 text-[#A2CE3A]" },
 ];
 
 /* ─── Components ─── */

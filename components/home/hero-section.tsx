@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Fade } from "react-awesome-reveal";
 import { motion, AnimatePresence } from "framer-motion";
+import Link from "next/link";
 
 const SVG1 = () => {
   return (
@@ -137,12 +138,12 @@ export default function HeroSection() {
             <Fade direction="down" triggerOnce delay={2000} duration={2000}>
               {/* Buttons */}
               <div className="flex flex-col lg:flex-row gap-4">
-                <button className="px-8 py-3.5 bg-[#EAFFBA] border-[6px] border-[#272f1568] rounded-2xl text-[#4A4A4A] font-mona-sans text-base font-semibold hover:bg-[#92BE2A] transition-colors">
+                <Link href="/signup?type=jobseeker" className="px-8 py-3.5 bg-[#EAFFBA] border-[6px] border-[#272f1568] rounded-2xl text-[#4A4A4A] font-mona-sans text-base font-semibold hover:bg-[#92BE2A] transition-colors">
                   Job Seeker Sign In
-                </button>
-                <button className="px-8 py-3.5 bg-transparent bg-white border-[6px] border-[#272f1568] rounded-2xl text-[#4A4A4A] font-mona-sans text-base font-semibold hover:bg-white/10 transition-colors">
+                </Link>
+                <Link href="/signup?type=coach" className="px-8 py-3.5 bg-transparent bg-white border-[6px] border-[#272f1568] rounded-2xl text-[#4A4A4A] font-mona-sans text-base font-semibold hover:bg-white/10 transition-colors">
                   Interview Coach Sign In
-                </button>
+                </Link>
               </div>
             </Fade>
 

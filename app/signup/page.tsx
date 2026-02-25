@@ -217,12 +217,12 @@ function SignUpContent() {
       </div>
 
       {/* Main Layout */}
-      <div className="relative z-[1] min-h-screen flex flex-col lg:flex-row items-center justify-center px-4 pt-40 pb-10 lg:py-20 gap-8 lg:gap-16 max-w-[1400px] mx-auto">
+      <div className="relative z-[1] min-h-screen flex flex-col lg:flex-row items-center justify-center px-4 pt-40 lg:pt-16 2xl:pt-20 pb-10 lg:py-20 gap-8 lg:gap-16 max-w-[1400px] mx-auto">
         {/* ─── Left Side: Coach Carousel ─── */}
         {type === "coach" && (
           <div className="flex-1 hidden lg:flex flex-col items-center justify-center w-full max-w-[480px]">
             {/* Carousel Image */}
-            <div className="relative w-full aspect-[4/3] rounded-[16px] overflow-hidden">
+            <div className="relative w-full h-[500px] 2xl:h-[600px] rounded-[16px] overflow-hidden">
               <AnimatePresence mode="wait">
                 <motion.img
                   key={currentSlide}
@@ -285,7 +285,7 @@ function SignUpContent() {
 
         {/* ─── Right Side: Sign Up Form / Email Verification ─── */}
         <div className="flex-1 w-full max-w-[520px]">
-          <div className="lg:scale-[80%] bg-[#141619] border border-white/10 rounded-[18px] p-6 lg:p-8 h-full lg:max-h-[800px] overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent" style={{ backgroundImage: "url('/img3.png')", backgroundRepeat: "no-repeat", backgroundPosition: "center", backgroundSize: "cover" }}>
+          <div className="lg:scale-[90%] 2xl:scale-[100%] bg-[#141619] border border-white/10 rounded-[18px] p-6 lg:p-8 h-full lg:max-h-[800px] overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent" style={{ backgroundImage: "url('/img3.png')", backgroundRepeat: "no-repeat", backgroundPosition: "center", backgroundSize: "cover" }}>
 
             {/* ─── Email Verification View ─── */}
             {isEmailVerification ? (
@@ -471,6 +471,14 @@ function SignUpContent() {
                 </div>
               </motion.div>
             )}
+
+                        <p className="text-white/50 font-mona-sans text-sm text-center mt-1">
+                          Already have an account?{" "}
+                          <Link href="/signin" className="text-[#A2CE3A] font-semibold hover:underline">
+                            Sign in to your account
+                          </Link>
+                        </p>
+            
 
             {/* Continue Button */}
             <button

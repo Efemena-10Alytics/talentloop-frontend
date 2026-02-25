@@ -67,7 +67,7 @@ export default function SignInPage() {
       </div>
 
       {/* Main Layout */}
-      <div className="relative z-[1] min-h-screen flex flex-col lg:flex-row items-center justify-center px-4 pt-40 pb-10 lg:py-20 gap-8 lg:gap-16 max-w-[1400px] mx-auto">
+      <div className="relative z-[1] min-h-screen flex flex-col lg:flex-row items-center justify-center px-4 pt-40 lg:pt-20 pb-10 lg:py-20 gap-8 lg:gap-16 max-w-[1400px] mx-auto">
         {/* ─── Left Side ─── */}
         <div className="flex-1 hidden lg:flex flex-col items-start justify-center w-full max-w-[480px]">
           <h2 className="text-white text-3xl lg:text-[42px] font-mona-sans font-bold leading-tight">
@@ -83,7 +83,7 @@ export default function SignInPage() {
 
         {/* ─── Right Side: Sign In Form ─── */}
         <div className="flex-1 w-full max-w-[520px]">
-          <div className="lg:scale-[80%] bg-[#141619] border border-white/10 rounded-[18px] p-6 lg:p-8" style={{ backgroundImage: "url('/img3.png')", backgroundRepeat: "no-repeat", backgroundPosition: "center", backgroundSize: "cover" }}>
+          <div className="lg:scale-[90%] 2xl:scale-[100%] bg-[#141619] border border-white/10 rounded-[18px] p-6 lg:p-8" style={{ backgroundImage: "url('/img3.png')", backgroundRepeat: "no-repeat", backgroundPosition: "center", backgroundSize: "cover" }}>
             <h1 className="text-2xl lg:text-3xl font-mona-sans font-bold text-white text-center mb-8">
               Welcome Back
             </h1>
@@ -141,7 +141,7 @@ export default function SignInPage() {
             {/* Don't have an account */}
             <p className="text-white/50 font-mona-sans text-sm text-center mb-5">
               Don&apos;t have an account?{" "}
-              <Link href="/signup" className="text-[#A2CE3A] font-semibold hover:underline">
+              <Link href="/signup?type=coach" className="text-[#A2CE3A] font-semibold hover:underline">
                 Create your account
               </Link>
             </p>
