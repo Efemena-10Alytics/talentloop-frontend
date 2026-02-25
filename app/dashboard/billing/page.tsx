@@ -1,6 +1,8 @@
 "use client";
 
-export default function BillingPage() {
+import { Suspense } from "react";
+
+function BillingContent() {
   return (
     <div>
       <h1 className="text-white font-mona-sans font-bold text-2xl lg:text-3xl">Billing</h1>
@@ -9,5 +11,13 @@ export default function BillingPage() {
         <p className="text-white/40 font-mona-sans text-sm">Coming soon</p>
       </div>
     </div>
+  );
+}
+
+export default function BillingPage() {
+  return (
+    <Suspense fallback={<div className="text-white">Loading...</div>}>
+      <BillingContent />
+    </Suspense>
   );
 }

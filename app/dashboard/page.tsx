@@ -1,6 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
+import { CoachDashboard } from "@/components/dashboard/CoachDashboard";
 
 /* ─── SVG Icons ─── */
 
@@ -154,9 +157,9 @@ const prioritySkillGaps = [
   "Portfolio Projects with Real Data",
 ];
 
-/* ─── Page ─── */
+/* ─── Job Seeker Dashboard Component ─── */
 
-export default function DashboardPage() {
+function JobSeekerDashboard() {
   return (
     <div>
       {/* Welcome */}
@@ -308,5 +311,26 @@ export default function DashboardPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+/* ─── Page Wrapper ─── */
+
+function DashboardContent() {
+  const searchParams = useSearchParams();
+  const userType = searchParams.get('us') || 'jobseeker';
+
+  if (userType === 'coach') {
+    return <CoachDashboard />;
+  }
+
+  return <JobSeekerDashboard />;
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={<div className="text-white">Loading...</div>}>
+      <DashboardContent />
+    </Suspense>
   );
 }

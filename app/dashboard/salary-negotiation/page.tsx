@@ -1,6 +1,8 @@
 "use client";
 
-export default function SalaryNegotiationPage() {
+import { Suspense } from "react";
+
+function SalaryNegotiationContent() {
   return (
     <div>
       <h1 className="text-white font-mona-sans font-bold text-2xl lg:text-3xl">Salary Negotiation</h1>
@@ -9,5 +11,13 @@ export default function SalaryNegotiationPage() {
         <p className="text-white/40 font-mona-sans text-sm">Coming soon</p>
       </div>
     </div>
+  );
+}
+
+export default function SalaryNegotiationPage() {
+  return (
+    <Suspense fallback={<div className="text-white">Loading...</div>}>
+      <SalaryNegotiationContent />
+    </Suspense>
   );
 }

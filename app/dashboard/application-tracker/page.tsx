@@ -1,6 +1,8 @@
 "use client";
 
-export default function ApplicationTrackerPage() {
+import { Suspense } from "react";
+
+function ApplicationTrackerContent() {
   return (
     <div>
       <h1 className="text-white font-mona-sans font-bold text-2xl lg:text-3xl">Application Tracker</h1>
@@ -9,5 +11,13 @@ export default function ApplicationTrackerPage() {
         <p className="text-white/40 font-mona-sans text-sm">Coming soon</p>
       </div>
     </div>
+  );
+}
+
+export default function ApplicationTrackerPage() {
+  return (
+    <Suspense fallback={<div className="text-white">Loading...</div>}>
+      <ApplicationTrackerContent />
+    </Suspense>
   );
 }

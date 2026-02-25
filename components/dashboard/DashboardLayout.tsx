@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 
 /* ─── SVG Icons ─── */
 const BellSVG = () => (
@@ -108,8 +109,34 @@ const SettingsSVG = () => (
   </svg>
 );
 
+const SessionsSVG = () => (
+  <svg width="19" height="21" viewBox="0 0 19 21" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M13.5 0.5V4.5M5.5 0.5V4.5M18.5 10.5C18.5 6.729 18.5 4.843 17.328 3.672C16.156 2.501 14.271 2.5 10.5 2.5H8.5C4.729 2.5 2.843 2.5 1.672 3.672C0.501 4.844 0.5 6.729 0.5 10.5V12.5C0.5 16.271 0.5 18.157 1.672 19.328C2.844 20.499 4.729 20.5 8.5 20.5M0.5 8.5H18.5" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M15.767 17.2009L14.5 16.4999V14.7669M18.5 16.4999C18.5 17.5607 18.0786 18.5782 17.3284 19.3283C16.5783 20.0784 15.5609 20.4999 14.5 20.4999C13.4391 20.4999 12.4217 20.0784 11.6716 19.3283C10.9214 18.5782 10.5 17.5607 10.5 16.4999C10.5 15.439 10.9214 14.4216 11.6716 13.6715C12.4217 12.9213 13.4391 12.4999 14.5 12.4999C15.5609 12.4999 16.5783 12.9213 17.3284 13.6715C18.0786 14.4216 18.5 15.439 18.5 16.4999Z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+
+const ClientsSVG = () => (
+  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M14.1667 17.5V15.8333C14.1667 14.9493 13.8155 14.1014 13.1904 13.4763C12.5652 12.8512 11.7174 12.5 10.8333 12.5H4.16667C3.28261 12.5 2.43477 12.8512 1.80964 13.4763C1.18452 14.1014 0.833336 14.9493 0.833336 15.8333V17.5M19.1667 17.5V15.8333C19.1662 15.0948 18.9204 14.3773 18.4679 13.7936C18.0154 13.2099 17.3819 12.793 16.6667 12.6083M13.3333 2.60833C14.0503 2.79192 14.6858 3.20892 15.1397 3.79359C15.5935 4.37827 15.8398 5.09736 15.8398 5.8375C15.8398 6.57764 15.5935 7.29673 15.1397 7.88141C14.6858 8.46608 14.0503 8.88308 13.3333 9.06667M10.8333 5.83333C10.8333 7.67428 9.34095 9.16667 7.5 9.16667C5.65905 9.16667 4.16667 7.67428 4.16667 5.83333C4.16667 3.99238 5.65905 2.5 7.5 2.5C9.34095 2.5 10.8333 3.99238 10.8333 5.83333Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+
+const EarningsSVG = () => (
+  <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M1.922 19.578C3.093 20.75 4.979 20.75 8.75 20.75H12.75C16.521 20.75 18.407 20.75 19.578 19.578C20.749 18.406 20.75 16.521 20.75 12.75C20.75 11.58 20.75 10.592 20.715 9.75M19.578 5.922C18.407 4.75 16.521 4.75 12.75 4.75H8.75C4.979 4.75 3.093 4.75 1.922 5.922C0.751 7.094 0.75 8.979 0.75 12.75C0.75 13.92 0.75 14.908 0.785 15.75M10.75 0.75C12.636 0.75 13.578 0.75 14.164 1.336C14.75 1.922 14.75 2.864 14.75 4.75M7.336 1.336C6.75 1.922 6.75 2.864 6.75 4.75" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+    <path d="M10.75 16.083C11.855 16.083 12.75 15.337 12.75 14.417C12.75 13.497 11.855 12.75 10.75 12.75C9.645 12.75 8.75 12.004 8.75 11.083C8.75 10.163 9.645 9.417 10.75 9.417M10.75 16.083C9.645 16.083 8.75 15.337 8.75 14.417M10.75 16.083V16.75M10.75 9.417V8.75M10.75 9.417C11.855 9.417 12.75 10.163 12.75 11.083" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+  </svg>
+);
+
+const ReviewsSVG = () => (
+  <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M4.79024 6.522C2.33024 7.079 1.10024 7.357 0.807235 8.298C0.515235 9.238 1.35324 10.219 3.03024 12.18L3.46424 12.687C3.94024 13.244 4.17923 13.523 4.28623 13.867C4.39323 14.212 4.35723 14.584 4.28523 15.327L4.21923 16.004C3.96623 18.621 3.83924 19.929 4.60524 20.51C5.37124 21.091 6.52323 20.561 8.82523 19.501L9.42223 19.227C10.0762 18.925 10.4032 18.775 10.7502 18.775C11.0972 18.775 11.4242 18.925 12.0792 19.227L12.6742 19.501C14.9772 20.561 16.1292 21.091 16.8942 20.511C17.6612 19.929 17.5342 18.621 17.2812 16.004M18.4702 12.18C20.1472 10.22 20.9852 9.239 20.6932 8.298C20.4012 7.357 19.1702 7.078 16.7102 6.522L16.0742 6.378C15.3752 6.22 15.0262 6.141 14.7452 5.928C14.4642 5.715 14.2852 5.392 13.9252 4.746L13.5972 4.158C12.3302 1.886 11.6972 0.75 10.7502 0.75C9.80323 0.75 9.17023 1.886 7.90323 4.158" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+  </svg>
+);
+
 /* ─── Navigation Items ─── */
-const navItems = [
+const jobSeekerNavItems = [
   { label: "Dashboard", href: "/dashboard", icon: DashboardSVG },
   { label: "Auto-Apply", href: "/dashboard/auto-apply", icon: AutoApplySVG },
   { label: "Job Matching", href: "/dashboard/job-matching", icon: JobMatchingSVG },
@@ -124,9 +151,21 @@ const navItems = [
   { label: "Settings", href: "/dashboard/settings", icon: SettingsSVG },
 ];
 
+const coachNavItems = [
+  { label: "Dashboard", href: "/dashboard", icon: DashboardSVG },
+  { label: "Sessions", href: "/dashboard/sessions", icon: SessionsSVG },
+  { label: "Clients", href: "/dashboard/clients", icon: ClientsSVG },
+  { label: "Earnings", href: "/dashboard/earnings", icon: EarningsSVG },
+  { label: "Reviews", href: "/dashboard/reviews", icon: ReviewsSVG },
+  { label: "Settings", href: "/dashboard/settings", icon: SettingsSVG },
+];
+
 /* ─── Sidebar ─── */
 function Sidebar() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const userType = searchParams.get('us') || 'jobseeker';
+  const navItems = userType === 'coach' ? coachNavItems : jobSeekerNavItems;
 
   return (
     <aside className="fixed top-0 left-0 h-screen w-[220px] 2xl:w-[240px] bg-[#0B0D0F] border-r border-white/10 flex flex-col z-50">
@@ -144,10 +183,11 @@ function Sidebar() {
             ? pathname === "/dashboard"
             : pathname === item.href || pathname.startsWith(item.href + "/");
           const Icon = item.icon;
+          const hrefWithQuery = userType === 'coach' ? `${item.href}?us=coach` : item.href;
           return (
             <Link
               key={item.href}
-              href={item.href}
+              href={hrefWithQuery}
               className={`flex items-center gap-3 px-3 py-2 2xl:py-2.5 rounded-[10px] text-[12px] 2xl:text-sm font-mona-sans transition-colors ${
                 isActive
                   ? "bg-[#A2CE3A]/15 text-[#A2CE3A]"
@@ -196,7 +236,17 @@ function TopBar() {
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-[#0B0D0F]">
-      <Sidebar />
+      <Suspense fallback={
+        <aside className="fixed top-0 left-0 h-screen w-[220px] 2xl:w-[240px] bg-[#0B0D0F] border-r border-white/10 flex flex-col z-50">
+          <div className="px-5 py-5">
+            <Link href="/">
+              <img src="/logo.svg" alt="TalentLoop" className="h-8 w-auto object-contain" />
+            </Link>
+          </div>
+        </aside>
+      }>
+        <Sidebar />
+      </Suspense>
       <div className="lg:ml-[220px]">
         <TopBar />
         <main className="p-6 lg:p-8">{children}</main>

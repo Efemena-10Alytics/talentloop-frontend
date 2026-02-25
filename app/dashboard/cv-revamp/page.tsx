@@ -1,6 +1,8 @@
 "use client";
 
-export default function CVRevampPage() {
+import { Suspense } from "react";
+
+function CVRevampContent() {
   return (
     <div>
       <h1 className="text-white font-mona-sans font-bold text-2xl lg:text-3xl">CV Revamp</h1>
@@ -9,5 +11,13 @@ export default function CVRevampPage() {
         <p className="text-white/40 font-mona-sans text-sm">Coming soon</p>
       </div>
     </div>
+  );
+}
+
+export default function CVRevampPage() {
+  return (
+    <Suspense fallback={<div className="text-white">Loading...</div>}>
+      <CVRevampContent />
+    </Suspense>
   );
 }

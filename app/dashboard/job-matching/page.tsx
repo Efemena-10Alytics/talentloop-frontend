@@ -1,6 +1,8 @@
 "use client";
 
-export default function JobMatchingPage() {
+import { Suspense } from "react";
+
+function JobMatchingContent() {
   return (
     <div>
       <h1 className="text-white font-mona-sans font-bold text-2xl lg:text-3xl">Job Matching</h1>
@@ -9,5 +11,13 @@ export default function JobMatchingPage() {
         <p className="text-white/40 font-mona-sans text-sm">Coming soon</p>
       </div>
     </div>
+  );
+}
+
+export default function JobMatchingPage() {
+  return (
+    <Suspense fallback={<div className="text-white">Loading...</div>}>
+      <JobMatchingContent />
+    </Suspense>
   );
 }

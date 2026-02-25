@@ -1,6 +1,8 @@
 "use client";
 
-export default function AnalyticsPage() {
+import { Suspense } from "react";
+
+function AnalyticsContent() {
   return (
     <div>
       <h1 className="text-white font-mona-sans font-bold text-2xl lg:text-3xl">Analytics & Report</h1>
@@ -9,5 +11,13 @@ export default function AnalyticsPage() {
         <p className="text-white/40 font-mona-sans text-sm">Coming soon</p>
       </div>
     </div>
+  );
+}
+
+export default function AnalyticsPage() {
+  return (
+    <Suspense fallback={<div className="text-white">Loading...</div>}>
+      <AnalyticsContent />
+    </Suspense>
   );
 }
