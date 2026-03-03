@@ -229,7 +229,7 @@ export default function CompleteProfilePage() {
                   className="flex items-center justify-center overflow-hidden cursor-pointer"
                 >
                   {photoPreview ? (
-                    <img src={photoPreview} alt="Photo" className="w-full h-full object-cover" />
+                    <img src={photoPreview} alt="Photo" className="w-40 h-40 object-cover rounded-full" />
                   ) : (
                     <UploadSVG />
                   )}

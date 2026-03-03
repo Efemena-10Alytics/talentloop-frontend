@@ -237,22 +237,8 @@ function SignUpContent() {
               </AnimatePresence>
             </div>
 
-            {/* Caption */}
-            {/* <AnimatePresence mode="wait">
-              <motion.p
-                key={currentSlide}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.4 }}
-                className="text-white text-xl lg:text-2xl font-mona-sans font-bold text-center mt-6 whitespace-pre-line leading-snug"
-              >
-                {coachSlides[currentSlide].caption}
-              </motion.p>
-            </AnimatePresence> */}
-
             {/* Slide Indicators */}
-            <div className="flex items-center gap-2 mt-5">
+            <div className="absolute bottom-32 2xl:bottom-32 3xl:relative left-52 flex items-center gap-2">
               {coachSlides.map((_, i) => (
                 <button
                   key={i}
@@ -296,12 +282,12 @@ function SignUpContent() {
                 <p className="text-white/50 text-sm font-mona-sans text-center mb-8 max-w-[360px]">
                   Check your email, we sent a code to {email || "@jimberino"}.io. If this is not your
                   mail,{" "}
-                  <button
+                  {/* <button
                     onClick={() => router.push(`/signup?type=${type}`)}
                     className="text-[#A2CE3A] underline cursor-pointer"
                   >
                     Change email
-                  </button>
+                  </button> */}
                 </p>
 
                 {/* OTP Inputs */}

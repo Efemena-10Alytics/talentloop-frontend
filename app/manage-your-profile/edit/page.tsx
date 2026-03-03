@@ -6,6 +6,8 @@ import PhoneInput from "react-phone-number-input";
 import "react-phone-number-input/style.css";
 import { Navbar1 } from "@/components/manage-your-profile/Navbar1";
 import { GlassCard } from "@/components/manage-your-profile/GlassCard";
+import { Select } from "@/components/ui/Select";
+import { MultiSelect } from "@/components/ui/MultiSelect";
 
 /* ─── SVG Icons ─── */
 
@@ -84,7 +86,7 @@ export default function EditProfilePage() {
   const [phone, setPhone] = useState<string | undefined>("");
   const [location, setLocation] = useState("");
   const [timezone, setTimezone] = useState("");
-  const [languages, setLanguages] = useState("");
+  const [languages, setLanguages] = useState<string[]>([]);
 
   // Professional Background
   const [jobTitle, setJobTitle] = useState("");
@@ -92,7 +94,7 @@ export default function EditProfilePage() {
   const [fieldsCoached, setFieldsCoached] = useState("");
   const [experience, setExperience] = useState("");
   const [bgTimezone, setBgTimezone] = useState("");
-  const [bgLanguages, setBgLanguages] = useState("");
+  const [bgLanguages, setBgLanguages] = useState<string[]>([]);
   const [companies, setCompanies] = useState("");
   const [linkedin, setLinkedin] = useState("");
 
@@ -108,11 +110,53 @@ export default function EditProfilePage() {
     }
   };
 
-  const locationOptions = ["United States", "United Kingdom", "Canada", "Nigeria", "Germany", "Australia", "India", "France"];
-  const timezoneOptions = ["UTC-12:00", "UTC-08:00 (PST)", "UTC-05:00 (EST)", "UTC+00:00 (GMT)", "UTC+01:00 (WAT)", "UTC+05:30 (IST)", "UTC+08:00 (SGT)", "UTC+09:00 (JST)"];
-  const languageOptions = ["English", "Spanish", "French", "German", "Portuguese", "Mandarin", "Hindi", "Arabic"];
-  const industryOptions = ["Technology", "Finance", "Healthcare", "Education", "Consulting", "Marketing", "Engineering", "Design"];
-  const experienceOptions = ["0-1 years", "1-3 years", "3-5 years", "5-10 years", "10+ years"];
+  const locationOptions = [
+    { value: "us", label: "United States" },
+    { value: "uk", label: "United Kingdom" },
+    { value: "ca", label: "Canada" },
+    { value: "ng", label: "Nigeria" },
+    { value: "de", label: "Germany" },
+    { value: "au", label: "Australia" },
+    { value: "in", label: "India" },
+    { value: "fr", label: "France" },
+  ];
+  const timezoneOptions = [
+    { value: "utc-12", label: "UTC-12:00" },
+    { value: "pst", label: "UTC-08:00 (PST)" },
+    { value: "est", label: "UTC-05:00 (EST)" },
+    { value: "gmt", label: "UTC+00:00 (GMT)" },
+    { value: "wat", label: "UTC+01:00 (WAT)" },
+    { value: "ist", label: "UTC+05:30 (IST)" },
+    { value: "sgt", label: "UTC+08:00 (SGT)" },
+    { value: "jst", label: "UTC+09:00 (JST)" },
+  ];
+  const languageOptions = [
+    { value: "en", label: "English" },
+    { value: "es", label: "Spanish" },
+    { value: "fr", label: "French" },
+    { value: "de", label: "German" },
+    { value: "pt", label: "Portuguese" },
+    { value: "zh", label: "Mandarin" },
+    { value: "hi", label: "Hindi" },
+    { value: "ar", label: "Arabic" },
+  ];
+  const industryOptions = [
+    { value: "tech", label: "Technology" },
+    { value: "finance", label: "Finance" },
+    { value: "healthcare", label: "Healthcare" },
+    { value: "education", label: "Education" },
+    { value: "consulting", label: "Consulting" },
+    { value: "marketing", label: "Marketing" },
+    { value: "engineering", label: "Engineering" },
+    { value: "design", label: "Design" },
+  ];
+  const experienceOptions = [
+    { value: "0-1", label: "0-1 years" },
+    { value: "1-3", label: "1-3 years" },
+    { value: "3-5", label: "3-5 years" },
+    { value: "5-10", label: "5-10 years" },
+    { value: "10+", label: "10+ years" },
+  ];
 
   return (
     <div className="min-h-screen bg-[#0B0D0F] relative overflow-hidden">
@@ -179,9 +223,7 @@ export default function EditProfilePage() {
               />
             </div>
 
-            <FormSelect label="Location (Country)" placeholder="Select your location" value={location} onChange={setLocation} options={locationOptions} />
-            <FormSelect label="Timezone" placeholder="Select your location" value={timezone} onChange={setTimezone} options={timezoneOptions} />
-            <FormSelect label="Languages Spoken" placeholder="Select your location" value={languages} onChange={setLanguages} options={languageOptions} />
+            <Select label="Location (Country)" placeholder="Select your location" value={location} onChange={setLocation} options={locationOptions} />
           </div>
         </GlassCard>
 
@@ -190,11 +232,11 @@ export default function EditProfilePage() {
           <h2 className="text-white font-mona-sans font-bold text-lg mb-5">Professional Background</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormInput label="Job Title" placeholder="e.g. Senior Product Manager" value={jobTitle} onChange={setJobTitle} />
-            <FormSelect label="Industries You want to Prep Candidates For" placeholder="Select your Industry" value={industry} onChange={setIndustry} options={industryOptions} />
-            <FormSelect label="Fields Coached" placeholder="Select your Industry" value={fieldsCoached} onChange={setFieldsCoached} options={industryOptions} />
-            <FormSelect label="Years of Experience" placeholder="Select" value={experience} onChange={setExperience} options={experienceOptions} />
-            <FormSelect label="Timezone" placeholder="Select your location" value={bgTimezone} onChange={setBgTimezone} options={timezoneOptions} />
-            <FormSelect label="Languages Spoken" placeholder="Select your location" value={bgLanguages} onChange={setBgLanguages} options={languageOptions} />
+            <Select label="Industries You want to Prep Candidates For" placeholder="Select your Industry" value={industry} onChange={setIndustry} options={industryOptions} />
+            <Select label="Fields Coached" placeholder="Select your Industry" value={fieldsCoached} onChange={setFieldsCoached} options={industryOptions} />
+            <Select label="Years of Experience" placeholder="Select" value={experience} onChange={setExperience} options={experienceOptions} />
+            <Select label="Timezone" placeholder="Select your timezone" value={bgTimezone} onChange={setBgTimezone} options={timezoneOptions} />
+            <MultiSelect label="Languages Spoken" placeholder="Select languages" value={bgLanguages} onChange={setBgLanguages} options={languageOptions} />
             <FormInput label="Companies Worked At" placeholder="e.g. Google, Meta" value={companies} onChange={setCompanies} />
             <FormInput label="LinkedIn Profile" placeholder="https://linkedin.com/in/yourprofile" value={linkedin} onChange={setLinkedin} />
           </div>
