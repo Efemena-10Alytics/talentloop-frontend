@@ -4,6 +4,9 @@ import { useState, useEffect, useCallback, useRef, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
+import { signIn } from "next-auth/react";
+import { getApiUrl, getHeaders } from "@/lib/api";
+import { useToast } from "@/components/ui/use-toast";
 
 /* ─── SVGs ─── */
 
@@ -102,7 +105,7 @@ export default function SignUpPage() {
 function SignUpContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const type = searchParams.get("type") || "coach";
+  const type = searchParams.get("type") || "jobseeker";
   const isEmailVerification = searchParams.get("e_v") === "true";
 
   const [email, setEmail] = useState("");
@@ -112,20 +115,130 @@ function SignUpContent() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
 
   /* OTP State */
   const [otp, setOtp] = useState<string[]>(["", "", "", "", "", ""]);
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
   const [resendTimer, setResendTimer] = useState(60);
   const [canResend, setCanResend] = useState(false);
+  const [verifying, setVerifying] = useState(false);
 
   const passwordTouched = password.length > 0;
   const confirmTouched = confirmPassword.length > 0;
   const passwordsMatch = password === confirmPassword;
 
-  /* Handle form submit → navigate to e_v=true */
-  const handleSubmit = () => {
-    router.push(`/signup?type=${type}&e_v=true`);
+  const handleOAuthSignUp = async (provider: "google" | "linkedin") => {
+    try {
+      await signIn(provider, {
+        callbackUrl: type === "coach" ? "/complete-your-profile" : "/complete-your-profile/jobseeker",
+      });
+    } catch (error) {
+      toast({
+        variant: "error",
+        title: "Error",
+        description: "Failed to sign up with " + provider,
+      });
+    }
+  };
+
+  /* Handle form submit → call API */
+  const handleSubmit = async () => {
+    // Validation
+    if (!email || !password || !confirmPassword) {
+      toast({
+        variant: "error",
+        title: "Missing fields",
+        description: "Please fill in all fields",
+      });
+      return;
+    }
+
+    if (!email.includes("@")) {
+      toast({
+        variant: "error",
+        title: "Invalid email",
+        description: "Please enter a valid email address",
+      });
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      toast({
+        variant: "error",
+        title: "Password mismatch",
+        description: "Passwords do not match",
+      });
+      return;
+    }
+
+    // Check password requirements
+    const allChecksPassed = passwordChecks.every((check) => check.test(password));
+    if (!allChecksPassed) {
+      toast({
+        variant: "error",
+        title: "Weak password",
+        description: "Password does not meet all requirements",
+      });
+      return;
+    }
+
+    if (!acceptTerms) {
+      toast({
+        variant: "error",
+        title: "Terms required",
+        description: "Please accept the Terms of Service and Privacy Policy",
+      });
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const response = await fetch(`${getApiUrl()}/api/auth/register`, {
+        method: "POST",
+        headers: getHeaders(),
+        credentials: "include",
+        body: JSON.stringify({
+          email,
+          password,
+          password_confirmation: confirmPassword,
+          role: type,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        // Handle error response
+        toast({
+          variant: "error",
+          title: "Registration failed",
+          description: data.message || "An error occurred during registration",
+        });
+        setLoading(false);
+        return;
+      }
+
+      // Success
+      toast({
+        variant: "success",
+        title: "Account created!",
+        description: "Please check your email for verification code",
+      });
+
+      // Navigate to email verification
+      router.push(`/signup?type=${type}&e_v=true`);
+    } catch (err: any) {
+      toast({
+        variant: "error",
+        title: "Error",
+        description: err.message || "An error occurred during registration",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   /* OTP input handlers */
@@ -173,6 +286,75 @@ function SignUpContent() {
   const handleResend = () => {
     setResendTimer(60);
     setCanResend(false);
+    toast({
+      variant: "success",
+      title: "Code resent",
+      description: "A new verification code has been sent to your email",
+    });
+  };
+
+  /* Handle OTP verification */
+  const handleVerifyOtp = async () => {
+    const otpCode = otp.join("");
+
+    if (otpCode.length !== 6) {
+      toast({
+        variant: "error",
+        title: "Invalid code",
+        description: "Please enter the complete 6-digit code",
+      });
+      return;
+    }
+
+    setVerifying(true);
+
+    try {
+      const response = await fetch(`${getApiUrl()}/api/auth/verify-email`, {
+        method: "POST",
+        headers: getHeaders(),
+        credentials: "include",
+        body: JSON.stringify({
+          email,
+          otp: otpCode,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        toast({
+          variant: "error",
+          title: "Verification failed",
+          description: data.message || "Invalid or expired code",
+        });
+        setVerifying(false);
+        return;
+      }
+
+      // Success
+      toast({
+        variant: "success",
+        title: "Email verified!",
+        description: "Your email has been verified successfully",
+      });
+
+      // Redirect to complete profile based on user type
+      setTimeout(() => {
+        if (type === "coach") {
+          router.push("/complete-your-profile");
+        } else {
+          router.push("/complete-your-profile/jobseeker");
+        }
+      }, 1000);
+    } catch (err: any) {
+      toast({
+        variant: "error",
+        title: "Error",
+        description: err.message || "An error occurred during verification",
+      });
+    } finally {
+      setVerifying(false);
+    }
   };
 
   const formatTimer = (s: number) => {
@@ -308,8 +490,16 @@ function SignUpContent() {
                 </div>
 
                 {/* Verify Button */}
-                <button className="w-full max-w-[360px] px-8 py-3 bg-[#A2CE3A] rounded-[8px] text-[#121212] font-mona-sans text-base font-bold hover:bg-[#92BE2A] transition-colors cursor-pointer">
-                  Verify
+                <button
+                  onClick={handleVerifyOtp}
+                  disabled={verifying}
+                  className={`w-full max-w-[360px] px-8 py-3 rounded-[8px] font-mona-sans text-base font-bold transition-colors ${
+                    verifying
+                      ? "bg-[#A2CE3A]/50 text-[#121212]/50 cursor-not-allowed"
+                      : "bg-[#A2CE3A] text-[#121212] hover:bg-[#92BE2A] cursor-pointer"
+                  }`}
+                >
+                  {verifying ? "Verifying..." : "Verify"}
                 </button>
 
                 {/* Resend */}
@@ -337,11 +527,17 @@ function SignUpContent() {
 
             {/* Social Buttons */}
             <div className="flex flex-col lg:flex-row gap-3 mb-4">
-              <button className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-transparent border border-white/20 rounded-[8px] text-white font-mona-sans text-sm font-medium hover:border-white/40 transition-colors cursor-pointer">
+              <button
+                onClick={() => handleOAuthSignUp("google")}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-transparent border border-white/20 rounded-[8px] text-white font-mona-sans text-sm font-medium hover:border-white/40 transition-colors cursor-pointer"
+              >
                 <GoogleSVG />
                 Sign Up with Google
               </button>
-              <button className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-transparent border border-white/20 rounded-[8px] text-white font-mona-sans text-sm font-medium hover:border-white/40 transition-colors cursor-pointer">
+              <button
+                onClick={() => handleOAuthSignUp("linkedin")}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-transparent border border-white/20 rounded-[8px] text-white font-mona-sans text-sm font-medium hover:border-white/40 transition-colors cursor-pointer"
+              >
                 <LinkedInSVG />
                 Sign Up with LinkedIn
               </button>
@@ -469,8 +665,13 @@ function SignUpContent() {
             {/* Continue Button */}
             <button
               onClick={handleSubmit}
-              className="w-full mt-3 px-8 py-3 bg-[#A2CE3A] rounded-[8px] text-[#121212] font-mona-sans text-base font-bold hover:bg-[#92BE2A] transition-colors cursor-pointer">
-              Continue
+              disabled={loading}
+              className={`w-full mt-3 px-8 py-3 rounded-[8px] font-mona-sans text-base font-bold transition-colors ${
+                loading
+                  ? "bg-[#A2CE3A]/50 text-[#121212]/50 cursor-not-allowed"
+                  : "bg-[#A2CE3A] text-[#121212] hover:bg-[#92BE2A] cursor-pointer"
+              }`}>
+              {loading ? "Creating account..." : "Continue"}
             </button>
 
             {/* Terms */}

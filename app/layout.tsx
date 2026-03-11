@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Mona_Sans, Sora } from 'next/font/google'
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { Toaster } from "@/components/ui/toaster";
+import { SessionProvider } from "@/components/providers/SessionProvider";
 
 const monaSans = Mona_Sans({
   subsets: ['latin'],
@@ -40,7 +42,10 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${monaSans.variable} ${sora.variable} antialiased`}
       >
-        {children}
+        <SessionProvider>
+          {children}
+          <Toaster />
+        </SessionProvider>
       </body>
     </html>
   );

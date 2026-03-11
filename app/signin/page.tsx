@@ -1,7 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useToast } from "@/components/ui/use-toast";
 
 /* ─── SVGs ─── */
 
@@ -38,9 +41,73 @@ const LinkedInSVG = () => (
 );
 
 export default function SignInPage() {
+  const router = useRouter();
+  const { toast } = useToast();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const handleCredentialSignIn = async () => {
+    if (!email || !password) {
+      toast({
+        variant: "error",
+        title: "Missing fields",
+        description: "Please enter your email and password",
+      });
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const result = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
+      });
+
+      if (result?.error) {
+        toast({
+          variant: "error",
+          title: "Sign in failed",
+          description: result.error || "Invalid email or password",
+        });
+        setLoading(false);
+        return;
+      }
+
+      toast({
+        variant: "success",
+        title: "Welcome back!",
+        description: "You have successfully signed in",
+      });
+
+      // Redirect to dashboard
+      router.push("/dashboard");
+    } catch (error: any) {
+      toast({
+        variant: "error",
+        title: "Error",
+        description: error.message || "An error occurred during sign in",
+      });
+      setLoading(false);
+    }
+  };
+
+  const handleOAuthSignIn = async (provider: "google" | "linkedin") => {
+    try {
+      await signIn(provider, {
+        callbackUrl: "/dashboard",
+      });
+    } catch (error) {
+      toast({
+        variant: "error",
+        title: "Error",
+        description: "Failed to sign in with " + provider,
+      });
+    }
+  };
 
   return (
     <div className="min-h-screen lg:max-h-screen bg-[#0B0D0F] relative overflow-hidden">
@@ -90,11 +157,17 @@ export default function SignInPage() {
 
             {/* Social Sign In */}
             <div className="space-y-3 mb-6">
-              <button className="w-full flex items-center justify-center gap-3 py-3 rounded-[10px] border border-white/20 text-white font-mona-sans text-sm font-medium hover:bg-white/5 transition-colors cursor-pointer">
+              <button
+                onClick={() => handleOAuthSignIn("google")}
+                className="w-full flex items-center justify-center gap-3 py-3 rounded-[10px] border border-white/20 text-white font-mona-sans text-sm font-medium hover:bg-white/5 transition-colors cursor-pointer"
+              >
                 <GoogleSVG />
                 Sign In with Google
               </button>
-              <button className="w-full flex items-center justify-center gap-3 py-3 rounded-[10px] border border-white/20 text-white font-mona-sans text-sm font-medium hover:bg-white/5 transition-colors cursor-pointer">
+              <button
+                onClick={() => handleOAuthSignIn("linkedin")}
+                className="w-full flex items-center justify-center gap-3 py-3 rounded-[10px] border border-white/20 text-white font-mona-sans text-sm font-medium hover:bg-white/5 transition-colors cursor-pointer"
+              >
                 <LinkedInSVG />
                 Sign In with LinkedIn
               </button>
@@ -147,8 +220,16 @@ export default function SignInPage() {
             </p>
 
             {/* Sign In Button */}
-            <button className="w-full py-3.5 rounded-[10px] bg-[#A2CE3A] text-[#0B0D0F] font-mona-sans font-bold text-sm hover:opacity-90 transition-opacity cursor-pointer mb-5">
-              Sign In
+            <button
+              onClick={handleCredentialSignIn}
+              disabled={loading}
+              className={`w-full py-3.5 rounded-[10px] font-mona-sans font-bold text-sm transition-opacity mb-5 ${
+                loading
+                  ? "bg-[#A2CE3A]/50 text-[#0B0D0F]/50 cursor-not-allowed"
+                  : "bg-[#A2CE3A] text-[#0B0D0F] hover:opacity-90 cursor-pointer"
+              }`}
+            >
+              {loading ? "Signing in..." : "Sign In"}
             </button>
 
             {/* Forgot Password */}
