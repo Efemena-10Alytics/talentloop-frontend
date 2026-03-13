@@ -19,14 +19,21 @@ export const getHeaders = (): HeadersInit => {
 
 /**
  * Get headers for authenticated requests
- * Includes the authorization token from NextAuth session
+ * Includes the authorization token from NextAuth session or localStorage
  */
 export const getAuthHeaders = async (): Promise<HeadersInit> => {
-  // For client-side, use getSession from next-auth/react
+  // For client-side, use getSession from next-auth/react or localStorage
   if (typeof window !== "undefined") {
     const { getSession } = await import("next-auth/react");
     const session = await getSession();
-    const token = session?.backendToken;
+    let token = session?.backendToken;
+
+    // Fallback to localStorage if no session token
+    if (!token) {
+      token = localStorage.getItem("auth_token") || undefined;
+    }
+
+    console.log("TOKEN", token);
     
     return {
       "Content-Type": "application/json",

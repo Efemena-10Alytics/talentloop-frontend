@@ -318,6 +318,11 @@ function SignUpContent() {
         return;
       }
 
+      // Store authentication token from registration
+      if (data.data?.token) {
+        localStorage.setItem("auth_token", data.data.token);
+      }
+
       // Success
       toast({
         variant: "success",
@@ -383,14 +388,41 @@ function SignUpContent() {
     return () => clearInterval(interval);
   }, [isEmailVerification, resendTimer]);
 
-  const handleResend = () => {
-    setResendTimer(60);
-    setCanResend(false);
-    toast({
-      variant: "success",
-      title: "Code resent",
-      description: "A new verification code has been sent to your email",
-    });
+  const handleResend = async () => {
+    try {
+      const response = await fetch(`${getApiUrl()}/api/auth/resend-otp`, {
+        method: "POST",
+        headers: getHeaders(),
+        body: JSON.stringify({
+          email,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        toast({
+          variant: "error",
+          title: "Resend failed",
+          description: data.message || "Failed to resend verification code",
+        });
+        return;
+      }
+
+      setResendTimer(60);
+      setCanResend(false);
+      toast({
+        variant: "success",
+        title: "Code resent",
+        description: "A new verification code has been sent to your email",
+      });
+    } catch (error: any) {
+      toast({
+        variant: "error",
+        title: "Error",
+        description: error.message || "Failed to resend verification code",
+      });
+    }
   };
 
   /* Handle OTP verification */
@@ -411,7 +443,8 @@ function SignUpContent() {
     try {
       const response = await fetch(`${getApiUrl()}/api/auth/verify-email`, {
         method: "POST",
-        headers: getHeaders(),
+        headers: getHeaders(),
+
         body: JSON.stringify({
           email,
           otp: otpCode,
@@ -436,6 +469,17 @@ function SignUpContent() {
         title: "Email verified!",
         description: "Your email has been verified successfully",
       });
+
+      // Sign in with NextAuth to create session with the token
+      const token = localStorage.getItem("auth_token");
+      if (token) {
+        // Store user data in NextAuth session by signing in
+        await signIn("credentials", {
+          email,
+          password, // We have this from the registration form
+          redirect: false,
+        });
+      }
 
       // Redirect to complete profile based on user type
       setTimeout(() => {

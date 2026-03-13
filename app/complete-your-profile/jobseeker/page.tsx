@@ -1,10 +1,56 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import PhoneInput from "react-phone-number-input";
 import "react-phone-number-input/style.css";
+import { getApiUrl, getAuthHeaders } from "@/lib/api";
+import { useToast } from "@/components/ui/use-toast";
+
+/* ─── Onboarding Progress Storage ─── */
+
+const ONBOARDING_STORAGE_KEY = "jobseeker_onboarding_progress";
+const ONBOARDING_EXPIRY_DAYS = 60;
+
+interface OnboardingProgress {
+  currentStep: number;
+  onboardingStatus: string;
+  timestamp: number;
+}
+
+const saveOnboardingProgress = (step: number, status: string) => {
+  const progress: OnboardingProgress = {
+    currentStep: step,
+    onboardingStatus: status,
+    timestamp: Date.now(),
+  };
+  localStorage.setItem(ONBOARDING_STORAGE_KEY, JSON.stringify(progress));
+};
+
+const loadOnboardingProgress = (): OnboardingProgress | null => {
+  try {
+    const stored = localStorage.getItem(ONBOARDING_STORAGE_KEY);
+    if (!stored) return null;
+
+    const progress: OnboardingProgress = JSON.parse(stored);
+    const expiryTime = ONBOARDING_EXPIRY_DAYS * 24 * 60 * 60 * 1000; // 60 days in ms
+    const isExpired = Date.now() - progress.timestamp > expiryTime;
+
+    if (isExpired) {
+      localStorage.removeItem(ONBOARDING_STORAGE_KEY);
+      return null;
+    }
+
+    return progress;
+  } catch {
+    return null;
+  }
+};
+
+const clearOnboardingProgress = () => {
+  localStorage.removeItem(ONBOARDING_STORAGE_KEY);
+};
 
 /* ─── SVG Icons ─── */
 
@@ -120,7 +166,78 @@ function Dropdown({ label, placeholder, options, value, onChange }: {
 
 export default function JobseekerCompleteProfilePage() {
   const router = useRouter();
+  const { toast } = useToast();
   const [step, setStep] = useState(0);
+  const [completedSteps, setCompletedSteps] = useState<number[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [reviewLoading, setReviewLoading] = useState(false);
+
+  // Load onboarding progress on mount
+  useEffect(() => {
+    const progress = loadOnboardingProgress();
+    if (progress && progress.onboardingStatus === "in_progress") {
+      // Resume from last saved step (API returns step 2 after completing step 1, so we use currentStep - 1)
+      const resumeStep = Math.max(0, progress.currentStep - 1);
+      setStep(resumeStep);
+      toast({
+        variant: "success",
+        title: "Welcome back!",
+        description: `Resuming from step ${resumeStep + 1}`,
+      });
+    }
+  }, []);
+
+  // Fetch CV review data when step 3 loads
+  useEffect(() => {
+    const fetchReviewData = async () => {
+      if (step !== 3) return;
+
+      setReviewLoading(true);
+
+      try {
+        const headers = await getAuthHeaders();
+
+        const response = await fetch(`${getApiUrl()}/api/profile/setup/cv/review`, {
+          method: "GET",
+          headers,
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          toast({
+            variant: "error",
+            title: "Failed to load review data",
+            description: data.message || "Could not fetch CV analysis results",
+          });
+          setReviewLoading(false);
+          return;
+        }
+
+        // Update extracted data from API response
+        if (data.data) {
+          setExtractedData({
+            fullName: data.data.full_name || "",
+            currentRole: data.data.current_role || "",
+            experience: data.data.experience || "",
+            education: data.data.education || "",
+            topSkills: data.data.top_skills || [],
+            languages: data.data.languages || [],
+          });
+        }
+      } catch (error: any) {
+        toast({
+          variant: "error",
+          title: "Error",
+          description: error.message || "Failed to load review data",
+        });
+      } finally {
+        setReviewLoading(false);
+      }
+    };
+
+    fetchReviewData();
+  }, [step]);
 
   // Step 0: Profile
   const [username, setUsername] = useState("");
@@ -129,12 +246,14 @@ export default function JobseekerCompleteProfilePage() {
   const [gender, setGender] = useState("");
   const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Step 1: Basic Info
   const [targetRole, setTargetRole] = useState("");
   const [experienceLevel, setExperienceLevel] = useState("");
   const [industry, setIndustry] = useState("");
+  const [goals, setGoals] = useState("");
 
   // Step 2: CV Upload
   const [cvFile, setCvFile] = useState<File | null>(null);
@@ -158,9 +277,126 @@ export default function JobseekerCompleteProfilePage() {
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setPhotoFile(file);
       const reader = new FileReader();
       reader.onloadend = () => setPhotoPreview(reader.result as string);
       reader.readAsDataURL(file);
+    }
+  };
+
+  const handleProfileSubmit = async () => {
+    // Validation
+    if (!username.trim()) {
+      toast({
+        variant: "error",
+        title: "Missing username",
+        description: "Please enter your username",
+      });
+      return;
+    }
+
+    if (!location) {
+      toast({
+        variant: "error",
+        title: "Missing location",
+        description: "Please select your country",
+      });
+      return;
+    }
+
+    if (!phone) {
+      toast({
+        variant: "error",
+        title: "Missing phone number",
+        description: "Please enter your phone number",
+      });
+      return;
+    }
+
+    if (!gender) {
+      toast({
+        variant: "error",
+        title: "Missing gender",
+        description: "Please select your gender",
+      });
+      return;
+    }
+
+    if (selectedLanguages.length === 0) {
+      toast({
+        variant: "error",
+        title: "Missing languages",
+        description: "Please select at least one language",
+      });
+      return;
+    }
+
+    if (!photoFile) {
+      toast({
+        variant: "error",
+        title: "Missing photo",
+        description: "Please upload a profile photo",
+      });
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const headers = await getAuthHeaders();
+
+      // Create FormData for file upload
+      const formData = new FormData();
+      formData.append("username", username.trim());
+      formData.append("country", location);
+      formData.append("phone_number", phone);
+      formData.append("gender", gender.toLowerCase());
+      formData.append("languages_spoken", selectedLanguages.map(l => l.toLowerCase()).join(","));
+      formData.append("photo", photoFile);
+
+      // Remove Content-Type header to let browser set it with boundary for multipart/form-data
+      const { "Content-Type": _, ...headersWithoutContentType } = headers as Record<string, string>;
+
+      const response = await fetch(`${getApiUrl()}/api/profile/setup/basic`, {
+        method: "POST",
+        headers: headersWithoutContentType,
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        toast({
+          variant: "error",
+          title: "Profile setup failed",
+          description: data.message || "Failed to save profile information",
+        });
+        setLoading(false);
+        return;
+      }
+
+      toast({
+        variant: "success",
+        title: "Profile saved!",
+        description: "Your basic information has been saved successfully",
+      });
+
+      // Save onboarding progress
+      if (data.data?.current_step && data.data?.onboarding_status) {
+        saveOnboardingProgress(data.data.current_step, data.data.onboarding_status);
+      }
+
+      // Mark step 0 as completed and move to next step
+      setCompletedSteps(prev => [...new Set([...prev, 0])]);
+      setStep(1);
+    } catch (error: any) {
+      toast({
+        variant: "error",
+        title: "Error",
+        description: error.message || "An error occurred while saving your profile",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -181,18 +417,154 @@ export default function JobseekerCompleteProfilePage() {
     }
   };
 
-  const goNext = () => {
-    if (step === 2 && cvUploaded) {
-      // Simulate CV analysis
+  const handleCvSubmit = async () => {
+    if (!cvFile) {
+      toast({
+        variant: "error",
+        title: "Missing CV",
+        description: "Please upload your CV to continue",
+      });
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const headers = await getAuthHeaders();
+
+      // Create FormData for file upload
+      const formData = new FormData();
+      formData.append("cv_file", cvFile);
+
+      // Remove Content-Type header to let browser set it with boundary for multipart/form-data
+      const { "Content-Type": _, ...headersWithoutContentType } = headers as Record<string, string>;
+
+      const response = await fetch(`${getApiUrl()}/api/profile/setup/cv/upload-and-analyze`, {
+        method: "POST",
+        headers: headersWithoutContentType,
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        toast({
+          variant: "error",
+          title: "CV upload failed",
+          description: data.message || "Failed to upload and analyze CV",
+        });
+        setLoading(false);
+        return;
+      }
+
+      toast({
+        variant: "success",
+        title: "CV analyzed!",
+        description: "Your CV has been uploaded and analyzed successfully",
+      });
+
+      // Save onboarding progress
+      if (data.data?.current_step && data.data?.onboarding_status) {
+        saveOnboardingProgress(data.data.current_step, data.data.onboarding_status);
+      }
+
+      // Update extracted data if provided by API
+      if (data.data?.extracted_data) {
+        setExtractedData(data.data.extracted_data);
+      }
+
+      // Mark step 2 as completed and move to review step
+      setCompletedSteps(prev => [...new Set([...prev, 2])]);
       setStep(3);
-    } else {
-      setStep((s) => Math.min(s + 1, 3));
+    } catch (error: any) {
+      toast({
+        variant: "error",
+        title: "Error",
+        description: error.message || "An error occurred while uploading your CV",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
   const goBack = () => setStep((s) => Math.max(s - 1, 0));
 
+  const handleCareerSubmit = async () => {
+    // Validation
+    if (!targetRole.trim()) {
+      toast({
+        variant: "error",
+        title: "Missing target role",
+        description: "Please enter your target role",
+      });
+      return;
+    }
+
+    if (!experienceLevel) {
+      toast({
+        variant: "error",
+        title: "Missing experience level",
+        description: "Please select your experience level",
+      });
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const headers = await getAuthHeaders();
+
+      const response = await fetch(`${getApiUrl()}/api/profile/setup/career`, {
+        method: "PATCH",
+        headers,
+        body: JSON.stringify({
+          target_role: targetRole.trim(),
+          experience_level: experienceLevel,
+          industry: industry || "",
+          goals: goals.trim() || "",
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        toast({
+          variant: "error",
+          title: "Career setup failed",
+          description: data.message || "Failed to save career information",
+        });
+        setLoading(false);
+        return;
+      }
+
+      toast({
+        variant: "success",
+        title: "Career info saved!",
+        description: "Your career information has been saved successfully",
+      });
+
+      // Save onboarding progress
+      if (data.data?.current_step && data.data?.onboarding_status) {
+        saveOnboardingProgress(data.data.current_step, data.data.onboarding_status);
+      }
+
+      // Mark step 1 as completed and move to next step
+      setCompletedSteps(prev => [...new Set([...prev, 1])]);
+      setStep(2);
+    } catch (error: any) {
+      toast({
+        variant: "error",
+        title: "Error",
+        description: error.message || "An error occurred while saving your career info",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleFindCoaches = () => {
+    // Clear onboarding progress when user completes all steps
+    clearOnboardingProgress();
     router.push("/dashboard?us=jobseeker");
   };
 
@@ -217,12 +589,29 @@ export default function JobseekerCompleteProfilePage() {
       <div className="relative z-10 flex items-center justify-center gap-4 px-6 mb-10">
         {STEPS.map((label, idx) => (
           <div key={idx} className="flex items-center gap-4">
-            <div className="flex flex-col items-center gap-2">
-              <CheckCircleSVG filled={step >= idx} />
-              <span className={`text-xs font-mona-sans ${step >= idx ? "text-[#A2CE3A]" : "text-white/50"}`}>{label}</span>
-            </div>
+            <button
+              onClick={() => {
+                // Allow navigation to current step or any completed step
+                if (idx <= step || completedSteps.includes(idx)) {
+                  setStep(idx);
+                }
+              }}
+              disabled={idx > step && !completedSteps.includes(idx)}
+              className={`flex flex-col items-center gap-2 ${
+                idx <= step || completedSteps.includes(idx)
+                  ? "cursor-pointer hover:opacity-80"
+                  : "cursor-not-allowed opacity-50"
+              } transition-opacity`}
+            >
+              <CheckCircleSVG filled={step >= idx || completedSteps.includes(idx)} />
+              <span className={`text-xs font-mona-sans ${
+                step >= idx || completedSteps.includes(idx) ? "text-[#A2CE3A]" : "text-white/50"
+              }`}>{label}</span>
+            </button>
             {idx < STEPS.length - 1 && (
-              <div className={`w-16 h-0.5 ${step > idx ? "bg-[#A2CE3A]" : "bg-white/20"}`} />
+              <div className={`w-16 h-0.5 ${
+                step > idx || completedSteps.includes(idx) ? "bg-[#A2CE3A]" : "bg-white/20"
+              }`} />
             )}
           </div>
         ))}
@@ -324,10 +713,15 @@ export default function JobseekerCompleteProfilePage() {
               </div>
 
               <button
-                onClick={goNext}
-                className="w-full py-3 bg-[#A2CE3A] hover:bg-[#8fb832] text-black font-mona-sans font-semibold text-base rounded-[10px] transition-colors"
+                onClick={handleProfileSubmit}
+                disabled={loading}
+                className={`w-full py-3 font-mona-sans font-semibold text-base rounded-[10px] transition-colors ${
+                  loading
+                    ? "bg-[#A2CE3A]/50 text-black/50 cursor-not-allowed"
+                    : "bg-[#A2CE3A] hover:bg-[#8fb832] text-black cursor-pointer"
+                }`}
               >
-                Continue
+                {loading ? "Saving..." : "Continue"}
               </button>
             </div>
           )}
@@ -368,18 +762,40 @@ export default function JobseekerCompleteProfilePage() {
                 onChange={setIndustry}
               />
 
+              {/* Goals */}
+              <div className="mb-6">
+                <label className="block text-white font-mona-sans text-sm font-semibold mb-2">Goals (optional)</label>
+                <textarea
+                  placeholder="What are your career goals?"
+                  value={goals}
+                  onChange={(e) => setGoals(e.target.value)}
+                  rows={4}
+                  className="w-full px-4 py-3 bg-white border border-white/10 rounded-[8px] text-[#121212] placeholder-[#ACACAC] font-sora text-sm outline-none focus:border-[#A2CE3A] transition-colors resize-none"
+                />
+              </div>
+
               <div className="flex items-center gap-3 mt-6">
                 <button
                   onClick={goBack}
-                  className="flex-1 py-3 bg-[#E8F5D0] hover:bg-[#d9ebc1] text-black font-mona-sans font-semibold text-base rounded-[10px] transition-colors"
+                  disabled={loading}
+                  className={`flex-1 py-3 font-mona-sans font-semibold text-base rounded-[10px] transition-colors ${
+                    loading
+                      ? "bg-[#E8F5D0]/50 text-black/50 cursor-not-allowed"
+                      : "bg-[#E8F5D0] hover:bg-[#d9ebc1] text-black cursor-pointer"
+                  }`}
                 >
                   Back
                 </button>
                 <button
-                  onClick={goNext}
-                  className="flex-1 py-3 bg-[#A2CE3A] hover:bg-[#8fb832] text-black font-mona-sans font-semibold text-base rounded-[10px] transition-colors"
+                  onClick={handleCareerSubmit}
+                  disabled={loading}
+                  className={`flex-1 py-3 font-mona-sans font-semibold text-base rounded-[10px] transition-colors ${
+                    loading
+                      ? "bg-[#A2CE3A]/50 text-black/50 cursor-not-allowed"
+                      : "bg-[#A2CE3A] hover:bg-[#8fb832] text-black cursor-pointer"
+                  }`}
                 >
-                  Continue
+                  {loading ? "Saving..." : "Continue"}
                 </button>
               </div>
             </div>
@@ -429,20 +845,25 @@ export default function JobseekerCompleteProfilePage() {
               <div className="flex items-center gap-3 mt-6">
                 <button
                   onClick={goBack}
-                  className="flex-1 py-3 bg-[#E8F5D0] hover:bg-[#d9ebc1] text-black font-mona-sans font-semibold text-base rounded-[10px] transition-colors"
+                  disabled={loading}
+                  className={`flex-1 py-3 font-mona-sans font-semibold text-base rounded-[10px] transition-colors ${
+                    loading
+                      ? "bg-[#E8F5D0]/50 text-black/50 cursor-not-allowed"
+                      : "bg-[#E8F5D0] hover:bg-[#d9ebc1] text-black cursor-pointer"
+                  }`}
                 >
                   Back
                 </button>
                 <button
-                  onClick={goNext}
-                  disabled={!cvUploaded}
+                  onClick={handleCvSubmit}
+                  disabled={!cvUploaded || loading}
                   className={`flex-1 py-3 font-mona-sans font-semibold text-base rounded-[10px] transition-colors ${
-                    cvUploaded
-                      ? "bg-[#A2CE3A] hover:bg-[#8fb832] text-black"
+                    cvUploaded && !loading
+                      ? "bg-[#A2CE3A] hover:bg-[#8fb832] text-black cursor-pointer"
                       : "bg-white/10 text-white/30 cursor-not-allowed"
                   }`}
                 >
-                  Upload and Analyze
+                  {loading ? "Uploading..." : "Upload and Analyze"}
                 </button>
               </div>
             </div>
