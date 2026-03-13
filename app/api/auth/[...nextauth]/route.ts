@@ -122,9 +122,9 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id;
         token.email = user.email;
-        token.role = user.role;
-        token.status = user.status;
-        token.backendToken = user.token;
+        token.role = user.role || "";
+        token.status = user.status || "";
+        token.backendToken = user.token || "";
       }
 
       return token;
