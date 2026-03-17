@@ -5,6 +5,8 @@ import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useToast } from "@/components/ui/use-toast";
+import { getApiUrl, getHeaders, getAuthHeaders } from "@/lib/api";
+import EmailVerification from "@/components/EmailVerification";
 
 /* ─── SVGs ─── */
 
@@ -47,6 +49,8 @@ export default function SignInPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showEmailVerification, setShowEmailVerification] = useState(false);
+  const [verifying, setVerifying] = useState(false);
 
   const handleCredentialSignIn = async () => {
     if (!email || !password) {
@@ -77,6 +81,30 @@ export default function SignInPage() {
         return;
       }
 
+      // Check if email is verified
+      const headers = await getAuthHeaders();
+      const userResponse = await fetch(`${getApiUrl()}/api/auth/me`, {
+        method: "GET",
+        headers,
+      });
+
+      if (userResponse.ok) {
+        const userData = await userResponse.json();
+        
+        // Check if email is verified
+        if (!userData.data?.user?.email_verified_at) {
+          // Show email verification UI
+          setShowEmailVerification(true);
+          setLoading(false);
+          toast({
+            variant: "error",
+            title: "Email not verified",
+            description: "Please verify your email to continue",
+          });
+          return;
+        }
+      }
+
       toast({
         variant: "success",
         title: "Welcome back!",
@@ -105,6 +133,88 @@ export default function SignInPage() {
         variant: "error",
         title: "Error",
         description: "Failed to sign in with " + provider,
+      });
+    }
+  };
+
+  const handleVerifyOtp = async (otpString: string) => {
+    setVerifying(true);
+
+    try {
+      const response = await fetch(`${getApiUrl()}/api/auth/verify-email`, {
+        method: "POST",
+        headers: getHeaders(),
+        body: JSON.stringify({
+          email,
+          otp: otpString,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        toast({
+          variant: "error",
+          title: "Verification failed",
+          description: data.message || "Invalid or expired code",
+        });
+        setVerifying(false);
+        return;
+      }
+
+      toast({
+        variant: "success",
+        title: "Email verified!",
+        description: "Your email has been verified successfully",
+      });
+
+      // Redirect to dashboard
+      setTimeout(() => {
+        router.push("/dashboard");
+      }, 1000);
+    } catch (err: any) {
+      toast({
+        variant: "error",
+        title: "Error",
+        description: err.message || "An error occurred during verification",
+      });
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  const handleResend = async () => {
+    try {
+      const response = await fetch(`${getApiUrl()}/api/auth/resend-otp`, {
+        method: "POST",
+        headers: getHeaders(),
+        credentials: "include",
+        body: JSON.stringify({
+          email,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        toast({
+          variant: "error",
+          title: "Resend failed",
+          description: data.message || "Failed to resend verification code",
+        });
+        return;
+      }
+
+      toast({
+        variant: "success",
+        title: "Code resent",
+        description: "A new verification code has been sent to your email",
+      });
+    } catch (error: any) {
+      toast({
+        variant: "error",
+        title: "Error",
+        description: error.message || "Failed to resend verification code",
       });
     }
   };
@@ -148,39 +258,59 @@ export default function SignInPage() {
           />
         </div>
 
-        {/* ─── Right Side: Sign In Form ─── */}
+        {/* ─── Right Side: Sign In Form / Email Verification ─── */}
         <div className="flex-1 w-full max-w-[520px]">
-          <div className="lg:scale-[90%] 2xl:scale-[100%] bg-[#141619] border border-white/10 rounded-[18px] p-6 lg:p-8" style={{ backgroundImage: "url('/img3.png')", backgroundRepeat: "no-repeat", backgroundPosition: "center", backgroundSize: "cover" }}>
-            <h1 className="text-2xl lg:text-3xl font-mona-sans font-bold text-white text-center mb-8">
-              Welcome Back
-            </h1>
+          <div
+            className="lg:scale-[90%] 2xl:scale-[100%] bg-[#141619] border border-white/10 rounded-[18px] p-6 lg:p-8 h-full lg:max-h-[800px] overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent"
+            style={{
+              backgroundImage: "url('/img3.png')",
+              backgroundRepeat: "no-repeat",
+              backgroundPosition: "center",
+              backgroundSize: "cover",
+            }}
+          >
+            {/* ─── Email Verification View ─── */}
+            {showEmailVerification ? (
+              <EmailVerification
+                email={email}
+                onVerify={handleVerifyOtp}
+                onResend={handleResend}
+                verifying={verifying}
+              />
+            ) : (
+              /* ─── Sign In Form ─── */
+              <>
+                {/* Header */}
+                <h1 className="text-2xl lg:text-3xl font-mona-sans font-bold text-white text-center mb-5">
+                  Sign In
+                </h1>
 
-            {/* Social Sign In */}
-            <div className="space-y-3 mb-6">
-              <button
-                onClick={() => handleOAuthSignIn("google")}
-                className="w-full flex items-center justify-center gap-3 py-3 rounded-[10px] border border-white/20 text-white font-mona-sans text-sm font-medium hover:bg-white/5 transition-colors cursor-pointer"
-              >
-                <GoogleSVG />
-                Sign In with Google
-              </button>
-              <button
-                onClick={() => handleOAuthSignIn("linkedin")}
-                className="w-full flex items-center justify-center gap-3 py-3 rounded-[10px] border border-white/20 text-white font-mona-sans text-sm font-medium hover:bg-white/5 transition-colors cursor-pointer"
-              >
-                <LinkedInSVG />
-                Sign In with LinkedIn
-              </button>
-            </div>
+                {/* Social Buttons */}
+                <div className="flex flex-col gap-3 mb-5">
+                  <button
+                    onClick={() => handleOAuthSignIn("google")}
+                    className="w-full flex items-center justify-center gap-3 py-3 rounded-[10px] border border-white/20 text-white font-mona-sans text-sm font-medium hover:bg-white/5 transition-colors cursor-pointer"
+                  >
+                    <GoogleSVG />
+                    Sign In with Google
+                  </button>
+                  <button
+                    onClick={() => handleOAuthSignIn("linkedin")}
+                    className="w-full flex items-center justify-center gap-3 py-3 rounded-[10px] border border-white/20 text-white font-mona-sans text-sm font-medium hover:bg-white/5 transition-colors cursor-pointer"
+                  >
+                    <LinkedInSVG />
+                    Sign In with LinkedIn
+                  </button>
+                </div>
 
-            {/* Divider */}
-            <div className="flex items-center gap-4 mb-6">
-              <div className="flex-1 h-px bg-white/10" />
-              <span className="text-white/40 font-mona-sans text-xs whitespace-nowrap">
-                Or Sign in with a registered account
-              </span>
-              <div className="flex-1 h-px bg-white/10" />
-            </div>
+                {/* Divider */}
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="flex-1 h-px bg-white/10" />
+                  <span className="text-white/40 font-mona-sans text-xs whitespace-nowrap">
+                    Or Sign in with a registered account
+                  </span>
+                  <div className="flex-1 h-px bg-white/10" />
+                </div>
 
             {/* Email */}
             <div className="mb-4">
@@ -238,6 +368,8 @@ export default function SignInPage() {
                 Forgot password?
               </Link>
             </p>
+              </>
+            )}
           </div>
         </div>
       </div>

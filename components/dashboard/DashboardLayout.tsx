@@ -1,8 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
-import { Suspense } from "react";
+import { usePathname, useSearchParams, useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import { signOut } from "next-auth/react";
+import { getApiUrl, getAuthHeaders } from "@/lib/api";
+import { useToast } from "@/components/ui/use-toast";
 
 /* ─── SVG Icons ─── */
 const BellSVG = () => (
@@ -161,19 +164,67 @@ const coachNavItems = [
 ];
 
 /* ─── Sidebar ─── */
-function Sidebar() {
+function Sidebar({ isMobileOpen, onClose }: { isMobileOpen?: boolean; onClose?: () => void }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const userType = searchParams.get('us') || 'jobseeker';
+  const router = useRouter();
+  const { toast } = useToast();
+  const userType = searchParams.get("us") || "jobseeker";
+  const [loggingOut, setLoggingOut] = useState(false);
   const navItems = userType === 'coach' ? coachNavItems : jobSeekerNavItems;
 
+  const handleLogout = async () => {
+    setLoggingOut(true);
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch(`${getApiUrl()}/api/auth/logout`, {
+        method: "POST",
+        headers,
+      });
+
+      if (!response.ok) {
+        toast({
+          variant: "error",
+          title: "Logout failed",
+          description: "Failed to log out from server",
+        });
+        setLoggingOut(false);
+        return;
+      }
+
+      // Clear localStorage
+      localStorage.removeItem("auth_token");
+
+      // Sign out from NextAuth
+      await signOut({ callbackUrl: "/signin" });
+    } catch (error: any) {
+      toast({
+        variant: "error",
+        title: "Error",
+        description: error.message || "An error occurred during logout",
+      });
+      setLoggingOut(false);
+    }
+  };
+
   return (
-    <aside className="fixed top-0 left-0 h-screen w-[220px] 2xl:w-[240px] bg-[#0B0D0F] border-r border-white/10 flex flex-col z-50">
+    <aside className={`fixed top-0 left-0 h-screen w-[220px] 2xl:w-[240px] bg-[#0B0D0F] border-r border-white/10 flex flex-col z-50 transition-transform duration-300 ${
+      isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+    }`}>
       {/* Logo */}
-      <div className="px-5 py-5">
+      <div className="px-5 py-5 flex items-center justify-between">
         <Link href="/">
           <img src="/logo.svg" alt="TalentLoop" className="h-8 w-auto object-contain" />
         </Link>
+        <button
+          onClick={onClose}
+          className="lg:hidden text-white p-2 hover:bg-white/10 rounded-lg transition-colors"
+          aria-label="Close menu"
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </button>
       </div>
 
       {/* Nav Links */}
@@ -188,6 +239,7 @@ function Sidebar() {
             <Link
               key={item.href}
               href={hrefWithQuery}
+              onClick={onClose}
               className={`flex items-center gap-3 px-3 py-2 2xl:py-2.5 rounded-[10px] text-[12px] 2xl:text-sm font-mona-sans transition-colors ${
                 isActive
                   ? "bg-[#A2CE3A]/15 text-[#A2CE3A]"
@@ -205,8 +257,16 @@ function Sidebar() {
 
       {/* Logout */}
       <div className="px-3 pb-5">
-        <button className="w-full py-2.5 rounded-[10px] bg-red-500 text-white text-sm font-mona-sans font-semibold hover:bg-red-600 transition-colors cursor-pointer">
-          Logout
+        <button
+          onClick={handleLogout}
+          disabled={loggingOut}
+          className={`w-full py-2.5 rounded-[10px] text-white text-sm font-mona-sans font-semibold transition-colors ${
+            loggingOut
+              ? "bg-red-500/50 cursor-not-allowed"
+              : "bg-red-500 hover:bg-red-600 cursor-pointer"
+          }`}
+        >
+          {loggingOut ? "Logging out..." : "Logout"}
         </button>
       </div>
     </aside>
@@ -214,9 +274,18 @@ function Sidebar() {
 }
 
 /* ─── Top Bar ─── */
-function TopBar() {
+function TopBar({ onMenuClick }: { onMenuClick: () => void }) {
   return (
-    <header className="sticky top-0 z-40 h-[64px] border-b border-white/10 flex items-center justify-end px-6 bg-[#0B0D0F]">
+    <header className="sticky top-0 z-40 h-[64px] border-b border-white/10 flex items-center justify-between px-6 bg-[#0B0D0F]">
+      <button
+        onClick={onMenuClick}
+        className="lg:hidden text-white p-2 hover:bg-white/10 rounded-lg transition-colors"
+        aria-label="Open menu"
+      >
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M3 12H21M3 6H21M3 18H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      </button>
       <div className="flex items-center gap-4">
         <button className="cursor-pointer relative">
           <BellSVG />
@@ -234,10 +303,20 @@ function TopBar() {
 
 /* ─── Dashboard Layout ─── */
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+
   return (
     <div className="min-h-screen bg-[#0B0D0F]">
+      {/* Mobile Overlay */}
+      {isMobileSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={() => setIsMobileSidebarOpen(false)}
+        />
+      )}
+
       <Suspense fallback={
-        <aside className="fixed top-0 left-0 h-screen w-[220px] 2xl:w-[240px] bg-[#0B0D0F] border-r border-white/10 flex flex-col z-50">
+        <aside className="fixed top-0 left-0 h-screen w-[220px] 2xl:w-[240px] bg-[#0B0D0F] border-r border-white/10 flex flex-col z-50 -translate-x-full lg:translate-x-0">
           <div className="px-5 py-5">
             <Link href="/">
               <img src="/logo.svg" alt="TalentLoop" className="h-8 w-auto object-contain" />
@@ -245,10 +324,10 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           </div>
         </aside>
       }>
-        <Sidebar />
+        <Sidebar isMobileOpen={isMobileSidebarOpen} onClose={() => setIsMobileSidebarOpen(false)} />
       </Suspense>
-      <div className="lg:ml-[220px]">
-        <TopBar />
+      <div className="lg:ml-[220px] 2xl:ml-[240px]">
+        <TopBar onMenuClick={() => setIsMobileSidebarOpen(true)} />
         <main className="p-6 lg:p-8">{children}</main>
       </div>
     </div>

@@ -7,6 +7,7 @@ import Link from "next/link";
 import { signIn } from "next-auth/react";
 import { getApiUrl, getHeaders } from "@/lib/api";
 import { useToast } from "@/components/ui/use-toast";
+import EmailVerification from "@/components/EmailVerification";
 
 /* ─── SVGs ─── */
 
@@ -212,10 +213,6 @@ function SignUpContent() {
   const { toast } = useToast();
 
   /* OTP State */
-  const [otp, setOtp] = useState<string[]>(["", "", "", "", "", ""]);
-  const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
-  const [resendTimer, setResendTimer] = useState(60);
-  const [canResend, setCanResend] = useState(false);
   const [verifying, setVerifying] = useState(false);
 
   const passwordTouched = password.length > 0;
@@ -343,56 +340,12 @@ function SignUpContent() {
     }
   };
 
-  /* OTP input handlers */
-  const handleOtpChange = (index: number, value: string) => {
-    if (!/^\d*$/.test(value)) return;
-    const newOtp = [...otp];
-    newOtp[index] = value.slice(-1);
-    setOtp(newOtp);
-    if (value && index < 5) {
-      otpRefs.current[index + 1]?.focus();
-    }
-  };
-
-  const handleOtpKeyDown = (index: number, e: React.KeyboardEvent) => {
-    if (e.key === "Backspace" && !otp[index] && index > 0) {
-      otpRefs.current[index - 1]?.focus();
-    }
-  };
-
-  const handleOtpPaste = (e: React.ClipboardEvent) => {
-    e.preventDefault();
-    const pasted = e.clipboardData
-      .getData("text")
-      .replace(/\D/g, "")
-      .slice(0, 6);
-    const newOtp = [...otp];
-    for (let i = 0; i < pasted.length; i++) {
-      newOtp[i] = pasted[i];
-    }
-    setOtp(newOtp);
-    const focusIndex = Math.min(pasted.length, 5);
-    otpRefs.current[focusIndex]?.focus();
-  };
-
-  /* Resend timer */
-  useEffect(() => {
-    if (!isEmailVerification) return;
-    if (resendTimer <= 0) {
-      setCanResend(true);
-      return;
-    }
-    const interval = setInterval(() => {
-      setResendTimer((prev) => prev - 1);
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [isEmailVerification, resendTimer]);
-
   const handleResend = async () => {
     try {
       const response = await fetch(`${getApiUrl()}/api/auth/resend-otp`, {
         method: "POST",
         headers: getHeaders(),
+        credentials: "include",
         body: JSON.stringify({
           email,
         }),
@@ -409,8 +362,6 @@ function SignUpContent() {
         return;
       }
 
-      setResendTimer(60);
-      setCanResend(false);
       toast({
         variant: "success",
         title: "Code resent",
@@ -426,18 +377,7 @@ function SignUpContent() {
   };
 
   /* Handle OTP verification */
-  const handleVerifyOtp = async () => {
-    const otpCode = otp.join("");
-
-    if (otpCode.length !== 6) {
-      toast({
-        variant: "error",
-        title: "Invalid code",
-        description: "Please enter the complete 6-digit code",
-      });
-      return;
-    }
-
+  const handleVerifyOtp = async (otpString: string) => {
     setVerifying(true);
 
     try {
@@ -447,7 +387,7 @@ function SignUpContent() {
 
         body: JSON.stringify({
           email,
-          otp: otpCode,
+          otp: otpString,
         }),
       });
 
@@ -500,11 +440,6 @@ function SignUpContent() {
     }
   };
 
-  const formatTimer = (s: number) => {
-    const mins = Math.floor(s / 60);
-    const secs = s % 60;
-    return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
-  };
 
   /* Auto-advance carousel */
   const nextSlide = useCallback(() => {
@@ -607,70 +542,12 @@ function SignUpContent() {
           >
             {/* ─── Email Verification View ─── */}
             {isEmailVerification ? (
-              <div className="flex flex-col items-center">
-                <h1 className="text-2xl lg:text-3xl font-mona-sans font-bold text-white text-center mb-3">
-                  Email Verification
-                </h1>
-                <p className="text-white/50 text-sm font-mona-sans text-center mb-8 max-w-[360px]">
-                  Check your email, we sent a code to {email || "@jimberino"}
-                  .io. If this is not your mail,{" "}
-                  {/* <button
-                    onClick={() => router.push(`/signup?type=${type}`)}
-                    className="text-[#A2CE3A] underline cursor-pointer"
-                  >
-                    Change email
-                  </button> */}
-                </p>
-
-                {/* OTP Inputs */}
-                <div className="flex gap-3 mb-8" onPaste={handleOtpPaste}>
-                  {otp.map((digit, i) => (
-                    <input
-                      key={i}
-                      ref={(el) => {
-                        otpRefs.current[i] = el;
-                      }}
-                      type="text"
-                      inputMode="numeric"
-                      maxLength={1}
-                      value={digit}
-                      onChange={(e) => handleOtpChange(i, e.target.value)}
-                      onKeyDown={(e) => handleOtpKeyDown(i, e)}
-                      className="w-12 h-14 bg-white rounded-[8px] text-center text-[#121212] text-xl font-mona-sans font-bold outline-none border border-white/10 focus:border-[#A2CE3A] transition-colors"
-                    />
-                  ))}
-                </div>
-
-                {/* Verify Button */}
-                <button
-                  onClick={handleVerifyOtp}
-                  disabled={verifying}
-                  className={`w-full max-w-[360px] px-8 py-3 rounded-[8px] font-mona-sans text-base font-bold transition-colors ${
-                    verifying
-                      ? "bg-[#A2CE3A]/50 text-[#121212]/50 cursor-not-allowed"
-                      : "bg-[#A2CE3A] text-[#121212] hover:bg-[#92BE2A] cursor-pointer"
-                  }`}
-                >
-                  {verifying ? "Verifying..." : "Verify"}
-                </button>
-
-                {/* Resend */}
-                <div className="mt-4 text-sm font-mona-sans text-white/50">
-                  Didn&apos;t get a code?{" "}
-                  {canResend ? (
-                    <button
-                      onClick={handleResend}
-                      className="text-[#A2CE3A] underline cursor-pointer"
-                    >
-                      Resend
-                    </button>
-                  ) : (
-                    <span className="text-white/30">
-                      {formatTimer(resendTimer)}
-                    </span>
-                  )}
-                </div>
-              </div>
+              <EmailVerification
+                email={email}
+                onVerify={handleVerifyOtp}
+                onResend={handleResend}
+                verifying={verifying}
+              />
             ) : (
               /* ─── Sign Up Form ─── */
               <>
