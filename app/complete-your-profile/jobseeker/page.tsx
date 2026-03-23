@@ -7,6 +7,7 @@ import PhoneInput from "react-phone-number-input";
 import "react-phone-number-input/style.css";
 import { getApiUrl, getAuthHeaders } from "@/lib/api";
 import { useToast } from "@/components/ui/use-toast";
+import { ArrowLeft } from "lucide-react";
 
 /* ─── Onboarding Progress Storage ─── */
 
@@ -171,6 +172,8 @@ export default function JobseekerCompleteProfilePage() {
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
   const [loading, setLoading] = useState(false);
   const [reviewLoading, setReviewLoading] = useState(false);
+  const [cvProcessing, setCvProcessing] = useState(false);
+  const [processingProgress, setProcessingProgress] = useState(0);
 
   // Load onboarding progress on mount
   useEffect(() => {
@@ -417,6 +420,27 @@ export default function JobseekerCompleteProfilePage() {
     }
   };
 
+  const pollCvStatus = async () => {
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch(`${getApiUrl()}/api/profile/setup/cv/status`, {
+        method: "GET",
+        headers,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return null;
+      }
+
+      return data.data?.analysis_status || null;
+    } catch (error) {
+      console.error("Error polling CV status:", error);
+      return null;
+    }
+  };
+
   const handleCvSubmit = async () => {
     if (!cvFile) {
       toast({
@@ -459,8 +483,8 @@ export default function JobseekerCompleteProfilePage() {
 
       toast({
         variant: "success",
-        title: "CV analyzed!",
-        description: "Your CV has been uploaded and analyzed successfully",
+        title: "CV uploaded!",
+        description: "Your CV is being analyzed. This may take up to a minute.",
       });
 
       // Save onboarding progress
@@ -468,22 +492,65 @@ export default function JobseekerCompleteProfilePage() {
         saveOnboardingProgress(data.data.current_step, data.data.onboarding_status);
       }
 
-      // Update extracted data if provided by API
-      if (data.data?.extracted_data) {
-        setExtractedData(data.data.extracted_data);
-      }
+      setLoading(false);
+      setCvProcessing(true);
+      setProcessingProgress(0);
 
-      // Mark step 2 as completed and move to review step
-      setCompletedSteps(prev => [...new Set([...prev, 2])]);
-      setStep(3);
+      // Start polling for CV processing status
+      const pollInterval = setInterval(async () => {
+        const status = await pollCvStatus();
+
+        // Update progress bar (simulate progress)
+        setProcessingProgress(prev => Math.min(prev + 5, 95));
+
+        if (status === "successful" || status === "completed") {
+          clearInterval(pollInterval);
+          setProcessingProgress(100);
+          setCvProcessing(false);
+
+          toast({
+            variant: "success",
+            title: "Analysis complete!",
+            description: "Your CV has been analyzed successfully",
+          });
+
+          // Mark step 2 as completed and move to review step
+          setCompletedSteps(prev => [...new Set([...prev, 2])]);
+          setStep(3);
+        } else if (status === "failed" || status === "error") {
+          clearInterval(pollInterval);
+          setCvProcessing(false);
+          setProcessingProgress(0);
+
+          toast({
+            variant: "error",
+            title: "Analysis failed",
+            description: "Failed to analyze your CV. Please try uploading again.",
+          });
+        }
+      }, 3000); // Poll every 3 seconds
+
+      // Timeout after 2 minutes
+      setTimeout(() => {
+        clearInterval(pollInterval);
+        if (cvProcessing) {
+          setCvProcessing(false);
+          setProcessingProgress(0);
+          toast({
+            variant: "error",
+            title: "Processing timeout",
+            description: "CV analysis is taking longer than expected. Please try again.",
+          });
+        }
+      }, 120000); // 2 minutes timeout
     } catch (error: any) {
       toast({
         variant: "error",
         title: "Error",
         description: error.message || "An error occurred while uploading your CV",
       });
-    } finally {
       setLoading(false);
+      setCvProcessing(false);
     }
   };
 
@@ -577,8 +644,8 @@ export default function JobseekerCompleteProfilePage() {
 
       {/* Header */}
       <div className="relative z-10 flex items-center justify-between px-6 lg:px-12 py-6">
-        <Link href="/" className="cursor-pointer">
-          <BackArrowSVG />
+        <Link href="/" className="cursor-pointer text-white flex items-center gap-1">
+         <ArrowLeft /> Back
         </Link>
         <button className="px-6 py-2.5 bg-[#E8F5D0] hover:bg-[#d9ebc1] text-black font-mona-sans font-semibold text-sm rounded-[10px] transition-colors">
           Save & Exit
@@ -804,83 +871,120 @@ export default function JobseekerCompleteProfilePage() {
           {/* Step 2: CV Upload */}
           {step === 2 && (
             <div>
-              <h2 className="text-2xl font-mona-sans font-bold text-white mb-2">Upload your CV</h2>
-              <p className="text-white/50 font-mona-sans text-sm mb-6">We'll analyze it to find the best coach matches</p>
+              {cvProcessing ? (
+                <div className="flex flex-col items-center justify-center py-12">
+                  <div className="w-20 h-20 mb-6">
+                    <svg className="animate-spin" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <circle cx="40" cy="40" r="35" stroke="#A2CE3A" strokeOpacity="0.2" strokeWidth="8"/>
+                      <path d="M40 5C59.33 5 75 20.67 75 40" stroke="#A2CE3A" strokeWidth="8" strokeLinecap="round"/>
+                    </svg>
+                  </div>
+                  <h2 className="text-2xl font-mona-sans font-bold text-white mb-2">Analyzing your CV</h2>
+                  <p className="text-white/50 font-mona-sans text-sm mb-8 text-center">This may take up to a minute. Please don't close this page.</p>
+                  
+                  <div className="w-full max-w-md">
+                    <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-[#A2CE3A] transition-all duration-500 ease-out"
+                        style={{ width: `${processingProgress}%` }}
+                      />
+                    </div>
+                    <p className="text-white/40 font-mona-sans text-xs mt-2 text-center">{processingProgress}% complete</p>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <h2 className="text-2xl font-mona-sans font-bold text-white mb-2">Upload your CV</h2>
+                  <p className="text-white/50 font-mona-sans text-sm mb-6">We'll analyze it to find the best coach matches</p>
 
-              <input
-                type="file"
-                ref={cvInputRef}
-                accept=".pdf,.doc,.docx"
-                onChange={handleCvUpload}
-                className="hidden"
-              />
+                  <input
+                    type="file"
+                    ref={cvInputRef}
+                    accept=".pdf,.doc,.docx"
+                    onChange={handleCvUpload}
+                    className="hidden"
+                  />
 
-              <div
-                onClick={() => !cvUploaded && cvInputRef.current?.click()}
-                onDrop={handleCvDrop}
-                onDragOver={(e) => e.preventDefault()}
-                className={`border-2 border-dashed rounded-[12px] p-12 flex flex-col items-center justify-center cursor-pointer transition-colors ${
-                  cvUploaded
-                    ? "border-[#A2CE3A] bg-[#A2CE3A]/5"
-                    : "border-white/20 bg-white/5 hover:border-[#A2CE3A]/50"
-                }`}
-              >
-                {cvUploaded ? (
-                  <>
-                    <CheckGreenSVG />
-                    <p className="text-white font-mona-sans font-semibold text-base mt-4">{cvFile?.name || "My Recent Portfolio - Updated"}</p>
-                    <p className="text-white/50 font-mona-sans text-sm mt-1">
-                      {cvFile ? `${(cvFile.size / 1024).toFixed(2)} KB` : "104 KB"} • Click to change
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    <UploadIconSVG />
-                    <p className="text-white/70 font-mona-sans text-sm mt-4">Drop your CV here or click to Browse</p>
-                    <p className="text-white/40 font-mona-sans text-xs mt-1">PDF or DOC, up to 10MB</p>
-                  </>
-                )}
-              </div>
+                  <div
+                    onClick={() => !cvUploaded && cvInputRef.current?.click()}
+                    onDrop={handleCvDrop}
+                    onDragOver={(e) => e.preventDefault()}
+                    className={`border-2 border-dashed rounded-[12px] p-12 flex flex-col items-center justify-center cursor-pointer transition-colors ${
+                      cvUploaded
+                        ? "border-[#A2CE3A] bg-[#A2CE3A]/5"
+                        : "border-white/20 bg-white/5 hover:border-[#A2CE3A]/50"
+                    }`}
+                  >
+                    {cvUploaded ? (
+                      <>
+                        <CheckGreenSVG />
+                        <p className="text-white font-mona-sans font-semibold text-base mt-4">{cvFile?.name || "My Recent Portfolio - Updated"}</p>
+                        <p className="text-white/50 font-mona-sans text-sm mt-1">
+                          {cvFile ? `${(cvFile.size / 1024).toFixed(2)} KB` : "104 KB"} • Click to change
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <UploadIconSVG />
+                        <p className="text-white/70 font-mona-sans text-sm mt-4">Drop your CV here or click to Browse</p>
+                        <p className="text-white/40 font-mona-sans text-xs mt-1">PDF or DOC, up to 10MB</p>
+                      </>
+                    )}
+                  </div>
 
-              <div className="flex items-center gap-3 mt-6">
-                <button
-                  onClick={goBack}
-                  disabled={loading}
-                  className={`flex-1 py-3 font-mona-sans font-semibold text-base rounded-[10px] transition-colors ${
-                    loading
-                      ? "bg-[#E8F5D0]/50 text-black/50 cursor-not-allowed"
-                      : "bg-[#E8F5D0] hover:bg-[#d9ebc1] text-black cursor-pointer"
-                  }`}
-                >
-                  Back
-                </button>
-                <button
-                  onClick={handleCvSubmit}
-                  disabled={!cvUploaded || loading}
-                  className={`flex-1 py-3 font-mona-sans font-semibold text-base rounded-[10px] transition-colors ${
-                    cvUploaded && !loading
-                      ? "bg-[#A2CE3A] hover:bg-[#8fb832] text-black cursor-pointer"
-                      : "bg-white/10 text-white/30 cursor-not-allowed"
-                  }`}
-                >
-                  {loading ? "Uploading..." : "Upload and Analyze"}
-                </button>
-              </div>
+                  <div className="flex items-center gap-3 mt-6">
+                    <button
+                      onClick={goBack}
+                      disabled={loading}
+                      className={`flex-1 py-3 font-mona-sans font-semibold text-base rounded-[10px] transition-colors ${
+                        loading
+                          ? "bg-[#E8F5D0]/50 text-black/50 cursor-not-allowed"
+                          : "bg-[#E8F5D0] hover:bg-[#d9ebc1] text-black cursor-pointer"
+                      }`}
+                    >
+                      Back
+                    </button>
+                    <button
+                      onClick={handleCvSubmit}
+                      disabled={!cvUploaded || loading}
+                      className={`flex-1 py-3 font-mona-sans font-semibold text-base rounded-[10px] transition-colors ${
+                        cvUploaded && !loading
+                          ? "bg-[#A2CE3A] hover:bg-[#8fb832] text-black cursor-pointer"
+                          : "bg-white/10 text-white/30 cursor-not-allowed"
+                      }`}
+                    >
+                      {loading ? "Uploading..." : "Upload and Analyze"}
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           )}
 
           {/* Step 3: Review */}
           {step === 3 && (
             <div>
-              <div className="flex items-center justify-center mb-6">
-                <div className="px-4 py-1.5 bg-[#A2CE3A]/20 border border-[#A2CE3A] rounded-full flex items-center gap-2">
-                  <CheckCircleSVG filled={true} />
-                  <span className="text-[#A2CE3A] font-mona-sans text-sm font-semibold">Analysis Complete</span>
+              {reviewLoading ? (
+                <div className="flex flex-col items-center justify-center py-12">
+                  <div className="w-16 h-16 mb-4">
+                    <svg className="animate-spin" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <circle cx="32" cy="32" r="28" stroke="#A2CE3A" strokeOpacity="0.2" strokeWidth="6"/>
+                      <path d="M32 4C48.5685 4 62 17.4315 62 34" stroke="#A2CE3A" strokeWidth="6" strokeLinecap="round"/>
+                    </svg>
+                  </div>
+                  <p className="text-white/70 font-mona-sans text-sm">Loading your CV analysis...</p>
                 </div>
-              </div>
+              ) : (
+                <>
+                  <div className="flex items-center justify-center mb-6">
+                    <div className="px-4 py-1.5 bg-[#A2CE3A]/20 border border-[#A2CE3A] rounded-full flex items-center gap-2">
+                      <CheckCircleSVG filled={true} />
+                      <span className="text-[#A2CE3A] font-mona-sans text-sm font-semibold">Analysis Complete</span>
+                    </div>
+                  </div>
 
-              <h2 className="text-2xl font-mona-sans font-bold text-white text-center mb-2">Here's what we found</h2>
-              <p className="text-white/50 font-mona-sans text-sm text-center mb-8">Review and edit any information below</p>
+                  <h2 className="text-2xl font-mona-sans font-bold text-white text-center mb-2">Here's what we found</h2>
+                  <p className="text-white/50 font-mona-sans text-sm text-center mb-8">Review and edit any information below</p>
 
               <div className="space-y-4">
                 {/* Full Name */}
@@ -976,20 +1080,22 @@ export default function JobseekerCompleteProfilePage() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 mt-8">
-                <button
-                  onClick={goBack}
-                  className="flex-1 py-3 bg-[#E8F5D0] hover:bg-[#d9ebc1] text-black font-mona-sans font-semibold text-base rounded-[10px] transition-colors"
-                >
-                  Back
-                </button>
-                <button
-                  onClick={handleFindCoaches}
-                  className="flex-1 py-3 bg-[#A2CE3A] hover:bg-[#8fb832] text-black font-mona-sans font-semibold text-base rounded-[10px] transition-colors"
-                >
-                  Find My Coaches
-                </button>
-              </div>
+                  <div className="flex items-center gap-3 mt-8">
+                    <button
+                      onClick={goBack}
+                      className="flex-1 py-3 bg-[#E8F5D0] hover:bg-[#d9ebc1] text-black font-mona-sans font-semibold text-base rounded-[10px] transition-colors"
+                    >
+                      Back
+                    </button>
+                    <button
+                      onClick={handleFindCoaches}
+                      className="flex-1 py-3 bg-[#A2CE3A] hover:bg-[#8fb832] text-black font-mona-sans font-semibold text-base rounded-[10px] transition-colors"
+                    >
+                      Find My Coaches
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           )}
         </div>
