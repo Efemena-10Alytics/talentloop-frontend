@@ -503,7 +503,7 @@ export default function JobseekerCompleteProfilePage() {
         // Update progress bar (simulate progress)
         setProcessingProgress(prev => Math.min(prev + 5, 95));
 
-        if (status === "successful" || status === "completed") {
+        if (status === "completed") {
           clearInterval(pollInterval);
           setProcessingProgress(100);
           setCvProcessing(false);
@@ -528,6 +528,7 @@ export default function JobseekerCompleteProfilePage() {
             description: "Failed to analyze your CV. Please try uploading again.",
           });
         }
+        // Continue polling if status is "processing" or "in-progress"
       }, 3000); // Poll every 3 seconds
 
       // Timeout after 2 minutes
