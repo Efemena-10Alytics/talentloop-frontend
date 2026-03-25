@@ -216,7 +216,7 @@ export default function CompleteProfilePage() {
         setReviewData(result.data);
       } catch (error: any) {
         toast({
-          variant: "destructive",
+          variant: "error",
           title: "Error",
           description: error.message || "Failed to load review data",
         });
@@ -241,7 +241,7 @@ export default function CompleteProfilePage() {
   const handleBasicInfoSubmit = async () => {
     if (!photoFile || !name || !username || !linkedinUrl || !country || !phone || !gender || selectedLanguages.length === 0) {
       toast({
-        variant: "destructive",
+        variant: "error",
         title: "Missing fields",
         description: "Please fill in all required fields",
       });
@@ -289,7 +289,7 @@ export default function CompleteProfilePage() {
       setStep(1);
     } catch (error: any) {
       toast({
-        variant: "destructive",
+        variant: "error",
         title: "Error",
         description: error.message || "Failed to save basic info",
       });
@@ -301,7 +301,7 @@ export default function CompleteProfilePage() {
   const handleBackgroundSubmit = async () => {
     if (!jobTitle || !industry || !yearsOfExperience || !companiesWorkedAt || fieldsCoached.length === 0) {
       toast({
-        variant: "destructive",
+        variant: "error",
         title: "Missing fields",
         description: "Please fill in all required fields",
       });
@@ -343,7 +343,7 @@ export default function CompleteProfilePage() {
       setStep(2);
     } catch (error: any) {
       toast({
-        variant: "destructive",
+        variant: "error",
         title: "Error",
         description: error.message || "Failed to save background",
       });
@@ -355,7 +355,7 @@ export default function CompleteProfilePage() {
   const handleCoachingSubmit = async () => {
     if (!bio || interviewTypes.length === 0 || targetLevels.length === 0) {
       toast({
-        variant: "destructive",
+        variant: "error",
         title: "Missing fields",
         description: "Please fill in all required fields",
       });
@@ -395,7 +395,7 @@ export default function CompleteProfilePage() {
       setStep(3);
     } catch (error: any) {
       toast({
-        variant: "destructive",
+        variant: "error",
         title: "Error",
         description: error.message || "Failed to save coaching preferences",
       });
