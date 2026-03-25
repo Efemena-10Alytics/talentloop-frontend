@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useUserData } from "@/hooks/useUserData";
 
 const BellSVG = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -13,6 +16,8 @@ const ChevronDownSVG = () => (
 );
 
 export function Navbar1() {
+  const { userData } = useUserData();
+
   return (
     <nav className="relative z-10 border-b border-white/10">
       <div className="max-w-[1400px] mx-auto flex items-center justify-between px-6 py-4">
@@ -25,7 +30,7 @@ export function Navbar1() {
           </button>
           <div className="flex items-center gap-2 cursor-pointer">
             <div className="w-9 h-9 rounded-full bg-white/20 overflow-hidden">
-              <img src="/coaches/coach1.jpg" alt="Avatar" className="w-full h-full object-cover" />
+              <img src={userData?.user?.photo || "/coaches/coach1.jpg"} alt="Avatar" className="w-full h-full object-cover" />
             </div>
             <ChevronDownSVG />
           </div>

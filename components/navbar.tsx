@@ -3,11 +3,13 @@
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
+import { useUserData } from "@/hooks/useUserData";
 
 const navLinks = [{text: "Find Interview Coach", link:"/coaches"}, {text: "Auto Apply", link:"/auto-apply"}, {text: "AI Copilot", link:"/ai-copilot"}];
 
 export function Navbar() {
   const { data: session } = useSession();
+  const { userData } = useUserData();
   const [isScrolled, setIsScrolled] = useState(false);
   const [showSignUpDropdown, setShowSignUpDropdown] = useState(false);
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
@@ -101,7 +103,7 @@ export function Navbar() {
               className="w-10 h-10 rounded-full bg-white/20 overflow-hidden hover:ring-2 hover:ring-[#A2CE3A] transition-all cursor-pointer"
             >
               <img
-                src={session.user?.image || '/coaches/coach1.jpg'}
+                src={userData?.user?.photo || session.user?.image || '/coaches/coach1.jpg'}
                 alt="User avatar"
                 className="w-full h-full object-cover"
               />

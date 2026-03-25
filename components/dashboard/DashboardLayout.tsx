@@ -6,6 +6,7 @@ import { Suspense, useState } from "react";
 import { signOut } from "next-auth/react";
 import { getApiUrl, getAuthHeaders } from "@/lib/api";
 import { useToast } from "@/components/ui/use-toast";
+import { useUserData } from "@/hooks/useUserData";
 
 /* ─── SVG Icons ─── */
 const BellSVG = () => (
@@ -275,6 +276,8 @@ function Sidebar({ isMobileOpen, onClose }: { isMobileOpen?: boolean; onClose?: 
 
 /* ─── Top Bar ─── */
 function TopBar({ onMenuClick }: { onMenuClick: () => void }) {
+  const { userData } = useUserData();
+
   return (
     <header className="sticky top-0 z-40 h-[64px] border-b border-white/10 flex items-center justify-between px-6 bg-[#0B0D0F]">
       <button
@@ -292,7 +295,7 @@ function TopBar({ onMenuClick }: { onMenuClick: () => void }) {
         </button>
         <div className="flex items-center gap-2 cursor-pointer">
           <div className="w-9 h-9 rounded-full bg-white/20 overflow-hidden">
-            <img src="/coaches/coach1.jpg" alt="Avatar" className="w-full h-full object-cover" />
+            <img src={userData?.user?.photo || "/coaches/coach1.jpg"} alt="Avatar" className="w-full h-full object-cover" />
           </div>
           <ChevronDownSVG />
         </div>
