@@ -190,6 +190,33 @@ export default function JobseekerCompleteProfilePage() {
     }
   }, []);
 
+  // Check CV status when on step 2 (CV Upload tab) - auto-navigate if completed
+  useEffect(() => {
+    const checkCvStatus = async () => {
+      if (step !== 2) return;
+
+      try {
+        const status = await pollCvStatus();
+        
+        if (status === "completed") {
+          // CV is already processed, move to review
+          setCompletedSteps(prev => [...new Set([...prev, 2])]);
+          setStep(3);
+          toast({
+            variant: "success",
+            title: "CV already processed",
+            description: "Your CV has been analyzed. Proceeding to review.",
+          });
+        }
+      } catch (error) {
+        // Silently fail - user can still upload CV manually
+        console.error("Error checking CV status:", error);
+      }
+    };
+
+    checkCvStatus();
+  }, [step]);
+
   // Fetch CV review data when step 3 loads
   useEffect(() => {
     const fetchReviewData = async () => {
@@ -517,7 +544,7 @@ export default function JobseekerCompleteProfilePage() {
           // Mark step 2 as completed and move to review step
           setCompletedSteps(prev => [...new Set([...prev, 2])]);
           setStep(3);
-        } else if (status === "failed" || status === "error") {
+        } else if (status === "failed") {
           clearInterval(pollInterval);
           setCvProcessing(false);
           setProcessingProgress(0);
@@ -528,8 +555,8 @@ export default function JobseekerCompleteProfilePage() {
             description: "Failed to analyze your CV. Please try uploading again.",
           });
         }
-        // Continue polling if status is "processing" or "in-progress"
-      }, 3000); // Poll every 3 seconds
+        // Continue polling if status is "processing" or "in_progress"
+      }, 20000); // Poll every 20 seconds
 
       // Timeout after 2 minutes
       setTimeout(() => {
