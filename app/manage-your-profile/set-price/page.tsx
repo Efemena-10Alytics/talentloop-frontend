@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Navbar1 } from "@/components/manage-your-profile/Navbar1";
 import { GlassCard } from "@/components/manage-your-profile/GlassCard";
 import {
@@ -105,14 +106,11 @@ export default function SetPricePage() {
   const { data: session } = useSession();
   const { userData, loading: userLoading } = useUserData();
   const { toast } = useToast();
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [plans, setPlans] = useState<CoachPlan[]>([]);
+  const queryClient = useQueryClient();
   const [existingPlan, setExistingPlan] = useState<CoachPlan | null>(null);
-
-  const [sessionName, setSessionName] = useState("Standard Session");
-  const [sessionDuration, setSessionDuration] = useState("60 mins");
-  const [sessionPrice, setSessionPrice] = useState("100");
+  const [sessionName, setSessionName] = useState("");
+  const [sessionDuration, setSessionDuration] = useState("30");
+  const [sessionPrice, setSessionPrice] = useState("");
   const [sessionCount, setSessionCount] = useState("5");
 
   // Role-based access control
@@ -129,92 +127,56 @@ export default function SetPricePage() {
     }
   }, [userData, userLoading, router, toast]);
 
-  // Fetch existing plans on mount
-  useEffect(() => {
-    if (!userData || userData.user.role !== "coach") return;
-    const fetchPlans = async () => {
-      try {
-        const headers = await getAuthHeaders();
-        const response = await fetch(`${getApiUrl()}/api/coach/plans`, {
-          method: "GET",
-          headers,
-        });
+  // Fetch existing plans using TanStack Query
+  const { data: plans, isLoading } = useQuery({
+    queryKey: ["coach-plans"],
+    queryFn: async () => {
+      const headers = await getAuthHeaders();
+      const response = await fetch(`${getApiUrl()}/api/coach/plans`, {
+        method: "GET",
+        headers,
+      });
 
-        if (!response.ok) {
-          throw new Error("Failed to fetch plans");
-        }
-
-        const result = await response.json();
-        const fetchedPlans: CoachPlan[] = result.data;
-        setPlans(fetchedPlans);
-
-        // If there's an active plan, populate the form
-        const activePlan = fetchedPlans.find((p) => p.is_active);
-        if (activePlan) {
-          setExistingPlan(activePlan);
-          setSessionName(activePlan.title);
-          setSessionDuration(`${activePlan.session_duration_minutes} mins`);
-          setSessionPrice(String(activePlan.price));
-          setSessionCount(String(activePlan.sessions_total));
-        }
-      } catch (error: any) {
-        toast({
-          variant: "error",
-          title: "Error",
-          description: error.message || "Failed to load plans",
-        });
-      } finally {
-        setLoading(false);
+      if (!response.ok) {
+        throw new Error("Failed to fetch plans");
       }
-    };
 
-    fetchPlans();
-  }, [toast, userData]);
+      const result = await response.json();
+      return result.data as CoachPlan[];
+    },
+    enabled: !!userData && userData.user.role === "coach",
+  });
 
-  // Show loading while checking user role
-  if (userLoading || !userData) {
-    return (
-      <div className="min-h-screen bg-[#0B0D0F] relative overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: "url('/img2.png')", backgroundRepeat: "no-repeat", backgroundPosition: "center", backgroundSize: "cover" }} />
-        <Navbar1 />
-        <div className="relative z-10 flex justify-center items-center py-20">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#A2CE3A]"></div>
-        </div>
-      </div>
-    );
-  }
+  // Process plans data when it changes
+  useEffect(() => {
+    if (!plans) return;
 
-  // Prevent rendering if not a coach
-  if (userData.user.role !== "coach") {
-    return null;
-  }
+    // If there's an active plan, populate the form
+    const activePlan = plans.find((p) => p.is_active);
+    if (activePlan) {
+      setExistingPlan(activePlan);
+      setSessionName(activePlan.title);
+      setSessionDuration(`${activePlan.session_duration_minutes} mins`);
+      setSessionPrice(String(activePlan.price));
+      setSessionCount(String(activePlan.sessions_total));
+    }
+  }, [plans]);
 
-  const handleSave = async () => {
-    setSaving(true);
-
-    try {
+  // Save mutation - MUST be before conditional returns
+  const saveMutation = useMutation({
+    mutationFn: async () => {
       const headers = await getAuthHeaders();
       
-      // Parse duration to get minutes
-      const durationMinutes = parseInt(sessionDuration.split(" ")[0]);
+      // Extract numeric value from duration string (e.g., "30 mins" -> 30)
+      const durationMinutes = parseInt(sessionDuration.replace(/\D/g, '')) || 30;
       
       const payload = {
         title: sessionName,
-        description: `${sessionName} - ${sessionCount} sessions package`,
-        sessions_total: parseInt(sessionCount),
+        description: `${sessionCount} sessions package`,
+        sessions_total: Number(sessionCount),
         session_duration_minutes: durationMinutes,
-        price: parseFloat(sessionPrice),
+        price: Number(sessionPrice),
         is_active: true,
-        offers: [
-          {
-            text: `${sessionCount} coaching sessions`,
-            style: "check" as const,
-          },
-          {
-            text: `${sessionDuration} per session`,
-            style: "check" as const,
-          },
-        ],
       };
 
       let response;
@@ -245,40 +207,53 @@ export default function SetPricePage() {
       }
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to save plan");
+        throw new Error("Failed to save plan");
       }
 
       const result = await response.json();
-      
+      return result.data;
+    },
+    onSuccess: (data) => {
       toast({
         variant: "success",
         title: "Success",
-        description: existingPlan ? "Plan updated successfully" : "Plan created successfully",
+        description: "Session pricing updated successfully",
       });
 
-      // Update local state
-      setExistingPlan(result.data);
+      setExistingPlan(data);
       
-      // Reload plans
-      const plansResponse = await fetch(`${getApiUrl()}/api/coach/plans`, {
-        method: "GET",
-        headers,
-      });
-      
-      if (plansResponse.ok) {
-        const plansResult = await plansResponse.json();
-        setPlans(plansResult.data);
-      }
-    } catch (error: any) {
+      // Invalidate and refetch plans
+      queryClient.invalidateQueries({ queryKey: ["coach-plans"] });
+    },
+    onError: (error: any) => {
       toast({
         variant: "error",
         title: "Error",
-        description: error.message || "Failed to save plan",
+        description: error.message || "Failed to save session pricing",
       });
-    } finally {
-      setSaving(false);
-    }
+    },
+  });
+
+  // Show loading while checking user role
+  if (userLoading || !userData || isLoading) {
+    return (
+      <div className="min-h-screen bg-[#0B0D0F] relative overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: "url('/img2.png')", backgroundRepeat: "no-repeat", backgroundPosition: "center", backgroundSize: "cover" }} />
+        <Navbar1 />
+        <div className="relative z-10 flex justify-center items-center py-20">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#A2CE3A]"></div>
+        </div>
+      </div>
+    );
+  }
+
+  // Prevent rendering if not a coach
+  if (userData.user.role !== "coach") {
+    return null;
+  }
+
+  const handleSave = () => {
+    saveMutation.mutate();
   };
 
   return (
@@ -310,7 +285,7 @@ export default function SetPricePage() {
         {/* Page Title */}
         <h1 className="text-white font-mona-sans font-bold text-2xl lg:text-3xl mb-8">Set Price Range</h1>
 
-        {loading ? (
+        {isLoading ? (
           <div className="flex justify-center items-center py-20">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#A2CE3A]"></div>
           </div>
@@ -443,7 +418,7 @@ export default function SetPricePage() {
         <div className="flex items-center justify-center gap-4">
           <button
             onClick={() => router.push("/manage-your-profile")}
-            disabled={saving}
+            disabled={saveMutation.isPending}
             className="px-10 py-3 rounded-[8px] font-mona-sans text-sm font-bold transition-colors cursor-pointer disabled:opacity-50"
             style={{ backgroundColor: "#ECF8C7", color: "#054711" }}
           >
@@ -451,11 +426,11 @@ export default function SetPricePage() {
           </button>
           <button
             onClick={handleSave}
-            disabled={saving}
+            disabled={saveMutation.isPending}
             className="flex items-center gap-2 px-10 py-3 bg-[#A2CE3A] rounded-[8px] text-[#121212] font-mona-sans text-sm font-bold hover:bg-[#92BE2A] transition-colors cursor-pointer disabled:opacity-50"
           >
             <SaveIconSVG />
-            {saving ? "Saving..." : "Save Changes"}
+            {saveMutation.isPending ? "Saving..." : "Save Changes"}
           </button>
         </div>
         </>

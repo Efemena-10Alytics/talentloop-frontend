@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Navbar1 } from "@/components/manage-your-profile/Navbar1";
 import { GlassCard } from "@/components/manage-your-profile/GlassCard";
 import { getApiUrl, getAuthHeaders } from "@/lib/api";
@@ -213,10 +214,9 @@ export default function SetAvailabilityPage() {
   const { data: session } = useSession();
   const { userData, loading: userLoading } = useUserData();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [schedule, setSchedule] = useState<WeekSchedule>(defaultSchedule);
   const [originalSlots, setOriginalSlots] = useState<Map<number, { day: number; start: string; end: string }>>(new Map());
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [deletedSlots, setDeletedSlots] = useState<number[]>([]);
 
   // Role-based access control
@@ -233,68 +233,142 @@ export default function SetAvailabilityPage() {
     }
   }, [userData, userLoading, router, toast]);
 
-  // Fetch availability on mount
+  // Fetch availability using TanStack Query
+  const { data: availabilityData, isLoading } = useQuery({
+    queryKey: ["availability"],
+    queryFn: async () => {
+      const headers = await getAuthHeaders();
+      const response = await fetch(`${getApiUrl()}/api/coach/availability`, {
+        method: "GET",
+        headers,
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch availability");
+      }
+
+      const result = await response.json();
+      return result.data as AvailabilitySlot[];
+    },
+    enabled: !!userData && userData.user.role === "coach",
+  });
+
+  // Process availability data when it changes
   useEffect(() => {
-    if (!userData || userData.user.role !== "coach") return;
-    const fetchAvailability = async () => {
-      try {
-        const headers = await getAuthHeaders();
-        const response = await fetch(`${getApiUrl()}/api/coach/availability`, {
-          method: "GET",
+    if (!availabilityData) return;
+
+    // Store original slots for change detection
+    const originalMap = new Map<number, { day: number; start: string; end: string }>();
+    availabilityData.forEach((slot) => {
+      originalMap.set(slot.id, {
+        day: slot.day_of_week,
+        start: slot.start_time,
+        end: slot.end_time,
+      });
+    });
+    setOriginalSlots(originalMap);
+
+    // Convert API data to schedule format
+    const newSchedule = { ...defaultSchedule };
+    availabilityData.forEach((slot) => {
+      const dayName = dayNumberToName[slot.day_of_week];
+      if (dayName) {
+        if (!newSchedule[dayName].enabled) {
+          newSchedule[dayName] = { enabled: true, slots: [] };
+        }
+        newSchedule[dayName].slots.push({
+          id: slot.id,
+          start: slot.start_time,
+          end: slot.end_time,
+        });
+      }
+    });
+
+    setSchedule(newSchedule);
+  }, [availabilityData]);
+
+  // Save mutation - MUST be before conditional returns
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      const headers = await getAuthHeaders();
+
+      // 1. Delete removed slots
+      for (const slotId of deletedSlots) {
+        await fetch(`${getApiUrl()}/api/coach/availability/${slotId}`, {
+          method: "DELETE",
           headers,
         });
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch availability");
-        }
-
-        const result = await response.json();
-        const slots: AvailabilitySlot[] = result.data;
-
-        // Store original slots for change detection
-        const originalMap = new Map<number, { day: number; start: string; end: string }>();
-        slots.forEach((slot) => {
-          originalMap.set(slot.id, {
-            day: slot.day_of_week,
-            start: slot.start_time,
-            end: slot.end_time,
-          });
-        });
-        setOriginalSlots(originalMap);
-
-        // Convert API data to schedule format
-        const newSchedule = { ...defaultSchedule };
-        slots.forEach((slot) => {
-          const dayName = dayNumberToName[slot.day_of_week];
-          if (dayName) {
-            if (!newSchedule[dayName].enabled) {
-              newSchedule[dayName] = { enabled: true, slots: [] };
-            }
-            newSchedule[dayName].slots.push({
-              id: slot.id,
-              start: slot.start_time,
-              end: slot.end_time,
-            });
-          }
-        });
-
-        setSchedule(newSchedule);
-      } catch (error: any) {
-        toast({
-          variant: "error",
-          title: "Error",
-          description: error.message || "Failed to load availability",
-        });
-      } finally {
-        setLoading(false);
       }
-    };
 
-    fetchAvailability();
-  }, [toast, userData]);
+      // 2. Process all enabled days
+      for (const [dayName, daySchedule] of Object.entries(schedule)) {
+        if (!daySchedule.enabled) continue;
+
+        const dayOfWeek = dayNameToNumber[dayName];
+
+        for (const slot of daySchedule.slots) {
+          const payload = {
+            day_of_week: dayOfWeek,
+            start_time: slot.start,
+            end_time: slot.end,
+          };
+
+          if (slot.isNew || typeof slot.id === "string") {
+            // Create new slot
+            await fetch(`${getApiUrl()}/api/coach/availability`, {
+              method: "POST",
+              headers: {
+                ...headers,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(payload),
+            });
+          } else if (slot.isModified && typeof slot.id === "number") {
+            // Only update if slot has been modified
+            const original = originalSlots.get(slot.id);
+            const hasChanged = !original || 
+              original.day !== dayOfWeek || 
+              original.start !== slot.start || 
+              original.end !== slot.end;
+            
+            if (hasChanged) {
+              await fetch(`${getApiUrl()}/api/coach/availability/${slot.id}`, {
+                method: "PATCH",
+                headers: {
+                  ...headers,
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify(payload),
+              });
+            }
+          }
+        }
+      }
+    },
+    onSuccess: () => {
+      toast({
+        variant: "success",
+        title: "Success",
+        description: "Availability updated successfully",
+      });
+
+      // Clear deleted slots tracker
+      setDeletedSlots([]);
+      
+      // Invalidate and refetch availability data
+      queryClient.invalidateQueries({ queryKey: ["availability"] });
+    },
+    onError: (error: any) => {
+      toast({
+        variant: "error",
+        title: "Error",
+        description: error.message || "Failed to save availability",
+      });
+    },
+  });
 
   // Show loading while checking user role
-  if (userLoading || !userData) {
+  if (userLoading || !userData || isLoading) {
     return (
       <div className="min-h-screen bg-[#0B0D0F] relative overflow-hidden">
         <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: "url('/img2.png')", backgroundRepeat: "no-repeat", backgroundPosition: "center", backgroundSize: "cover" }} />
@@ -311,6 +385,7 @@ export default function SetAvailabilityPage() {
     return null;
   }
 
+  // Handler functions
   const handleToggle = (day: string, enabled: boolean) => {
     setSchedule((prev) => {
       const daySchedule = prev[day];
@@ -378,121 +453,8 @@ export default function SetAvailabilityPage() {
     }));
   };
 
-  const handleSave = async () => {
-    setSaving(true);
-
-    try {
-      const headers = await getAuthHeaders();
-
-      // 1. Delete removed slots
-      for (const slotId of deletedSlots) {
-        await fetch(`${getApiUrl()}/api/coach/availability/${slotId}`, {
-          method: "DELETE",
-          headers,
-        });
-      }
-
-      // 2. Process all enabled days
-      for (const [dayName, daySchedule] of Object.entries(schedule)) {
-        if (!daySchedule.enabled) continue;
-
-        const dayOfWeek = dayNameToNumber[dayName];
-
-        for (const slot of daySchedule.slots) {
-          const payload = {
-            day_of_week: dayOfWeek,
-            start_time: slot.start,
-            end_time: slot.end,
-          };
-
-          if (slot.isNew || typeof slot.id === "string") {
-            // Create new slot
-            await fetch(`${getApiUrl()}/api/coach/availability`, {
-              method: "POST",
-              headers: {
-                ...headers,
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify(payload),
-            });
-          } else if (slot.isModified && typeof slot.id === "number") {
-            // Only update if slot has been modified
-            const original = originalSlots.get(slot.id);
-            const hasChanged = !original || 
-              original.day !== dayOfWeek || 
-              original.start !== slot.start || 
-              original.end !== slot.end;
-            
-            if (hasChanged) {
-              await fetch(`${getApiUrl()}/api/coach/availability/${slot.id}`, {
-                method: "PATCH",
-                headers: {
-                  ...headers,
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify(payload),
-              });
-            }
-          }
-        }
-      }
-
-      toast({
-        variant: "success",
-        title: "Success",
-        description: "Availability updated successfully",
-      });
-
-      // Clear deleted slots tracker and reload data
-      setDeletedSlots([]);
-      
-      // Reload availability data to get updated IDs
-      const reloadResponse = await fetch(`${getApiUrl()}/api/coach/availability`, {
-        method: "GET",
-        headers,
-      });
-      
-      if (reloadResponse.ok) {
-        const reloadResult = await reloadResponse.json();
-        const slots: AvailabilitySlot[] = reloadResult.data;
-        
-        // Update original slots map
-        const newOriginalMap = new Map<number, { day: number; start: string; end: string }>();
-        slots.forEach((slot) => {
-          newOriginalMap.set(slot.id, {
-            day: slot.day_of_week,
-            start: slot.start_time,
-            end: slot.end_time,
-          });
-        });
-        setOriginalSlots(newOriginalMap);
-        
-        const newSchedule = { ...defaultSchedule };
-        slots.forEach((slot) => {
-          const dayName = dayNumberToName[slot.day_of_week];
-          if (dayName) {
-            if (!newSchedule[dayName].enabled) {
-              newSchedule[dayName] = { enabled: true, slots: [] };
-            }
-            newSchedule[dayName].slots.push({
-              id: slot.id,
-              start: slot.start_time,
-              end: slot.end_time,
-            });
-          }
-        });
-        
-        setSchedule(newSchedule);
-      }
-    } catch (error: any) {
-      toast({
-        variant: "error",
-        title: "Error",
-        description: error.message || "Failed to save availability",
-      });
-    } finally {
-      setSaving(false);
-    }
+  const handleSave = () => {
+    saveMutation.mutate();
   };
 
   const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
@@ -525,7 +487,7 @@ export default function SetAvailabilityPage() {
 
         <h1 className="text-white font-mona-sans font-bold text-2xl lg:text-3xl mb-8">Set Availability</h1>
 
-        {loading ? (
+        {isLoading ? (
           <div className="flex justify-center items-center py-20">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#A2CE3A]"></div>
           </div>
@@ -569,7 +531,7 @@ export default function SetAvailabilityPage() {
         <div className="flex items-center justify-center gap-4">
           <button
             onClick={() => router.push("/manage-your-profile")}
-            disabled={saving}
+            disabled={saveMutation.isPending}
             className="px-10 py-3 rounded-[8px] font-mona-sans text-sm font-bold transition-colors cursor-pointer disabled:opacity-50"
             style={{ backgroundColor: "#ECF8C7", color: "#054711" }}
           >
@@ -577,11 +539,11 @@ export default function SetAvailabilityPage() {
           </button>
           <button
             onClick={handleSave}
-            disabled={saving}
+            disabled={saveMutation.isPending}
             className="flex items-center gap-2 px-10 py-3 bg-[#A2CE3A] rounded-[8px] text-[#121212] font-mona-sans text-sm font-bold hover:bg-[#92BE2A] transition-colors cursor-pointer disabled:opacity-50"
           >
             <SaveIconSVG />
-            {saving ? "Saving..." : "Save Changes"}
+            {saveMutation.isPending ? "Saving..." : "Save Changes"}
           </button>
         </div>
         </>
