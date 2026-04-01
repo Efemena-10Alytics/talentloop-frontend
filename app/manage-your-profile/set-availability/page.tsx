@@ -1,9 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { Navbar1 } from "@/components/manage-your-profile/Navbar1";
 import { GlassCard } from "@/components/manage-your-profile/GlassCard";
+import { getApiUrl, getAuthHeaders } from "@/lib/api";
+import { useToast } from "@/components/ui/use-toast";
+import { useUserData } from "@/hooks/useUserData";
 
 /* ─── SVG Icons ─── */
 
@@ -38,11 +42,28 @@ const ClockSmallSVG = () => (
   </svg>
 );
 
+const BackArrowSVG = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M19 12H5M5 12L12 19M5 12L12 5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+
 /* ─── Types ─── */
+interface AvailabilitySlot {
+  id: number;
+  day_of_week: number;
+  start_time: string;
+  end_time: string;
+  created_at: string;
+  updated_at: string;
+}
+
 interface TimeSlot {
-  id: string;
+  id: number | string;
   start: string;
   end: string;
+  isNew?: boolean;
+  isModified?: boolean;
 }
 
 interface DaySchedule {
@@ -64,13 +85,34 @@ for (let h = 0; h < 24; h++) {
 
 /* ─── Default Schedule ─── */
 const defaultSchedule: WeekSchedule = {
-  Monday: { enabled: true, slots: [{ id: "mon-1", start: "09:00", end: "17:00" }] },
-  Tuesday: { enabled: true, slots: [{ id: "tue-1", start: "09:00", end: "17:00" }, { id: "tue-2", start: "09:00", end: "17:00" }] },
-  Wednesday: { enabled: true, slots: [{ id: "wed-1", start: "09:00", end: "17:00" }] },
-  Thursday: { enabled: true, slots: [{ id: "thu-1", start: "09:00", end: "17:00" }] },
-  Friday: { enabled: true, slots: [{ id: "fri-1", start: "09:00", end: "17:00" }] },
+  Monday: { enabled: false, slots: [] },
+  Tuesday: { enabled: false, slots: [] },
+  Wednesday: { enabled: false, slots: [] },
+  Thursday: { enabled: false, slots: [] },
+  Friday: { enabled: false, slots: [] },
   Saturday: { enabled: false, slots: [] },
   Sunday: { enabled: false, slots: [] },
+};
+
+// Map day names to day_of_week numbers (0 = Sunday, 1 = Monday, etc.)
+const dayNameToNumber: Record<string, number> = {
+  Sunday: 0,
+  Monday: 1,
+  Tuesday: 2,
+  Wednesday: 3,
+  Thursday: 4,
+  Friday: 5,
+  Saturday: 6,
+};
+
+const dayNumberToName: Record<number, string> = {
+  0: "Sunday",
+  1: "Monday",
+  2: "Tuesday",
+  3: "Wednesday",
+  4: "Thursday",
+  5: "Friday",
+  6: "Saturday",
 };
 
 /* ─── Toggle Switch ─── */
@@ -122,9 +164,9 @@ function DayRow({
   day: string;
   schedule: DaySchedule;
   onToggle: (enabled: boolean) => void;
-  onSlotChange: (slotId: string, field: "start" | "end", value: string) => void;
+  onSlotChange: (slotId: string | number, field: "start" | "end", value: string) => void;
   onAddSlot: () => void;
-  onRemoveSlot: (slotId: string) => void;
+  onRemoveSlot: (slotId: string | number) => void;
 }) {
   return (
     <div className="bg-[#FFFFFF08] border border-white/5 rounded-[16px] px-5 py-4">
@@ -168,27 +210,145 @@ function DayRow({
 /* ─── Main Page ─── */
 export default function SetAvailabilityPage() {
   const router = useRouter();
+  const { data: session } = useSession();
+  const { userData, loading: userLoading } = useUserData();
+  const { toast } = useToast();
   const [schedule, setSchedule] = useState<WeekSchedule>(defaultSchedule);
+  const [originalSlots, setOriginalSlots] = useState<Map<number, { day: number; start: string; end: string }>>(new Map());
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [deletedSlots, setDeletedSlots] = useState<number[]>([]);
+
+  // Role-based access control
+  useEffect(() => {
+    if (!userLoading && userData) {
+      if (userData.user.role !== "coach") {
+        toast({
+          variant: "error",
+          title: "Access Denied",
+          description: "This page is only accessible to coaches.",
+        });
+        router.push("/manage-your-profile");
+      }
+    }
+  }, [userData, userLoading, router, toast]);
+
+  // Fetch availability on mount
+  useEffect(() => {
+    if (!userData || userData.user.role !== "coach") return;
+    const fetchAvailability = async () => {
+      try {
+        const headers = await getAuthHeaders();
+        const response = await fetch(`${getApiUrl()}/api/coach/availability`, {
+          method: "GET",
+          headers,
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch availability");
+        }
+
+        const result = await response.json();
+        const slots: AvailabilitySlot[] = result.data;
+
+        // Store original slots for change detection
+        const originalMap = new Map<number, { day: number; start: string; end: string }>();
+        slots.forEach((slot) => {
+          originalMap.set(slot.id, {
+            day: slot.day_of_week,
+            start: slot.start_time,
+            end: slot.end_time,
+          });
+        });
+        setOriginalSlots(originalMap);
+
+        // Convert API data to schedule format
+        const newSchedule = { ...defaultSchedule };
+        slots.forEach((slot) => {
+          const dayName = dayNumberToName[slot.day_of_week];
+          if (dayName) {
+            if (!newSchedule[dayName].enabled) {
+              newSchedule[dayName] = { enabled: true, slots: [] };
+            }
+            newSchedule[dayName].slots.push({
+              id: slot.id,
+              start: slot.start_time,
+              end: slot.end_time,
+            });
+          }
+        });
+
+        setSchedule(newSchedule);
+      } catch (error: any) {
+        toast({
+          variant: "error",
+          title: "Error",
+          description: error.message || "Failed to load availability",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAvailability();
+  }, [toast, userData]);
+
+  // Show loading while checking user role
+  if (userLoading || !userData) {
+    return (
+      <div className="min-h-screen bg-[#0B0D0F] relative overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: "url('/img2.png')", backgroundRepeat: "no-repeat", backgroundPosition: "center", backgroundSize: "cover" }} />
+        <Navbar1 />
+        <div className="relative z-10 flex justify-center items-center py-20">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#A2CE3A]"></div>
+        </div>
+      </div>
+    );
+  }
+
+  // Prevent rendering if not a coach
+  if (userData.user.role !== "coach") {
+    return null;
+  }
 
   const handleToggle = (day: string, enabled: boolean) => {
-    setSchedule((prev) => ({
-      ...prev,
-      [day]: {
-        ...prev[day],
-        enabled,
-        slots: enabled && prev[day].slots.length === 0
-          ? [{ id: `${day.toLowerCase().slice(0, 3)}-${Date.now()}`, start: "09:00", end: "17:00" }]
-          : prev[day].slots,
-      },
-    }));
+    setSchedule((prev) => {
+      const daySchedule = prev[day];
+      
+      // If disabling, mark existing slots for deletion
+      if (!enabled && daySchedule.slots.length > 0) {
+        const slotsToDelete = daySchedule.slots
+          .filter((s) => typeof s.id === "number")
+          .map((s) => s.id as number);
+        setDeletedSlots((prev) => [...prev, ...slotsToDelete]);
+      }
+
+      return {
+        ...prev,
+        [day]: {
+          ...prev[day],
+          enabled,
+          slots: enabled && prev[day].slots.length === 0
+            ? [{ id: `new-${Date.now()}`, start: "09:00", end: "17:00", isNew: true }]
+            : enabled ? prev[day].slots : [],
+        },
+      };
+    });
   };
 
-  const handleSlotChange = (day: string, slotId: string, field: "start" | "end", value: string) => {
+  const handleSlotChange = (day: string, slotId: string | number, field: "start" | "end", value: string) => {
     setSchedule((prev) => ({
       ...prev,
       [day]: {
         ...prev[day],
-        slots: prev[day].slots.map((s) => (s.id === slotId ? { ...s, [field]: value } : s)),
+        slots: prev[day].slots.map((s) => {
+          if (s.id === slotId) {
+            // Mark as modified if it's an existing slot
+            const isModified = typeof s.id === "number" ? true : s.isModified;
+            return { ...s, [field]: value, isModified };
+          }
+          return s;
+        }),
       },
     }));
   };
@@ -198,12 +358,17 @@ export default function SetAvailabilityPage() {
       ...prev,
       [day]: {
         ...prev[day],
-        slots: [...prev[day].slots, { id: `${day.toLowerCase().slice(0, 3)}-${Date.now()}`, start: "09:00", end: "17:00" }],
+        slots: [...prev[day].slots, { id: `new-${Date.now()}`, start: "09:00", end: "17:00", isNew: true }],
       },
     }));
   };
 
-  const handleRemoveSlot = (day: string, slotId: string) => {
+  const handleRemoveSlot = (day: string, slotId: number | string) => {
+    // If it's an existing slot (number ID), mark for deletion
+    if (typeof slotId === "number") {
+      setDeletedSlots((prev) => [...prev, slotId]);
+    }
+
     setSchedule((prev) => ({
       ...prev,
       [day]: {
@@ -211,6 +376,123 @@ export default function SetAvailabilityPage() {
         slots: prev[day].slots.filter((s) => s.id !== slotId),
       },
     }));
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+
+    try {
+      const headers = await getAuthHeaders();
+
+      // 1. Delete removed slots
+      for (const slotId of deletedSlots) {
+        await fetch(`${getApiUrl()}/api/coach/availability/${slotId}`, {
+          method: "DELETE",
+          headers,
+        });
+      }
+
+      // 2. Process all enabled days
+      for (const [dayName, daySchedule] of Object.entries(schedule)) {
+        if (!daySchedule.enabled) continue;
+
+        const dayOfWeek = dayNameToNumber[dayName];
+
+        for (const slot of daySchedule.slots) {
+          const payload = {
+            day_of_week: dayOfWeek,
+            start_time: slot.start,
+            end_time: slot.end,
+          };
+
+          if (slot.isNew || typeof slot.id === "string") {
+            // Create new slot
+            await fetch(`${getApiUrl()}/api/coach/availability`, {
+              method: "POST",
+              headers: {
+                ...headers,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(payload),
+            });
+          } else if (slot.isModified && typeof slot.id === "number") {
+            // Only update if slot has been modified
+            const original = originalSlots.get(slot.id);
+            const hasChanged = !original || 
+              original.day !== dayOfWeek || 
+              original.start !== slot.start || 
+              original.end !== slot.end;
+            
+            if (hasChanged) {
+              await fetch(`${getApiUrl()}/api/coach/availability/${slot.id}`, {
+                method: "PATCH",
+                headers: {
+                  ...headers,
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify(payload),
+              });
+            }
+          }
+        }
+      }
+
+      toast({
+        variant: "success",
+        title: "Success",
+        description: "Availability updated successfully",
+      });
+
+      // Clear deleted slots tracker and reload data
+      setDeletedSlots([]);
+      
+      // Reload availability data to get updated IDs
+      const reloadResponse = await fetch(`${getApiUrl()}/api/coach/availability`, {
+        method: "GET",
+        headers,
+      });
+      
+      if (reloadResponse.ok) {
+        const reloadResult = await reloadResponse.json();
+        const slots: AvailabilitySlot[] = reloadResult.data;
+        
+        // Update original slots map
+        const newOriginalMap = new Map<number, { day: number; start: string; end: string }>();
+        slots.forEach((slot) => {
+          newOriginalMap.set(slot.id, {
+            day: slot.day_of_week,
+            start: slot.start_time,
+            end: slot.end_time,
+          });
+        });
+        setOriginalSlots(newOriginalMap);
+        
+        const newSchedule = { ...defaultSchedule };
+        slots.forEach((slot) => {
+          const dayName = dayNumberToName[slot.day_of_week];
+          if (dayName) {
+            if (!newSchedule[dayName].enabled) {
+              newSchedule[dayName] = { enabled: true, slots: [] };
+            }
+            newSchedule[dayName].slots.push({
+              id: slot.id,
+              start: slot.start_time,
+              end: slot.end_time,
+            });
+          }
+        });
+        
+        setSchedule(newSchedule);
+      }
+    } catch (error: any) {
+      toast({
+        variant: "error",
+        title: "Error",
+        description: error.message || "Failed to save availability",
+      });
+    } finally {
+      setSaving(false);
+    }
   };
 
   const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
@@ -232,7 +514,23 @@ export default function SetAvailabilityPage() {
 
       {/* ─── Content ─── */}
       <div className="relative z-10 max-w-[900px] mx-auto px-6 py-8 lg:py-12">
+        {/* Back Button */}
+        <button
+          onClick={() => router.push("/manage-your-profile")}
+          className="flex items-center gap-2 text-white/70 hover:text-white font-mona-sans text-sm mb-6 transition-colors cursor-pointer"
+        >
+          <BackArrowSVG />
+          <span>Back to Profile</span>
+        </button>
+
         <h1 className="text-white font-mona-sans font-bold text-2xl lg:text-3xl mb-8">Set Availability</h1>
+
+        {loading ? (
+          <div className="flex justify-center items-center py-20">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#A2CE3A]"></div>
+          </div>
+        ) : (
+          <>
 
         {/* ─── Configure Your Weekly Schedule ─── */}
         <GlassCard className="p-6 lg:p-8 mb-6">
@@ -271,19 +569,23 @@ export default function SetAvailabilityPage() {
         <div className="flex items-center justify-center gap-4">
           <button
             onClick={() => router.push("/manage-your-profile")}
-            className="px-10 py-3 rounded-[8px] font-mona-sans text-sm font-bold transition-colors cursor-pointer"
+            disabled={saving}
+            className="px-10 py-3 rounded-[8px] font-mona-sans text-sm font-bold transition-colors cursor-pointer disabled:opacity-50"
             style={{ backgroundColor: "#ECF8C7", color: "#054711" }}
           >
             Cancel
           </button>
           <button
-            onClick={() => router.push("/manage-your-profile")}
-            className="flex items-center gap-2 px-10 py-3 bg-[#A2CE3A] rounded-[8px] text-[#121212] font-mona-sans text-sm font-bold hover:bg-[#92BE2A] transition-colors cursor-pointer"
+            onClick={handleSave}
+            disabled={saving}
+            className="flex items-center gap-2 px-10 py-3 bg-[#A2CE3A] rounded-[8px] text-[#121212] font-mona-sans text-sm font-bold hover:bg-[#92BE2A] transition-colors cursor-pointer disabled:opacity-50"
           >
             <SaveIconSVG />
-            Save Changes
+            {saving ? "Saving..." : "Save Changes"}
           </button>
         </div>
+        </>
+        )}
       </div>
     </div>
   );

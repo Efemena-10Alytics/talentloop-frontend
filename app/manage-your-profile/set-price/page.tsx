@@ -1,9 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { Navbar1 } from "@/components/manage-your-profile/Navbar1";
 import { GlassCard } from "@/components/manage-your-profile/GlassCard";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { getApiUrl, getAuthHeaders } from "@/lib/api";
+import { useToast } from "@/components/ui/use-toast";
+import { useUserData } from "@/hooks/useUserData";
 
 /* ─── SVG Icons ─── */
 
@@ -47,6 +57,31 @@ const ChevronDownSVG = () => (
   </svg>
 );
 
+const BackArrowSVG = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M19 12H5M5 12L12 19M5 12L12 5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+
+/* ─── API Interfaces ─── */
+interface PlanOffer {
+  text: string;
+  style: "check";
+}
+
+interface CoachPlan {
+  id: number;
+  title: string;
+  description: string;
+  offers: PlanOffer[];
+  sessions_total: number;
+  session_duration_minutes: number;
+  price: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 /* ─── Duration Option ─── */
 function DurationOption({ minutes, label, selected, onClick }: { minutes: string; label: string; selected: boolean; onClick: () => void }) {
   return (
@@ -67,22 +102,184 @@ function DurationOption({ minutes, label, selected, onClick }: { minutes: string
 /* ─── Main Page ─── */
 export default function SetPricePage() {
   const router = useRouter();
-  const [currency, setCurrency] = useState("USD - US Dollars ($)");
-  const [currencyOpen, setCurrencyOpen] = useState(false);
-  const [selectedDuration, setSelectedDuration] = useState("60");
+  const { data: session } = useSession();
+  const { userData, loading: userLoading } = useUserData();
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [plans, setPlans] = useState<CoachPlan[]>([]);
+  const [existingPlan, setExistingPlan] = useState<CoachPlan | null>(null);
 
   const [sessionName, setSessionName] = useState("Standard Session");
   const [sessionDuration, setSessionDuration] = useState("60 mins");
   const [sessionPrice, setSessionPrice] = useState("100");
   const [sessionCount, setSessionCount] = useState("5");
 
-  const currencies = [
-    "USD - US Dollars ($)",
-    "EUR - Euro (€)",
-    "GBP - British Pound (£)",
-    "NGN - Nigerian Naira (₦)",
-    "CAD - Canadian Dollar (C$)",
-  ];
+  // Role-based access control
+  useEffect(() => {
+    if (!userLoading && userData) {
+      if (userData.user.role !== "coach") {
+        toast({
+          variant: "error",
+          title: "Access Denied",
+          description: "This page is only accessible to coaches.",
+        });
+        router.push("/manage-your-profile");
+      }
+    }
+  }, [userData, userLoading, router, toast]);
+
+  // Fetch existing plans on mount
+  useEffect(() => {
+    if (!userData || userData.user.role !== "coach") return;
+    const fetchPlans = async () => {
+      try {
+        const headers = await getAuthHeaders();
+        const response = await fetch(`${getApiUrl()}/api/coach/plans`, {
+          method: "GET",
+          headers,
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch plans");
+        }
+
+        const result = await response.json();
+        const fetchedPlans: CoachPlan[] = result.data;
+        setPlans(fetchedPlans);
+
+        // If there's an active plan, populate the form
+        const activePlan = fetchedPlans.find((p) => p.is_active);
+        if (activePlan) {
+          setExistingPlan(activePlan);
+          setSessionName(activePlan.title);
+          setSessionDuration(`${activePlan.session_duration_minutes} mins`);
+          setSessionPrice(String(activePlan.price));
+          setSessionCount(String(activePlan.sessions_total));
+        }
+      } catch (error: any) {
+        toast({
+          variant: "error",
+          title: "Error",
+          description: error.message || "Failed to load plans",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPlans();
+  }, [toast, userData]);
+
+  // Show loading while checking user role
+  if (userLoading || !userData) {
+    return (
+      <div className="min-h-screen bg-[#0B0D0F] relative overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: "url('/img2.png')", backgroundRepeat: "no-repeat", backgroundPosition: "center", backgroundSize: "cover" }} />
+        <Navbar1 />
+        <div className="relative z-10 flex justify-center items-center py-20">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#A2CE3A]"></div>
+        </div>
+      </div>
+    );
+  }
+
+  // Prevent rendering if not a coach
+  if (userData.user.role !== "coach") {
+    return null;
+  }
+
+  const handleSave = async () => {
+    setSaving(true);
+
+    try {
+      const headers = await getAuthHeaders();
+      
+      // Parse duration to get minutes
+      const durationMinutes = parseInt(sessionDuration.split(" ")[0]);
+      
+      const payload = {
+        title: sessionName,
+        description: `${sessionName} - ${sessionCount} sessions package`,
+        sessions_total: parseInt(sessionCount),
+        session_duration_minutes: durationMinutes,
+        price: parseFloat(sessionPrice),
+        is_active: true,
+        offers: [
+          {
+            text: `${sessionCount} coaching sessions`,
+            style: "check" as const,
+          },
+          {
+            text: `${sessionDuration} per session`,
+            style: "check" as const,
+          },
+        ],
+      };
+
+      let response;
+      
+      if (existingPlan) {
+        // Update existing plan
+        response = await fetch(
+          `${getApiUrl()}/api/coach/plans/${existingPlan.id}`,
+          {
+            method: "PUT",
+            headers: {
+              ...headers,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
+          }
+        );
+      } else {
+        // Create new plan
+        response = await fetch(`${getApiUrl()}/api/coach/plans`, {
+          method: "POST",
+          headers: {
+            ...headers,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        });
+      }
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to save plan");
+      }
+
+      const result = await response.json();
+      
+      toast({
+        variant: "success",
+        title: "Success",
+        description: existingPlan ? "Plan updated successfully" : "Plan created successfully",
+      });
+
+      // Update local state
+      setExistingPlan(result.data);
+      
+      // Reload plans
+      const plansResponse = await fetch(`${getApiUrl()}/api/coach/plans`, {
+        method: "GET",
+        headers,
+      });
+      
+      if (plansResponse.ok) {
+        const plansResult = await plansResponse.json();
+        setPlans(plansResult.data);
+      }
+    } catch (error: any) {
+      toast({
+        variant: "error",
+        title: "Error",
+        description: error.message || "Failed to save plan",
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#0B0D0F] relative overflow-hidden">
@@ -101,8 +298,24 @@ export default function SetPricePage() {
 
       {/* ─── Content ─── */}
       <div className="relative z-10 max-w-[900px] mx-auto px-6 py-8 lg:py-12">
+        {/* Back Button */}
+        <button
+          onClick={() => router.push("/manage-your-profile")}
+          className="flex items-center gap-2 text-white/70 hover:text-white font-mona-sans text-sm mb-6 transition-colors cursor-pointer"
+        >
+          <BackArrowSVG />
+          <span>Back to Profile</span>
+        </button>
+
         {/* Page Title */}
         <h1 className="text-white font-mona-sans font-bold text-2xl lg:text-3xl mb-8">Set Price Range</h1>
+
+        {loading ? (
+          <div className="flex justify-center items-center py-20">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#A2CE3A]"></div>
+          </div>
+        ) : (
+          <>
 
         {/* ─── Suggested Pricing Ranges ─── */}
         <GlassCard className="p-6 lg:p-8 mb-6">
@@ -131,58 +344,6 @@ export default function SetPricePage() {
           </div>
         </GlassCard>
 
-        {/* ─── Currency Settings & Session Duration ─── */}
-        <GlassCard className="p-6 lg:p-8 mb-6">
-          {/* Currency Settings */}
-          <div className="mb-8">
-            <h3 className="text-white font-mona-sans font-bold text-base mb-1">Currency Settings</h3>
-            <p className="text-white/50 font-mona-sans text-sm mb-3">Choose currency</p>
-
-            <div className="relative w-full max-w-[300px]">
-              <button
-                onClick={() => setCurrencyOpen(!currencyOpen)}
-                className="w-full flex items-center justify-between px-4 py-3 rounded-[10px] border border-[#A2CE3A]/40 bg-[#FFFFFF0D] text-white/70 font-mona-sans text-sm cursor-pointer"
-              >
-                <span>{currency}</span>
-                <ChevronDownSVG />
-              </button>
-              {currencyOpen && (
-                <div className="absolute top-full left-0 mt-1 w-full bg-[#1A1C1F] border border-white/10 rounded-[10px] z-20 overflow-hidden">
-                  {currencies.map((c) => (
-                    <button
-                      key={c}
-                      onClick={() => { setCurrency(c); setCurrencyOpen(false); }}
-                      className={`w-full text-left px-4 py-2.5 font-mona-sans text-sm cursor-pointer hover:bg-[#FFFFFF1A] transition-colors ${
-                        c === currency ? "text-[#A2CE3A]" : "text-white/70"
-                      }`}
-                    >
-                      {c}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Session Duration */}
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="12" cy="12" r="10" stroke="#A2CE3A" strokeWidth="2"/>
-                <path d="M12 6V12L16 14" stroke="#A2CE3A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-              <h3 className="text-white font-mona-sans font-bold text-lg">Session Duration</h3>
-            </div>
-            <p className="text-white/50 font-mona-sans text-sm mb-4">Choose your default session length</p>
-
-            <div className="flex gap-3">
-              <DurationOption minutes="30 minutes" label="Quick Sessions" selected={selectedDuration === "30"} onClick={() => setSelectedDuration("30")} />
-              <DurationOption minutes="60 minutes" label="Standard Sessions" selected={selectedDuration === "60"} onClick={() => setSelectedDuration("60")} />
-              <DurationOption minutes="90 minutes" label="Deep Dive Sessions" selected={selectedDuration === "90"} onClick={() => setSelectedDuration("90")} />
-            </div>
-          </div>
-        </GlassCard>
-
         {/* ─── Session Rates ─── */}
         <GlassCard className="p-6 lg:p-8 mb-10">
           <div className="flex items-center gap-2 mb-1">
@@ -193,8 +354,8 @@ export default function SetPricePage() {
 
           <p className="text-white font-mona-sans font-bold text-sm mb-3">Session Type Pricing (Optional)</p>
 
-          {/* Table Header */}
-          <div className="grid grid-cols-4 gap-3 mb-2">
+          {/* Table Header - Desktop Only */}
+          <div className="hidden lg:grid grid-cols-4 gap-3 mb-2">
             <span className="text-white/60 font-mona-sans text-xs font-semibold">Session Name</span>
             <span className="text-white/60 font-mona-sans text-xs font-semibold">Duration</span>
             <span className="text-white/60 font-mona-sans text-xs font-semibold">Price (USD)</span>
@@ -202,45 +363,78 @@ export default function SetPricePage() {
           </div>
 
           {/* Table Row */}
-          <div className="grid grid-cols-4 gap-3">
-            <input
-              type="text"
-              value={sessionName}
-              onChange={(e) => setSessionName(e.target.value)}
-              className="px-3 py-2.5 rounded-[8px] border border-[#A2CE3A]/40 bg-[#FFFFFF0D] text-white font-mona-sans text-sm outline-none focus:border-[#A2CE3A]"
-            />
-            <div className="relative">
-              <select
-                value={sessionDuration}
-                onChange={(e) => setSessionDuration(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-[8px] border border-white/10 bg-[#FFFFFF0D] text-white/70 font-mona-sans text-sm outline-none appearance-none cursor-pointer focus:border-[#A2CE3A]"
-              >
-                <option value="30 mins">30 mins</option>
-                <option value="60 mins">60 mins</option>
-                <option value="90 mins">90 mins</option>
-              </select>
-              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"><ChevronDownSVG /></div>
-            </div>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50 font-mona-sans text-sm">$</span>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {/* Session Name */}
+            <div className="flex flex-col gap-1.5">
+              <span className="text-white/60 font-mona-sans text-xs font-semibold lg:hidden">Session Name</span>
               <input
                 type="text"
-                value={sessionPrice}
-                onChange={(e) => setSessionPrice(e.target.value)}
-                className="w-full pl-7 pr-3 py-2.5 rounded-[8px] border border-white/10 bg-[#FFFFFF0D] text-white font-mona-sans text-sm outline-none focus:border-[#A2CE3A]"
+                value={sessionName}
+                onChange={(e) => setSessionName(e.target.value)}
+                className="px-3 py-2.5 rounded-[8px] border border-[#A2CE3A]/40 bg-[#FFFFFF0D] text-white font-mona-sans text-sm outline-none focus:border-[#A2CE3A]"
               />
             </div>
-            <div className="relative">
-              <select
-                value={sessionCount}
-                onChange={(e) => setSessionCount(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-[8px] border border-white/10 bg-[#FFFFFF0D] text-white/70 font-mona-sans text-sm outline-none appearance-none cursor-pointer focus:border-[#A2CE3A]"
-              >
-                {[1,2,3,4,5,6,7,8,9,10].map(n => (
-                  <option key={n} value={String(n)}>{n}</option>
-                ))}
-              </select>
-              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"><ChevronDownSVG /></div>
+
+            {/* Duration */}
+            <div className="flex flex-col gap-1.5">
+              <span className="text-white/60 font-mona-sans text-xs font-semibold lg:hidden">Duration</span>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="w-full flex items-center justify-between px-3 py-2.5 rounded-[8px] border border-white/10 bg-[#FFFFFF0D] text-white/70 font-mona-sans text-sm outline-none cursor-pointer hover:border-[#A2CE3A] transition-colors">
+                    <span>{sessionDuration}</span>
+                    <ChevronDownSVG />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-full bg-[#1A1C1F] border-white/10">
+                  {["30 mins", "60 mins", "90 mins"].map((duration) => (
+                    <DropdownMenuItem
+                      key={duration}
+                      onClick={() => setSessionDuration(duration)}
+                      className="text-white/70 hover:text-[#A2CE3A] hover:bg-[#FFFFFF1A] cursor-pointer"
+                    >
+                      {duration}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+
+            {/* Price */}
+            <div className="flex flex-col gap-1.5">
+              <span className="text-white/60 font-mona-sans text-xs font-semibold lg:hidden">Price (USD)</span>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50 font-mona-sans text-sm">$</span>
+                <input
+                  type="text"
+                  value={sessionPrice}
+                  onChange={(e) => setSessionPrice(e.target.value)}
+                  className="w-full pl-7 pr-3 py-2.5 rounded-[8px] border border-white/10 bg-[#FFFFFF0D] text-white font-mona-sans text-sm outline-none focus:border-[#A2CE3A]"
+                />
+              </div>
+            </div>
+
+            {/* Number of Sessions */}
+            <div className="flex flex-col gap-1.5">
+              <span className="text-white/60 font-mona-sans text-xs font-semibold lg:hidden">Number of Sessions</span>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="w-full flex items-center justify-between px-3 py-2.5 rounded-[8px] border border-white/10 bg-[#FFFFFF0D] text-white/70 font-mona-sans text-sm outline-none cursor-pointer hover:border-[#A2CE3A] transition-colors">
+                    <span>{sessionCount}</span>
+                    <ChevronDownSVG />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-full bg-[#1A1C1F] border-white/10">
+                  {[1,2,3,4,5,6,7,8,9,10].map(n => (
+                    <DropdownMenuItem
+                      key={n}
+                      onClick={() => setSessionCount(String(n))}
+                      className="text-white/70 hover:text-[#A2CE3A] hover:bg-[#FFFFFF1A] cursor-pointer"
+                    >
+                      {n}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </GlassCard>
@@ -249,19 +443,23 @@ export default function SetPricePage() {
         <div className="flex items-center justify-center gap-4">
           <button
             onClick={() => router.push("/manage-your-profile")}
-            className="px-10 py-3 rounded-[8px] font-mona-sans text-sm font-bold transition-colors cursor-pointer"
+            disabled={saving}
+            className="px-10 py-3 rounded-[8px] font-mona-sans text-sm font-bold transition-colors cursor-pointer disabled:opacity-50"
             style={{ backgroundColor: "#ECF8C7", color: "#054711" }}
           >
             Cancel
           </button>
           <button
-            onClick={() => router.push("/manage-your-profile")}
-            className="flex items-center gap-2 px-10 py-3 bg-[#A2CE3A] rounded-[8px] text-[#121212] font-mona-sans text-sm font-bold hover:bg-[#92BE2A] transition-colors cursor-pointer"
+            onClick={handleSave}
+            disabled={saving}
+            className="flex items-center gap-2 px-10 py-3 bg-[#A2CE3A] rounded-[8px] text-[#121212] font-mona-sans text-sm font-bold hover:bg-[#92BE2A] transition-colors cursor-pointer disabled:opacity-50"
           >
             <SaveIconSVG />
-            Save Changes
+            {saving ? "Saving..." : "Save Changes"}
           </button>
         </div>
+        </>
+        )}
       </div>
     </div>
   );

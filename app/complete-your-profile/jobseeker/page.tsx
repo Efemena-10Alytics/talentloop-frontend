@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import PhoneInput from "react-phone-number-input";
 import "react-phone-number-input/style.css";
+import { useSession } from "next-auth/react";
 import { getApiUrl, getAuthHeaders } from "@/lib/api";
 import { useToast } from "@/components/ui/use-toast";
 import { ArrowLeft } from "lucide-react";
@@ -168,12 +169,23 @@ function Dropdown({ label, placeholder, options, value, onChange }: {
 export default function JobseekerCompleteProfilePage() {
   const router = useRouter();
   const { toast } = useToast();
+  const { data: session } = useSession();
   const [step, setStep] = useState(0);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
   const [loading, setLoading] = useState(false);
   const [reviewLoading, setReviewLoading] = useState(false);
   const [cvProcessing, setCvProcessing] = useState(false);
   const [processingProgress, setProcessingProgress] = useState(0);
+
+  // Auto-redirect coaches to their own complete profile page
+  useEffect(() => {
+    if (session?.user?.role) {
+      const userRole = session.user.role.toLowerCase();
+      if (userRole === 'coach') {
+        router.replace('/complete-your-profile');
+      }
+    }
+  }, [session, router]);
 
   // Load onboarding progress on mount
   useEffect(() => {
@@ -245,14 +257,14 @@ export default function JobseekerCompleteProfilePage() {
         }
 
         // Update extracted data from API response
-        if (data.data) {
+        if (data.data && data.data.review) {
           setExtractedData({
-            fullName: data.data.full_name || "",
-            currentRole: data.data.current_role || "",
-            experience: data.data.experience || "",
-            education: data.data.education || "",
-            topSkills: data.data.top_skills || [],
-            languages: data.data.languages || [],
+            fullName: data.data.review.full_name || "",
+            currentRole: data.data.review.current_role || "",
+            experience: data.data.review.experience || "",
+            education: data.data.review.education || "",
+            topSkills: data.data.review.top_skills || [],
+            languages: data.data.review.languages || [],
           });
         }
       } catch (error: any) {
@@ -292,13 +304,18 @@ export default function JobseekerCompleteProfilePage() {
 
   // Step 3: Review (extracted data)
   const [extractedData, setExtractedData] = useState({
-    fullName: "Richard Samson",
-    currentRole: "Product Manager",
-    experience: "5+ Experience",
-    education: "BSc Computer Science — University of London",
-    topSkills: ["Product Strategy", "Agile", "Stakeholder Management"],
-    languages: ["English", "French", "Spanish"]
+    fullName: "",
+    currentRole: "",
+    experience: "",
+    education: "",
+    topSkills: [] as string[],
+    languages: [] as string[],
   });
+
+  // Editing states for each field
+  const [editingField, setEditingField] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState<string>("");
+  const [editArrayValue, setEditArrayValue] = useState<string[]>([]);
 
   const toggleChip = (arr: string[], setArr: (v: string[]) => void, val: string) => {
     setArr(arr.includes(val) ? arr.filter((v) => v !== val) : [...arr, val]);
@@ -657,10 +674,59 @@ export default function JobseekerCompleteProfilePage() {
     }
   };
 
-  const handleFindCoaches = () => {
-    // Clear onboarding progress when user completes all steps
-    clearOnboardingProgress();
-    router.push("/dashboard?us=jobseeker");
+  const handleFindCoaches = async () => {
+    setLoading(true);
+
+    try {
+      const headers = await getAuthHeaders();
+
+      const response = await fetch(`${getApiUrl()}/api/profile/setup/cv/review`, {
+        method: "PATCH",
+        headers: {
+          ...headers,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          full_name: extractedData.fullName,
+          current_role: extractedData.currentRole,
+          experience: extractedData.experience,
+          education: extractedData.education,
+          top_skills: extractedData.topSkills,
+          languages: extractedData.languages,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        toast({
+          variant: "error",
+          title: "Failed to save",
+          description: data.message || "Could not save your profile data",
+        });
+        setLoading(false);
+        return;
+      }
+
+      toast({
+        variant: "success",
+        title: "Profile saved",
+        description: "Your profile has been saved successfully",
+      });
+
+      // Clear onboarding progress when user completes all steps
+      clearOnboardingProgress();
+      
+      // Navigate to coaches page
+      router.push("/coaches");
+    } catch (error: any) {
+      toast({
+        variant: "error",
+        title: "Error",
+        description: error.message || "Failed to save profile data",
+      });
+      setLoading(false);
+    }
   };
 
   return (
@@ -1018,52 +1084,200 @@ export default function JobseekerCompleteProfilePage() {
                 {/* Full Name */}
                 <div className="bg-[#0B0D0F] border border-white/10 rounded-[12px] p-4">
                   <div className="flex items-center justify-between">
-                    <div>
+                    <div className="flex-1">
                       <p className="text-white/50 font-mona-sans text-xs mb-1">Full Name</p>
-                      <p className="text-white font-mona-sans font-semibold text-base">{extractedData.fullName}</p>
+                      {editingField === "fullName" ? (
+                        <div className="mt-2">
+                          <input
+                            type="text"
+                            value={editValue}
+                            onChange={(e) => setEditValue(e.target.value)}
+                            className="w-full px-3 py-2 bg-white/5 border border-white/20 rounded-[8px] text-white font-mona-sans text-sm outline-none focus:border-[#A2CE3A] transition-colors"
+                            autoFocus
+                          />
+                          <div className="flex gap-2 mt-2">
+                            <button
+                              onClick={() => {
+                                setExtractedData({ ...extractedData, fullName: editValue });
+                                setEditingField(null);
+                              }}
+                              className="px-3 py-1.5 bg-[#A2CE3A] text-black font-mona-sans text-xs font-semibold rounded-[6px] hover:bg-[#8fb832] transition-colors"
+                            >
+                              Save
+                            </button>
+                            <button
+                              onClick={() => setEditingField(null)}
+                              className="px-3 py-1.5 bg-white/10 text-white font-mona-sans text-xs font-semibold rounded-[6px] hover:bg-white/20 transition-colors"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-white font-mona-sans font-semibold text-base">{extractedData.fullName}</p>
+                      )}
                     </div>
-                    <button className="p-2 hover:bg-white/5 rounded-[8px] transition-colors">
-                      <EditIconSVG />
-                    </button>
+                    {editingField !== "fullName" && (
+                      <button
+                        onClick={() => {
+                          setEditingField("fullName");
+                          setEditValue(extractedData.fullName);
+                        }}
+                        className="p-2 hover:bg-white/5 rounded-[8px] transition-colors"
+                      >
+                        <EditIconSVG />
+                      </button>
+                    )}
                   </div>
                 </div>
 
                 {/* Current Role */}
                 <div className="bg-[#0B0D0F] border border-white/10 rounded-[12px] p-4">
                   <div className="flex items-center justify-between">
-                    <div>
+                    <div className="flex-1">
                       <p className="text-white/50 font-mona-sans text-xs mb-1">Current Role</p>
-                      <p className="text-white font-mona-sans font-semibold text-base">{extractedData.currentRole}</p>
+                      {editingField === "currentRole" ? (
+                        <div className="mt-2">
+                          <input
+                            type="text"
+                            value={editValue}
+                            onChange={(e) => setEditValue(e.target.value)}
+                            className="w-full px-3 py-2 bg-white/5 border border-white/20 rounded-[8px] text-white font-mona-sans text-sm outline-none focus:border-[#A2CE3A] transition-colors"
+                            autoFocus
+                          />
+                          <div className="flex gap-2 mt-2">
+                            <button
+                              onClick={() => {
+                                setExtractedData({ ...extractedData, currentRole: editValue });
+                                setEditingField(null);
+                              }}
+                              className="px-3 py-1.5 bg-[#A2CE3A] text-black font-mona-sans text-xs font-semibold rounded-[6px] hover:bg-[#8fb832] transition-colors"
+                            >
+                              Save
+                            </button>
+                            <button
+                              onClick={() => setEditingField(null)}
+                              className="px-3 py-1.5 bg-white/10 text-white font-mona-sans text-xs font-semibold rounded-[6px] hover:bg-white/20 transition-colors"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-white font-mona-sans font-semibold text-base">{extractedData.currentRole}</p>
+                      )}
                     </div>
-                    <button className="p-2 hover:bg-white/5 rounded-[8px] transition-colors">
-                      <EditIconSVG />
-                    </button>
+                    {editingField !== "currentRole" && (
+                      <button
+                        onClick={() => {
+                          setEditingField("currentRole");
+                          setEditValue(extractedData.currentRole);
+                        }}
+                        className="p-2 hover:bg-white/5 rounded-[8px] transition-colors"
+                      >
+                        <EditIconSVG />
+                      </button>
+                    )}
                   </div>
                 </div>
 
                 {/* Experience */}
                 <div className="bg-[#0B0D0F] border border-white/10 rounded-[12px] p-4">
                   <div className="flex items-center justify-between">
-                    <div>
+                    <div className="flex-1">
                       <p className="text-white/50 font-mona-sans text-xs mb-1">Experience</p>
-                      <p className="text-white font-mona-sans font-semibold text-base">{extractedData.experience}</p>
+                      {editingField === "experience" ? (
+                        <div className="mt-2">
+                          <input
+                            type="text"
+                            value={editValue}
+                            onChange={(e) => setEditValue(e.target.value)}
+                            className="w-full px-3 py-2 bg-white/5 border border-white/20 rounded-[8px] text-white font-mona-sans text-sm outline-none focus:border-[#A2CE3A] transition-colors"
+                            autoFocus
+                          />
+                          <div className="flex gap-2 mt-2">
+                            <button
+                              onClick={() => {
+                                setExtractedData({ ...extractedData, experience: editValue });
+                                setEditingField(null);
+                              }}
+                              className="px-3 py-1.5 bg-[#A2CE3A] text-black font-mona-sans text-xs font-semibold rounded-[6px] hover:bg-[#8fb832] transition-colors"
+                            >
+                              Save
+                            </button>
+                            <button
+                              onClick={() => setEditingField(null)}
+                              className="px-3 py-1.5 bg-white/10 text-white font-mona-sans text-xs font-semibold rounded-[6px] hover:bg-white/20 transition-colors"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-white font-mona-sans font-semibold text-base">{extractedData.experience}</p>
+                      )}
                     </div>
-                    <button className="p-2 hover:bg-white/5 rounded-[8px] transition-colors">
-                      <EditIconSVG />
-                    </button>
+                    {editingField !== "experience" && (
+                      <button
+                        onClick={() => {
+                          setEditingField("experience");
+                          setEditValue(extractedData.experience);
+                        }}
+                        className="p-2 hover:bg-white/5 rounded-[8px] transition-colors"
+                      >
+                        <EditIconSVG />
+                      </button>
+                    )}
                   </div>
                 </div>
 
                 {/* Education */}
                 <div className="bg-[#0B0D0F] border border-white/10 rounded-[12px] p-4">
                   <div className="flex items-center justify-between">
-                    <div>
+                    <div className="flex-1">
                       <p className="text-white/50 font-mona-sans text-xs mb-1">Education</p>
-                      <p className="text-white font-mona-sans font-semibold text-base">{extractedData.education}</p>
+                      {editingField === "education" ? (
+                        <div className="mt-2">
+                          <input
+                            type="text"
+                            value={editValue}
+                            onChange={(e) => setEditValue(e.target.value)}
+                            className="w-full px-3 py-2 bg-white/5 border border-white/20 rounded-[8px] text-white font-mona-sans text-sm outline-none focus:border-[#A2CE3A] transition-colors"
+                            autoFocus
+                          />
+                          <div className="flex gap-2 mt-2">
+                            <button
+                              onClick={() => {
+                                setExtractedData({ ...extractedData, education: editValue });
+                                setEditingField(null);
+                              }}
+                              className="px-3 py-1.5 bg-[#A2CE3A] text-black font-mona-sans text-xs font-semibold rounded-[6px] hover:bg-[#8fb832] transition-colors"
+                            >
+                              Save
+                            </button>
+                            <button
+                              onClick={() => setEditingField(null)}
+                              className="px-3 py-1.5 bg-white/10 text-white font-mona-sans text-xs font-semibold rounded-[6px] hover:bg-white/20 transition-colors"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-white font-mona-sans font-semibold text-base">{extractedData.education}</p>
+                      )}
                     </div>
-                    <button className="p-2 hover:bg-white/5 rounded-[8px] transition-colors">
-                      <EditIconSVG />
-                    </button>
+                    {editingField !== "education" && (
+                      <button
+                        onClick={() => {
+                          setEditingField("education");
+                          setEditValue(extractedData.education);
+                        }}
+                        className="p-2 hover:bg-white/5 rounded-[8px] transition-colors"
+                      >
+                        <EditIconSVG />
+                      </button>
+                    )}
                   </div>
                 </div>
 
@@ -1071,40 +1285,116 @@ export default function JobseekerCompleteProfilePage() {
                 <div className="bg-[#0B0D0F] border border-white/10 rounded-[12px] p-4">
                   <div className="flex items-center justify-between mb-3">
                     <p className="text-white/50 font-mona-sans text-xs">Top Skills</p>
-                    <button className="p-2 hover:bg-white/5 rounded-[8px] transition-colors">
-                      <EditIconSVG />
-                    </button>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {extractedData.topSkills.map((skill) => (
-                      <span
-                        key={skill}
-                        className="px-3 py-1.5 bg-[#A2CE3A]/20 text-[#A2CE3A] border border-[#A2CE3A] rounded-full text-sm font-mona-sans"
+                    {editingField !== "topSkills" && (
+                      <button
+                        onClick={() => {
+                          setEditingField("topSkills");
+                          setEditArrayValue([...extractedData.topSkills]);
+                        }}
+                        className="p-2 hover:bg-white/5 rounded-[8px] transition-colors"
                       >
-                        {skill}
-                      </span>
-                    ))}
+                        <EditIconSVG />
+                      </button>
+                    )}
                   </div>
+                  {editingField === "topSkills" ? (
+                    <div className="mt-2">
+                      <input
+                        type="text"
+                        value={editArrayValue.join(", ")}
+                        onChange={(e) => setEditArrayValue(e.target.value.split(",").map(s => s.trim()).filter(Boolean))}
+                        placeholder="Separate skills with commas"
+                        className="w-full px-3 py-2 bg-white/5 border border-white/20 rounded-[8px] text-white font-mona-sans text-sm outline-none focus:border-[#A2CE3A] transition-colors"
+                        autoFocus
+                      />
+                      <div className="flex gap-2 mt-2">
+                        <button
+                          onClick={() => {
+                            setExtractedData({ ...extractedData, topSkills: editArrayValue });
+                            setEditingField(null);
+                          }}
+                          className="px-3 py-1.5 bg-[#A2CE3A] text-black font-mona-sans text-xs font-semibold rounded-[6px] hover:bg-[#8fb832] transition-colors"
+                        >
+                          Save
+                        </button>
+                        <button
+                          onClick={() => setEditingField(null)}
+                          className="px-3 py-1.5 bg-white/10 text-white font-mona-sans text-xs font-semibold rounded-[6px] hover:bg-white/20 transition-colors"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {extractedData.topSkills.map((skill) => (
+                        <span
+                          key={skill}
+                          className="px-3 py-1.5 bg-[#A2CE3A]/20 text-[#A2CE3A] border border-[#A2CE3A] rounded-full text-sm font-mona-sans"
+                        >
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {/* Languages */}
                 <div className="bg-[#0B0D0F] border border-white/10 rounded-[12px] p-4">
                   <div className="flex items-center justify-between mb-3">
                     <p className="text-white/50 font-mona-sans text-xs">Languages</p>
-                    <button className="p-2 hover:bg-white/5 rounded-[8px] transition-colors">
-                      <EditIconSVG />
-                    </button>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {extractedData.languages.map((lang) => (
-                      <span
-                        key={lang}
-                        className="px-3 py-1.5 bg-[#A2CE3A]/20 text-[#A2CE3A] border border-[#A2CE3A] rounded-full text-sm font-mona-sans"
+                    {editingField !== "languages" && (
+                      <button
+                        onClick={() => {
+                          setEditingField("languages");
+                          setEditArrayValue([...extractedData.languages]);
+                        }}
+                        className="p-2 hover:bg-white/5 rounded-[8px] transition-colors"
                       >
-                        {lang}
-                      </span>
-                    ))}
+                        <EditIconSVG />
+                      </button>
+                    )}
                   </div>
+                  {editingField === "languages" ? (
+                    <div className="mt-2">
+                      <input
+                        type="text"
+                        value={editArrayValue.join(", ")}
+                        onChange={(e) => setEditArrayValue(e.target.value.split(",").map(s => s.trim()).filter(Boolean))}
+                        placeholder="Separate languages with commas"
+                        className="w-full px-3 py-2 bg-white/5 border border-white/20 rounded-[8px] text-white font-mona-sans text-sm outline-none focus:border-[#A2CE3A] transition-colors"
+                        autoFocus
+                      />
+                      <div className="flex gap-2 mt-2">
+                        <button
+                          onClick={() => {
+                            setExtractedData({ ...extractedData, languages: editArrayValue });
+                            setEditingField(null);
+                          }}
+                          className="px-3 py-1.5 bg-[#A2CE3A] text-black font-mona-sans text-xs font-semibold rounded-[6px] hover:bg-[#8fb832] transition-colors"
+                        >
+                          Save
+                        </button>
+                        <button
+                          onClick={() => setEditingField(null)}
+                          className="px-3 py-1.5 bg-white/10 text-white font-mona-sans text-xs font-semibold rounded-[6px] hover:bg-white/20 transition-colors"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {extractedData.languages.map((lang) => (
+                        <span
+                          key={lang}
+                          className="px-3 py-1.5 bg-[#A2CE3A]/20 text-[#A2CE3A] border border-[#A2CE3A] rounded-full text-sm font-mona-sans"
+                        >
+                          {lang}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
 

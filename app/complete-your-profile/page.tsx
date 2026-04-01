@@ -5,8 +5,10 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import PhoneInput from "react-phone-number-input";
 import "react-phone-number-input/style.css";
+import { useSession } from "next-auth/react";
 import { getApiUrl, getAuthHeaders } from "@/lib/api";
 import { useToast } from "@/components/ui/use-toast";
+import { useUserData } from "@/hooks/useUserData";
 
 /* ─── Onboarding Progress Storage ─── */
 
@@ -149,6 +151,30 @@ function Dropdown({ label, placeholder, options, value, onChange }: {
 export default function CompleteProfilePage() {
   const router = useRouter();
   const { toast } = useToast();
+  const { data: session } = useSession();
+  const { userData } = useUserData();
+
+  // Auto-redirect jobseekers to their own complete profile page
+  useEffect(() => {
+    if (session?.user?.role) {
+      const userRole = session.user.role.toLowerCase();
+      if (userRole !== 'coach') {
+        router.replace('/complete-your-profile/jobseeker');
+      }
+    }
+  }, [session, router]);
+
+  // Prevent access if onboarding already submitted
+  useEffect(() => {
+    if (userData?.onboarding_status === "submitted") {
+      toast({
+        variant: "error",
+        title: "Profile Already Submitted",
+        description: "Your profile has already been submitted. Redirecting to dashboard.",
+      });
+      router.replace('/dashboard?us=coach');
+    }
+  }, [userData, router, toast]);
 
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -373,8 +399,14 @@ export default function CompleteProfilePage() {
         },
         body: JSON.stringify({
           bio: bio,
-          interview_types: interviewTypes.map(t => t.toLowerCase().replace(/ /g, "_")),
-          target_job_levels: targetLevels.map(l => l.toLowerCase().replace(/ /g, "_")),
+          interview_types: interviewTypes.map(t => {
+            // Transform to API format: "Behavioral Interviews" -> "behavioral_interview"
+            return t.toLowerCase().replace(/ /g, "_").replace(/s$/, "");
+          }),
+          target_job_levels: targetLevels.map(l => {
+            // Transform to API format: "Entry Levels" -> "entry_level"
+            return l.toLowerCase().replace(/ /g, "_").replace(/s$/, "");
+          }),
         }),
       });
 
@@ -407,13 +439,42 @@ export default function CompleteProfilePage() {
   const goBack = () => setStep((s) => Math.max(s - 1, 0));
 
   const handleCompleteOnboarding = async () => {
-    clearOnboardingProgress();
-    toast({
-      variant: "success",
-      title: "Profile Complete!",
-      description: "Your coach profile has been set up successfully",
-    });
-    router.push("/dashboard?us=coach");
+    setLoading(true);
+
+    try {
+      const response = await fetch(`${getApiUrl()}/api/coach/profile/setup/submit`, {
+        method: "POST",
+        headers: await getAuthHeaders(),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to submit profile");
+      }
+
+      const result = await response.json();
+      
+      // Clear onboarding progress from localStorage
+      clearOnboardingProgress();
+
+      toast({
+        variant: "success",
+        title: "Profile Submitted!",
+        description: result.message || "Your coach application has been submitted successfully",
+      });
+
+      // Navigate to assessment page using actual user ID
+      const userId = userData?.user?.id || session?.user?.id;
+      router.push(`/coaches/${userId}/assessment`);
+    } catch (error: any) {
+      toast({
+        variant: "error",
+        title: "Submission Failed",
+        description: error.message || "Failed to submit your profile. Please try again.",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -665,56 +726,113 @@ export default function CompleteProfilePage() {
               <div className="border border-white/10 rounded-[12px] p-5 mb-6">
                 {/* Name & Title */}
                 <div className="flex items-center gap-3 mb-5">
-                  <div className="w-10 h-10 rounded-full bg-white/10 overflow-hidden flex-shrink-0">
-                    {photoPreview ? (
+                  <div className="w-16 h-16 rounded-full bg-white/10 overflow-hidden flex-shrink-0">
+                    {reviewData?.photo_url ? (
+                      <img src={reviewData.photo_url} alt="Profile" className="w-full h-full object-cover" />
+                    ) : photoPreview ? (
                       <img src={photoPreview} alt="Profile" className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full bg-white/20" />
                     )}
                   </div>
                   <div>
-                    <p className="text-white font-mona-sans font-bold text-sm">{reviewData?.name || name || "Richard Samson"}</p>
-                    <p className="text-white/50 font-mona-sans text-xs">{reviewData?.job_title || jobTitle || "Senior Product Designer"}</p>
+                    <p className="text-white font-mona-sans font-bold text-base">{reviewData?.name || name}</p>
+                    <p className="text-white/50 font-mona-sans text-sm">@{reviewData?.username || username}</p>
+                    <p className="text-white/70 font-mona-sans text-xs mt-0.5">{reviewData?.job_title || jobTitle}</p>
                   </div>
                 </div>
+
+                {/* Bio */}
+                {reviewData?.bio && (
+                  <div className="mb-5 pb-5 border-b border-white/10">
+                    <p className="text-white/50 text-xs font-mona-sans mb-2">Bio</p>
+                    <p className="text-white text-sm font-mona-sans">{reviewData.bio}</p>
+                  </div>
+                )}
 
                 {/* Info Grid */}
                 <div className="grid grid-cols-2 gap-y-4 gap-x-6 mb-5">
                   <div>
-                    <p className="text-white/50 text-xs font-mona-sans">Country</p>
-                    <p className="text-white text-sm font-mona-sans font-semibold">{reviewData?.country || country || "Nigeria"}</p>
+                    <p className="text-white/50 text-xs font-mona-sans mb-1">Country</p>
+                    <p className="text-white text-sm font-mona-sans font-semibold capitalize">{reviewData?.country || country}</p>
                   </div>
                   <div>
-                    <p className="text-white/50 text-xs font-mona-sans">Experience</p>
-                    <p className="text-white text-sm font-mona-sans font-semibold">{reviewData?.years_of_experience || yearsOfExperience || "10-15 years"}</p>
+                    <p className="text-white/50 text-xs font-mona-sans mb-1">Phone</p>
+                    <p className="text-white text-sm font-mona-sans font-semibold">{reviewData?.phone_number || phone}</p>
                   </div>
                   <div>
-                    <p className="text-white/50 text-xs font-mona-sans">Industry</p>
-                    <p className="text-white text-sm font-mona-sans font-semibold">{reviewData?.industry || industry || "Technology"}</p>
+                    <p className="text-white/50 text-xs font-mona-sans mb-1">Gender</p>
+                    <p className="text-white text-sm font-mona-sans font-semibold capitalize">{reviewData?.gender || gender}</p>
                   </div>
                   <div>
-                    <p className="text-white/50 text-xs font-mona-sans">Languages</p>
-                    <p className="text-white text-sm font-mona-sans font-semibold">{reviewData?.languages_spoken?.join(", ") || selectedLanguages.join(", ") || "English"}</p>
+                    <p className="text-white/50 text-xs font-mona-sans mb-1">Experience</p>
+                    <p className="text-white text-sm font-mona-sans font-semibold">{reviewData?.years_of_experience || yearsOfExperience}</p>
+                  </div>
+                  <div>
+                    <p className="text-white/50 text-xs font-mona-sans mb-1">Industry</p>
+                    <p className="text-white text-sm font-mona-sans font-semibold capitalize">{reviewData?.industry || industry}</p>
+                  </div>
+                  <div>
+                    <p className="text-white/50 text-xs font-mona-sans mb-1">Languages</p>
+                    <p className="text-white text-sm font-mona-sans font-semibold capitalize">{reviewData?.languages_spoken?.join(", ") || selectedLanguages.join(", ")}</p>
                   </div>
                 </div>
+
+                {/* LinkedIn & Companies */}
+                {(reviewData?.linkedin_url || reviewData?.companies_worked_at) && (
+                  <div className="grid grid-cols-1 gap-4 mb-5 pb-5 border-b border-white/10">
+                    {reviewData?.linkedin_url && (
+                      <div>
+                        <p className="text-white/50 text-xs font-mona-sans mb-1">LinkedIn</p>
+                        <a href={reviewData.linkedin_url} target="_blank" rel="noopener noreferrer" className="text-[#A2CE3A] text-sm font-mona-sans hover:underline break-all">{reviewData.linkedin_url}</a>
+                      </div>
+                    )}
+                    {reviewData?.companies_worked_at && (
+                      <div>
+                        <p className="text-white/50 text-xs font-mona-sans mb-1">Companies Worked At</p>
+                        <p className="text-white text-sm font-mona-sans">{reviewData.companies_worked_at}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Fields Coached */}
+                {reviewData?.fields_coached && reviewData.fields_coached.length > 0 && (
+                  <div className="mb-4">
+                    <p className="text-white/50 text-xs font-mona-sans mb-2">Fields Coached</p>
+                    <div className="flex flex-wrap gap-2">
+                      {reviewData.fields_coached.map((field: string) => (
+                        <span key={field} className="px-3 py-1 rounded-full text-xs font-mona-sans text-white bg-white/10">{field}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Interview Types */}
                 <div className="mb-4">
                   <p className="text-white/50 text-xs font-mona-sans mb-2">Interview Types</p>
                   <div className="flex flex-wrap gap-2">
-                    {(reviewData?.interview_types || interviewTypes || ["Technical Interviews"]).map((t: string) => (
-                      <span key={t} className="px-3 py-1 rounded-full text-xs font-mona-sans text-[#7FA429] bg-[#E0EFBD]">{t}</span>
-                    ))}
+                    {(reviewData?.interview_types || interviewTypes || []).map((t: string) => {
+                      // Format snake_case to Title Case: behavioral_interview -> Behavioral Interview
+                      const formatted = t.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+                      return (
+                        <span key={t} className="px-3 py-1 rounded-full text-xs font-mona-sans text-[#7FA429] bg-[#E0EFBD]">{formatted}</span>
+                      );
+                    })}
                   </div>
                 </div>
 
                 {/* Target Levels */}
                 <div>
-                  <p className="text-white/50 text-xs font-mona-sans mb-2">Target levels</p>
+                  <p className="text-white/50 text-xs font-mona-sans mb-2">Target Job Levels</p>
                   <div className="flex flex-wrap gap-2">
-                    {(reviewData?.target_job_levels || targetLevels || ["Mid Level"]).map((t: string) => (
-                      <span key={t} className="px-3 py-1 rounded-full text-xs font-mona-sans text-[#7FA429] bg-[#E0EFBD]">{t}</span>
-                    ))}
+                    {(reviewData?.target_job_levels || targetLevels || []).map((t: string) => {
+                      // Format snake_case to Title Case: entry_level -> Entry Level
+                      const formatted = t.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+                      return (
+                        <span key={t} className="px-3 py-1 rounded-full text-xs font-mona-sans text-[#7FA429] bg-[#E0EFBD]">{formatted}</span>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
@@ -728,8 +846,8 @@ export default function CompleteProfilePage() {
                 <button onClick={goBack} className="flex-1 py-3 rounded-[8px] font-mona-sans text-base font-bold transition-colors cursor-pointer" style={{ backgroundColor: "#ECF8C7", color: "#054711" }}>
                   Back
                 </button>
-                <button onClick={handleCompleteOnboarding} className="flex-[1.4] py-3 bg-[#A2CE3A] rounded-[8px] text-[#121212] font-mona-sans text-base font-bold hover:bg-[#92BE2A] transition-colors cursor-pointer">
-                  Complete Setup
+                <button onClick={handleCompleteOnboarding} disabled={loading} className="flex-[1.4] py-3 bg-[#A2CE3A] rounded-[8px] text-[#121212] font-mona-sans text-base font-bold hover:bg-[#92BE2A] transition-colors cursor-pointer disabled:opacity-60">
+                  {loading ? "Submitting..." : "Complete Setup"}
                 </button>
               </div>
               </>

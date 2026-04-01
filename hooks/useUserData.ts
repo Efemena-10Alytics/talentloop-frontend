@@ -59,6 +59,14 @@ export function useUserData() {
 
         const result = await response.json();
         setUserData(result.data);
+
+        // Clear onboarding progress from localStorage if already submitted
+        if (result.data?.onboarding_status === "submitted") {
+          const storageKey = result.data?.user?.role === "coach" 
+            ? "coach_onboarding_progress" 
+            : "jobseeker_onboarding_progress";
+          localStorage.removeItem(storageKey);
+        }
       } catch (error) {
         console.error("Error fetching user data:", error);
         setUserData(null);

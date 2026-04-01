@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { GlassCard } from "./GlassCard";
 
 const ChevronRightSVG = () => (
@@ -42,16 +42,15 @@ const CoachGuideSVG = () => (
 );
 
 function QuickActionItem({ icon, title, subtitle, href }: { icon: React.ReactNode; title: string; subtitle: string; href: string }) {
-  const router = useRouter();
   return (
-    <button onClick={() => router.push(href)} className="flex items-center gap-3 bg-[#FFFFFF0D] backdrop-blur-sm border border-white/10 rounded-[16px] p-4 hover:bg-[#FFFFFF1A] transition-colors cursor-pointer w-full text-left">
+    <Link href={href} className="flex items-center gap-3 bg-[#FFFFFF0D] backdrop-blur-sm border border-white/10 rounded-[16px] p-4 hover:bg-[#FFFFFF1A] transition-colors cursor-pointer w-full text-left">
       <div className="flex-shrink-0">{icon}</div>
       <div className="flex-1 min-w-0">
         <p className="text-white font-mona-sans font-bold text-sm">{title}</p>
         <p className="text-white/50 font-mona-sans text-xs mt-0.5">{subtitle}</p>
       </div>
       <ChevronRightSVG />
-    </button>
+    </Link>
   );
 }
 
