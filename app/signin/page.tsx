@@ -225,7 +225,7 @@ export default function SignInPage() {
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          backgroundImage: "url('/img2.png')",
+          backgroundImage: "url('/Background1.jpeg')",
           backgroundRepeat: "no-repeat",
           backgroundPosition: "center",
           backgroundSize: "cover",

@@ -458,7 +458,7 @@ function SignUpContent() {
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          backgroundImage: "url('/img2.png')",
+          backgroundImage: "url('/Background1.jpeg')",
           backgroundRepeat: "no-repeat",
           backgroundPosition: "center",
           backgroundSize: "cover",
@@ -553,7 +553,7 @@ function SignUpContent() {
               <>
                 {/* Header */}
                 <h1 className="text-2xl lg:text-3xl font-mona-sans font-bold text-white text-center mb-5">
-                  Sign Up
+                  Sign Up As A {type === "jobseeker" ? "Job Seeker" : "Coach"}
                 </h1>
 
                 {/* Social Buttons */}
