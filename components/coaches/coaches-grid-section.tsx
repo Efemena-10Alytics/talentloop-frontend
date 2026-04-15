@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import CoachCard from "../coach-card";
+import { getApiUrl } from "@/lib/api";
 
 const categories = [
   "All Career Path",
@@ -457,46 +459,71 @@ interface CoachesGridSectionProps {
   debouncedSearch: string;
 }
 
+interface Coach {
+  id: number;
+  name: string;
+  image_url: string;
+  username: string;
+  job_title: string;
+  country: string;
+}
+
+interface CoachesResponse {
+  data: Coach[];
+  meta: {
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+  };
+}
+
 export default function CoachesGridSection({
   debouncedSearch,
 }: CoachesGridSectionProps) {
   const [activeCategory, setActiveCategory] = useState("All Career Path");
   const [currentPage, setCurrentPage] = useState(1);
 
-  const filteredCoaches = useMemo(() => {
-    let filtered = allCoachesData;
+  // Fetch coaches from API
+  const { data: coachesResponse, isLoading, error } = useQuery<CoachesResponse>({
+    queryKey: ["coaches", currentPage, debouncedSearch, activeCategory],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      params.append("page", currentPage.toString());
+      if (debouncedSearch) params.append("search", debouncedSearch);
+      if (activeCategory !== "All Career Path") params.append("category", activeCategory);
+      
+      const response = await fetch(`${getApiUrl()}/api/coaches?${params.toString()}`);
+      if (!response.ok) throw new Error("Failed to fetch coaches");
+      return response.json();
+    },
+  });
 
-    // Filter by category
-    if (activeCategory !== "All Career Path") {
-      filtered = filtered.filter(
-        (coach) =>
-          coach.specialty.toLowerCase() === activeCategory.toLowerCase()
-      );
-    }
+  const coaches = coachesResponse?.data || [];
+  const totalPages = coachesResponse?.meta?.last_page || 1;
 
-    // Filter by search query
-    if (debouncedSearch.trim()) {
-      const query = debouncedSearch.toLowerCase();
-      filtered = filtered.filter(
-        (coach) =>
-          coach.name.toLowerCase().includes(query) ||
-          coach.specialty.toLowerCase().includes(query) ||
-          coach.tag.toLowerCase().includes(query)
-      );
-    }
-
-    return filtered;
-  }, [activeCategory, debouncedSearch]);
-
-  const totalPages = Math.max(
-    1,
-    Math.ceil(filteredCoaches.length / COACHES_PER_PAGE)
-  );
-
-  const paginatedCoaches = useMemo(() => {
-    const start = (currentPage - 1) * COACHES_PER_PAGE;
-    return filteredCoaches.slice(start, start + COACHES_PER_PAGE);
-  }, [filteredCoaches, currentPage]);
+  // Transform API data to match CoachCard props
+  const transformedCoaches = useMemo(() => {
+    return coaches.map((coach) => ({
+      image: coach.image_url || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=500&fit=crop",
+      name: coach.name,
+      rating: 4.9,
+      tag: "Top Coach",
+      tagColor: "#A2CE3A",
+      specialty: coach.job_title || "Professional Coach",
+      specialtyColor: "#A2CE3A",
+      sessionCount: "Interview Prep Sessions",
+      hiredCount: "Helped clients get hired",
+      avatars: [
+        "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop",
+        "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop",
+        "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop",
+      ],
+      id: coach.id,
+      username: coach.username,
+      country: coach.country,
+    }));
+  }, [coaches]);
 
   // Reset page when filters change
   const handleCategoryChange = (category: string) => {
@@ -545,8 +572,25 @@ export default function CoachesGridSection({
           ))}
         </motion.div>
 
+        {/* Loading State */}
+        {isLoading && (
+          <div className="flex items-center justify-center py-20">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#A2CE3A]"></div>
+          </div>
+        )}
+
+        {/* Error State */}
+        {error && (
+          <div className="flex flex-col items-center justify-center py-20">
+            <p className="text-red-400 text-lg font-mona-sans">
+              Failed to load coaches. Please try again.
+            </p>
+          </div>
+        )}
+
         {/* Coaches Grid */}
-        <AnimatePresence mode="wait">
+        {!isLoading && !error && (
+          <AnimatePresence mode="wait">
           <motion.div
             key={`${activeCategory}-${currentPage}-${debouncedSearch}`}
             initial={{ opacity: 0, y: 20 }}
@@ -555,9 +599,9 @@ export default function CoachesGridSection({
             transition={{ duration: 0.5, ease: "easeOut" }}
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
           >
-            {paginatedCoaches.map((coach, index) => (
+            {transformedCoaches.map((coach, index) => (
               <motion.div
-                key={`${coach.name}-${coach.specialty}-${index}`}
+                key={`${coach.id}-${coach.username}`}
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{
@@ -570,19 +614,20 @@ export default function CoachesGridSection({
               </motion.div>
             ))}
           </motion.div>
-        </AnimatePresence>
 
-        {/* Empty State */}
-        {paginatedCoaches.length === 0 && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="flex flex-col items-center justify-center py-20"
-          >
-            <p className="text-white/60 text-lg font-mona-sans">
-              No coaches found matching your criteria.
-            </p>
-          </motion.div>
+          {/* Empty State */}
+          {transformedCoaches.length === 0 && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="flex flex-col items-center justify-center py-20"
+            >
+              <p className="text-white/60 text-lg font-mona-sans">
+                No coaches found matching your criteria.
+              </p>
+            </motion.div>
+          )}
+          </AnimatePresence>
         )}
 
         {/* Pagination */}
