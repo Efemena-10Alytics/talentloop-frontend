@@ -11,6 +11,7 @@ import { Select } from "@/components/ui/Select";
 import { MultiSelect } from "@/components/ui/MultiSelect";
 import { getApiUrl, getAuthHeaders } from "@/lib/api";
 import { useToast } from "@/components/ui/use-toast";
+import { useUserData } from "@/hooks/useUserData";
 
 /* ─── SVG Icons ─── */
 
@@ -101,11 +102,19 @@ const experienceOptions = [
   { value: "10+", label: "10+ years" },
 ];
 
+const genderOptions = [
+  { value: "male", label: "Male" },
+  { value: "female", label: "Female" },
+  { value: "non-binary", label: "Non-binary" },
+  { value: "prefer not to say", label: "Prefer not to say" },
+];
+
 /* ─── Components ─── */
 
 function SettingsContent() {
   const [activeTab, setActiveTab] = useState("profile");
   const { data: session } = useSession();
+  const { userData } = useUserData();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -127,6 +136,11 @@ function SettingsContent() {
   const [companies, setCompanies] = useState("");
   const [linkedin, setLinkedin] = useState("");
   const [bio, setBio] = useState("");
+  
+  // Job seeker specific state
+  const [username, setUsername] = useState("");
+  const [gender, setGender] = useState("");
+  const [targetRole, setTargetRole] = useState("");
 
   // Availability tab state
   const [weeklySchedule, setWeeklySchedule] = useState<any>({
@@ -148,6 +162,9 @@ function SettingsContent() {
     reviewNotifications: true,
     paymentNotifications: true,
     marketingEmails: true,
+    jobMatches: true,
+    applicationUpdates: true,
+    interviewInvites: true,
   });
 
   // Account tab state
@@ -164,6 +181,9 @@ function SettingsContent() {
     }
   }, [session]);
 
+  const userRole = session?.user?.role;
+  const isCoach = userRole === "coach";
+
   // Fetch coach profile data
   const { data: profileData, isLoading: profileLoading } = useQuery({
     queryKey: ["coach-profile"],
@@ -177,6 +197,16 @@ function SettingsContent() {
       const result = await response.json();
       return result.data;
     },
+    enabled: isCoach,
+  });
+
+  // Fetch job seeker profile data from /me endpoint
+  const { data: jobSeekerData, isLoading: jobSeekerLoading } = useQuery({
+    queryKey: ["jobseeker-profile"],
+    queryFn: async () => {
+      return userData;
+    },
+    enabled: !isCoach && !!userData,
   });
 
   // Fetch availability data
@@ -192,11 +222,12 @@ function SettingsContent() {
       const result = await response.json();
       return result.data;
     },
+    enabled: isCoach,
   });
 
-  // Process profile data when loaded
+  // Process coach profile data when loaded
   useEffect(() => {
-    if (!profileData) return;
+    if (!profileData || !isCoach) return;
     
     setFullName(profileData.name || "");
     setPhone(profileData.phone_number || "");
@@ -211,7 +242,19 @@ function SettingsContent() {
     setCompanies(profileData.companies_worked_at || "");
     setProfLanguages(profileData.languages_spoken || []);
     setBio(profileData.bio || "");
-  }, [profileData]);
+  }, [profileData, isCoach]);
+
+  // Process job seeker data from /me endpoint
+  useEffect(() => {
+    if (!userData || isCoach) return;
+    
+    setFullName(userData.user?.name || "");
+    setEmail(userData.user?.email || "");
+    if (userData.user?.photo) setPhotoPreview(userData.user.photo);
+    
+    // Note: Additional profile fields will be fetched from profile_summary or separate endpoint
+    // For now, we're using the basic user data from /me
+  }, [userData, isCoach]);
 
   // Process availability data when loaded
   useEffect(() => {
@@ -344,29 +387,77 @@ function SettingsContent() {
     mutationFn: async () => {
       const headers = await getAuthHeaders();
       
-      // Update coaching information
-      await fetch(`${getApiUrl()}/api/coach/profile/setup/coaching`, {
-        method: "PATCH",
-        headers: { ...headers, "Content-Type": "application/json" },
-        body: JSON.stringify({ bio }),
-      });
+      if (isCoach) {
+        // Coach: Update coaching information
+        await fetch(`${getApiUrl()}/api/coach/profile/setup/coaching`, {
+          method: "PATCH",
+          headers: { ...headers, "Content-Type": "application/json" },
+          body: JSON.stringify({ bio }),
+        });
 
-      // Update background information
-      await fetch(`${getApiUrl()}/api/coach/profile/setup/background`, {
-        method: "PATCH",
-        headers: { ...headers, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          job_title: jobTitle,
-          industry,
-          years_of_experience: experience,
-          companies_worked_at: companies,
-          fields_coached: fieldsCoached.split(",").map(f => f.trim()).filter(Boolean),
-        }),
-      });
+        // Coach: Update background information
+        await fetch(`${getApiUrl()}/api/coach/profile/setup/background`, {
+          method: "PATCH",
+          headers: { ...headers, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            job_title: jobTitle,
+            industry,
+            years_of_experience: experience,
+            companies_worked_at: companies,
+            fields_coached: fieldsCoached.split(",").map(f => f.trim()).filter(Boolean),
+          }),
+        });
+      } else {
+        // Job Seeker: Update basic information
+        const formData = new FormData();
+        if (username) formData.append("username", username.trim());
+        formData.append("country", location);
+        if (phone) formData.append("phone_number", phone);
+        if (gender) formData.append("gender", gender.toLowerCase());
+        if (languages.length > 0) {
+          formData.append("languages_spoken", languages.map(l => l.toLowerCase()).join(","));
+        }
+        if (fileInputRef.current?.files?.[0]) {
+          formData.append("photo", fileInputRef.current.files[0]);
+        }
+
+        const { "Content-Type": _, ...headersWithoutContentType } = headers as Record<string, string>;
+
+        const basicResponse = await fetch(`${getApiUrl()}/api/profile/setup/basic`, {
+          method: "PATCH",
+          headers: headersWithoutContentType,
+          body: formData,
+        });
+
+        if (!basicResponse.ok) {
+          const errorData = await basicResponse.json();
+          throw new Error(errorData.message || "Failed to update basic information");
+        }
+
+        // Job Seeker: Update career information
+        const careerResponse = await fetch(`${getApiUrl()}/api/profile/setup/career`, {
+          method: "PATCH",
+          headers: { ...headers, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            target_role: targetRole.trim() || jobTitle.trim(),
+            experience_level: experience,
+            industry: industry || "",
+          }),
+        });
+
+        if (!careerResponse.ok) {
+          const errorData = await careerResponse.json();
+          throw new Error(errorData.message || "Failed to update career information");
+        }
+      }
     },
     onSuccess: () => {
       toast({ variant: "success", title: "Success", description: "Profile updated successfully" });
-      queryClient.invalidateQueries({ queryKey: ["coach-profile"] });
+      if (isCoach) {
+        queryClient.invalidateQueries({ queryKey: ["coach-profile"] });
+      } else {
+        queryClient.invalidateQueries({ queryKey: ["jobseeker-profile"] });
+      }
     },
     onError: (error: any) => {
       toast({ variant: "error", title: "Error", description: error.message || "Failed to update profile" });
@@ -446,7 +537,7 @@ function SettingsContent() {
 
   const tabs = [
     { id: "profile", label: "Profile" },
-    { id: "availability", label: "Availability" },
+    ...(isCoach ? [{ id: "availability", label: "Availability" }] : []),
     { id: "notifications", label: "Notifications" },
     { id: "account", label: "Account" },
   ];
@@ -498,34 +589,59 @@ function SettingsContent() {
                 />
               </div>
               <Select label="Location (Country)" placeholder="Select your location" value={location} onChange={setLocation} options={locationOptions} />
-              <Select label="Timezone" placeholder="Select your timezone" value={timezone} onChange={setTimezone} options={timezoneOptions} />
-              <MultiSelect label="Languages Spoken" placeholder="Select languages" value={languages} onChange={setLanguages} options={languageOptions} />
+              {!isCoach && (
+                <>
+                  <FormInput label="Username" placeholder="Enter your username" value={username} onChange={setUsername} />
+                  <Select label="Gender" placeholder="Select your gender" value={gender} onChange={setGender} options={genderOptions} />
+                </>
+              )}
+              {isCoach && (
+                <>
+                  <Select label="Timezone" placeholder="Select your timezone" value={timezone} onChange={setTimezone} options={timezoneOptions} />
+                  <MultiSelect label="Languages Spoken" placeholder="Select languages" value={languages} onChange={setLanguages} options={languageOptions} />
+                </>
+              )}
+              {!isCoach && (
+                <MultiSelect label="Languages Spoken" placeholder="Select languages" value={languages} onChange={setLanguages} options={languageOptions} />
+              )}
             </div>
           </SettingsCard>
 
-          <SettingsCard title="Professional Background">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <FormInput label="Job Title" placeholder="e.g. Senior Product Manager" value={jobTitle} onChange={setJobTitle} />
-              <Select label="Industries You want to Prep Candidates For" placeholder="Select your Industry" value={industry} onChange={setIndustry} options={industryOptions} />
-              <Select label="Fields Coached" placeholder="Select your Industry" value={fieldsCoached} onChange={setFieldsCoached} options={industryOptions} />
-              <Select label="Years of Experience" placeholder="Select" value={experience} onChange={setExperience} options={experienceOptions} />
-              <Select label="Timezone" placeholder="Select your timezone" value={profTimezone} onChange={setProfTimezone} options={timezoneOptions} />
-              <MultiSelect label="Languages Spoken" placeholder="Select languages" value={profLanguages} onChange={setProfLanguages} options={languageOptions} />
-              <FormInput label="Companies Worked At" placeholder="e.g. Google, Meta" value={companies} onChange={setCompanies} />
-              <FormInput label="LinkedIn Profile" placeholder="https://linkedin.com/in/yourprofile" value={linkedin} onChange={setLinkedin} />
-            </div>
-          </SettingsCard>
+          {isCoach ? (
+            <>
+              <SettingsCard title="Professional Background">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <FormInput label="Job Title" placeholder="e.g. Senior Product Manager" value={jobTitle} onChange={setJobTitle} />
+                  <Select label="Industries You want to Prep Candidates For" placeholder="Select your Industry" value={industry} onChange={setIndustry} options={industryOptions} />
+                  <Select label="Fields Coached" placeholder="Select your Industry" value={fieldsCoached} onChange={setFieldsCoached} options={industryOptions} />
+                  <Select label="Years of Experience" placeholder="Select" value={experience} onChange={setExperience} options={experienceOptions} />
+                  <Select label="Timezone" placeholder="Select your timezone" value={profTimezone} onChange={setProfTimezone} options={timezoneOptions} />
+                  <MultiSelect label="Languages Spoken" placeholder="Select languages" value={profLanguages} onChange={setProfLanguages} options={languageOptions} />
+                  <FormInput label="Companies Worked At" placeholder="e.g. Google, Meta" value={companies} onChange={setCompanies} />
+                  <FormInput label="LinkedIn Profile" placeholder="https://linkedin.com/in/yourprofile" value={linkedin} onChange={setLinkedin} />
+                </div>
+              </SettingsCard>
 
-          <SettingsCard title="Bio">
-            <FormTextarea
-              label="About you"
-              placeholder="Tell candidates a bit about yourself and your coaching style"
-              value={bio}
-              onChange={setBio}
-              rows={5}
-              helperText="A compelling bio helps attract more clients."
-            />
-          </SettingsCard>
+              <SettingsCard title="Bio">
+                <FormTextarea
+                  label="About you"
+                  placeholder="Tell candidates a bit about yourself and your coaching style"
+                  value={bio}
+                  onChange={setBio}
+                  rows={5}
+                  helperText="A compelling bio helps attract more clients."
+                />
+              </SettingsCard>
+            </>
+          ) : (
+            <SettingsCard title="Build your profile">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FormInput label="Target Role" placeholder="e.g. Senior Product Manager" value={jobTitle} onChange={setJobTitle} />
+                <Select label="Industry (Optional)" placeholder="Select your Industry" value={industry} onChange={setIndustry} options={industryOptions} />
+                <Select label="Experience Level" placeholder="Select your Industry" value={experience} onChange={setExperience} options={experienceOptions} />
+              </div>
+            </SettingsCard>
+          )}
 
           <ActionButtons 
             onSave={() => saveProfileMutation.mutate()}
@@ -623,36 +739,67 @@ function SettingsContent() {
       {activeTab === "notifications" && (
         <div className="space-y-6">
           <SettingsCard title="Notification Preferences">
-            <ToggleItem
-              title="New booking notifications"
-              description="Toggle days on/off and set your available hours"
-              enabled={notifications.newBooking}
-              onChange={(enabled) => setNotifications(prev => ({ ...prev, newBooking: enabled }))}
-            />
-            <ToggleItem
-              title="Session reminders"
-              description="Receive reminders before upcoming sessions"
-              enabled={notifications.sessionReminders}
-              onChange={(enabled) => setNotifications(prev => ({ ...prev, sessionReminders: enabled }))}
-            />
-            <ToggleItem
-              title="Review notifications"
-              description="Get notified when you receive a new review"
-              enabled={notifications.reviewNotifications}
-              onChange={(enabled) => setNotifications(prev => ({ ...prev, reviewNotifications: enabled }))}
-            />
-            <ToggleItem
-              title="Payment notifications"
-              description="Get notified about earnings and payouts"
-              enabled={notifications.paymentNotifications}
-              onChange={(enabled) => setNotifications(prev => ({ ...prev, paymentNotifications: enabled }))}
-            />
-            <ToggleItem
-              title="Marketing emails"
-              description="Receive tips and platform updates"
-              enabled={notifications.marketingEmails}
-              onChange={(enabled) => setNotifications(prev => ({ ...prev, marketingEmails: enabled }))}
-            />
+            {isCoach ? (
+              <>
+                <ToggleItem
+                  title="New booking notifications"
+                  description="Toggle days on/off and set your available hours"
+                  enabled={notifications.newBooking}
+                  onChange={(enabled) => setNotifications(prev => ({ ...prev, newBooking: enabled }))}
+                />
+                <ToggleItem
+                  title="Session reminders"
+                  description="Receive reminders before upcoming sessions"
+                  enabled={notifications.sessionReminders}
+                  onChange={(enabled) => setNotifications(prev => ({ ...prev, sessionReminders: enabled }))}
+                />
+                <ToggleItem
+                  title="Review notifications"
+                  description="Get notified when you receive a new review"
+                  enabled={notifications.reviewNotifications}
+                  onChange={(enabled) => setNotifications(prev => ({ ...prev, reviewNotifications: enabled }))}
+                />
+                <ToggleItem
+                  title="Payment notifications"
+                  description="Get notified about earnings and payouts"
+                  enabled={notifications.paymentNotifications}
+                  onChange={(enabled) => setNotifications(prev => ({ ...prev, paymentNotifications: enabled }))}
+                />
+                <ToggleItem
+                  title="Marketing emails"
+                  description="Receive tips and platform updates"
+                  enabled={notifications.marketingEmails}
+                  onChange={(enabled) => setNotifications(prev => ({ ...prev, marketingEmails: enabled }))}
+                />
+              </>
+            ) : (
+              <>
+                <ToggleItem
+                  title="Job Matches"
+                  description="Receive notifications about jobmatches"
+                  enabled={notifications.jobMatches}
+                  onChange={(enabled) => setNotifications(prev => ({ ...prev, jobMatches: enabled }))}
+                />
+                <ToggleItem
+                  title="Application Updates"
+                  description="Receive notifications about applicationupdates"
+                  enabled={notifications.applicationUpdates}
+                  onChange={(enabled) => setNotifications(prev => ({ ...prev, applicationUpdates: enabled }))}
+                />
+                <ToggleItem
+                  title="Interview Invites"
+                  description="Receive notifications about interviewinvites"
+                  enabled={notifications.interviewInvites}
+                  onChange={(enabled) => setNotifications(prev => ({ ...prev, interviewInvites: enabled }))}
+                />
+                <ToggleItem
+                  title="Marketing Emails"
+                  description="Receive notifications about marketingemails"
+                  enabled={notifications.marketingEmails}
+                  onChange={(enabled) => setNotifications(prev => ({ ...prev, marketingEmails: enabled }))}
+                />
+              </>
+            )}
           </SettingsCard>
 
           <ActionButtons />
