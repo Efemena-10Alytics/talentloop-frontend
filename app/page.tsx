@@ -1,31 +1,27 @@
-import AIChatInputSection from "@/components/ai-chat-input-section";
-import Footer from "@/components/footer";
-import HeroSection from "@/components/home/hero-section";
-import InterviewPrepSection from "@/components/home/interview-prep-section";
-import JobSearchCTASection from "@/components/home/job-search-section";
-import PerfectInterviewSection from "@/components/home/perfect-interview-section";
-import WhoTalentLoopIsFor from "@/components/home/testimonials-section";
-import WhyTalentLoopDifferent from "@/components/home/Why-talentloop-different";
 import { Navbar } from "@/components/navbar";
-import ReportingTransparencySection from "@/components/transparency-section";
+import V1CareerSection from "@/components/v1-launch/v1-career-section";
+import V1CTASection from "@/components/v1-launch/v1-cta-section";
+import V1ExpertsSection from "@/components/v1-launch/v1-experts-section";
+import V1HeroSection from "@/components/v1-launch/v1-hero-section";
+import V1PricingSection from "@/components/v1-launch/v1-pricing-section";
+import V1TestimonialsSection from "@/components/v1-launch/v1-testimonials-section";
+import V1WhoIsForSection from "@/components/v1-launch/v1-who-is-for-section";
+import V1WhyDifferentSection from "@/components/v1-launch/v1-why-different-section";
 
 export default function Home() {
   return (
-    <div className="bg-[#0B0D0F]">
-      <div className="p-3">
-      <Navbar />
-      <HeroSection />
-      <PerfectInterviewSection />
-      <AIChatInputSection />
-      <InterviewPrepSection />
-      <WhoTalentLoopIsFor />
-      <WhyTalentLoopDifferent />
-      <div className="bg-black">
-      <ReportingTransparencySection />
-      <JobSearchCTASection />
-      <Footer />
-      </div>
-      </div>
-    </div>
+     <div className="bg-[#01090B] min-h-screen">
+          <div className="p-3">
+            <Navbar v1Launch />
+            <V1HeroSection />
+            <V1CareerSection />
+            <V1ExpertsSection />
+            <V1PricingSection />
+            <V1WhyDifferentSection />
+            <V1WhoIsForSection />
+            <V1TestimonialsSection />
+            <V1CTASection />
+          </div>
+        </div>
   );
 }

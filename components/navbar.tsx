@@ -7,7 +7,13 @@ import { useUserData } from "@/hooks/useUserData";
 
 const navLinks = [{text: "Find Interview Coach", link:"/coaches"}, {text: "Auto Apply", link:"/auto-apply"}, {text: "AI Copilot", link:"/ai-copilot"}];
 
-export function Navbar() {
+const v1Navlinks = [
+  {text: "How it works", link: "#how-it-works"},
+  {text: "Pricing Plan", link: "#pricing"},
+  {text: "FAQs", link: "#faqs"}
+];
+
+export function Navbar({ v1Launch }: {v1Launch?: boolean;}) {
   const { data: session } = useSession();
   const { userData } = useUserData();
   const [isScrolled, setIsScrolled] = useState(false);
@@ -85,6 +91,19 @@ export function Navbar() {
             </a>
           </div>
 
+{v1Launch ? (
+          <nav className="hidden items-center gap-8 lg:flex">
+            {v1Navlinks.map((link) => (
+              <a
+                href={link.link}
+                key={link.text}
+                className="text-sm font-normal text-white/60 transition-colors hover:text-white font-sora"
+              >
+                {link.text}
+              </a>
+            ))}
+          </nav>
+): (
           <nav className="hidden items-center gap-3 lg:flex">
             {navLinks.map((link) => (
               <Link
@@ -96,6 +115,7 @@ export function Navbar() {
               </Link>
             ))}
           </nav>
+)}
 
           {session ? (
             <Link
@@ -109,34 +129,46 @@ export function Navbar() {
               />
             </Link>
           ) : (
-            <div className="relative" ref={dropdownRef}>
-              <button
+            <>
+            {v1Launch ? (
+              <Link
+                href="/signup?type=jobseeker"
+                className="rounded-full bg-[#0B0D0F] border border-[#A2CE3A] px-8 py-2.5 text-sm font-semibold text-white transition-all hover:bg-[#A2CE3A] hover:text-[#0B0D0F] font-mona-sans"
+              >
+                Sign Up
+              </Link>
+            ) : (
+
+              <div className="relative" ref={dropdownRef}>
+             <button
                 type="button"
                 onClick={() => setShowSignUpDropdown(!showSignUpDropdown)}
                 className="rounded-full bg-[#A2CE3A] px-9 py-2 text-sm font-semibold text-[#121212] transition-transform hover:scale-[1.02] font-mona-sans"
               >
                 Sign Up
               </button>
-
-              {showSignUpDropdown && (
-                <div className="absolute right-0 top-full mt-2 w-[175px] rounded-[10px] bg-[#1D242D] p-2 shadow-lg">
-                  <Link
-                    href="/signup?type=jobseeker"
-                    className="block rounded-[8px] bg-[#151A20] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#1a2028] font-mona-sans mb-2"
-                    onClick={() => setShowSignUpDropdown(false)}
-                  >
-                    As Jobseeker
-                  </Link>
-                  <Link
-                    href="/signup?type=coach"
-                    className="block rounded-[8px] bg-[#151A20] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#1a2028] font-mona-sans"
-                    onClick={() => setShowSignUpDropdown(false)}
-                  >
-                    As Interview Coach
-                  </Link>
-                </div>
-              )}
-            </div>
+  
+                {showSignUpDropdown && (
+                  <div className="absolute right-0 top-full mt-2 w-[175px] rounded-[10px] bg-[#1D242D] p-2 shadow-lg">
+                    <Link
+                      href="/signup?type=jobseeker"
+                      className="block rounded-[8px] bg-[#151A20] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#1a2028] font-mona-sans mb-2"
+                      onClick={() => setShowSignUpDropdown(false)}
+                    >
+                      As Jobseeker
+                    </Link>
+                    <Link
+                      href="/signup?type=coach"
+                      className="block rounded-[8px] bg-[#151A20] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#1a2028] font-mona-sans"
+                      onClick={() => setShowSignUpDropdown(false)}
+                    >
+                      As Interview Coach
+                    </Link>
+                  </div>
+                )}
+              </div>
+            )}
+            </>
           )}
         </div>
       </div>
