@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Mona_Sans, Sora } from 'next/font/google'
+import { Mona_Sans, Sora, Plus_Jakarta_Sans } from 'next/font/google'
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
@@ -16,6 +16,12 @@ const sora = Sora({
   subsets: ['latin'],
   weight: ['100', '200', '300', '400', '500', '600', '700', '800'],
   variable: '--font-sora',
+})
+
+const jakartaSans = Plus_Jakarta_Sans({
+  subsets: ['latin'],
+  weight: ['200', '300', '400', '500', '600', '700', '800'],
+  variable: '--font-jakarta-sans',
 })
 
 const geistSans = Geist({
@@ -41,7 +47,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${monaSans.variable} ${sora.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${monaSans.variable} ${sora.variable} ${jakartaSans.variable} antialiased`}
         suppressHydrationWarning
       >
         <SessionProvider>

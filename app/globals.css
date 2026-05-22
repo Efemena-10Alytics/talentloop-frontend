@@ -94,3 +94,55 @@ body {
 .phone-input-custom .PhoneInputCountrySelectArrow {
   opacity: 0.5;
 }
+
+/* V1 Dashboard Phone Input Styles */
+.phone-input-wrapper .PhoneInput {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 56px;
+  border-radius: 40px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: transparent;
+  padding: 0 16px;
+}
+
+.phone-input-wrapper .PhoneInputInput {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #FFFFFF;
+  font-size: 0.875rem;
+  flex: 1;
+  padding-left: 8px;
+}
+
+.phone-input-wrapper .PhoneInputInput::placeholder {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.phone-input-wrapper .PhoneInputCountry {
+  margin-right: 8px;
+}
+
+.phone-input-wrapper .PhoneInputCountrySelect {
+  background: transparent;
+  border: none;
+  color: #FFFFFF;
+  cursor: pointer;
+}
+
+.phone-input-wrapper .PhoneInputCountryIcon {
+  width: 24px;
+  height: 18px;
+  border-radius: 2px;
+}
+
+.phone-input-wrapper .PhoneInputCountrySelectArrow {
+  opacity: 0.6;
+  border-color: #FFFFFF transparent transparent;
+}
+
+.phone-input-wrapper .PhoneInput:focus-within {
+  border-color: #A2CE3A;
+}
