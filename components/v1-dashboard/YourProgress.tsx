@@ -1,3 +1,5 @@
+import ProgressTracker from "./ProgressTracker";
+
 const CalendarIcon = () => (
   <svg width="14" height="15" viewBox="0 0 14 15" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path d="M9.6 0.5V3.3M4 0.5V3.3M13.1 7.5C13.1 4.8603 13.1 3.5401 12.2796 2.7204C11.4592 1.9007 10.1397 1.9 7.5 1.9H6.1C3.4603 1.9 2.1401 1.9 1.3204 2.7204C0.5007 3.5408 0.5 4.8603 0.5 7.5V8.9C0.5 11.5397 0.5 12.8599 1.3204 13.6796C2.1408 14.4993 3.4603 14.5 6.1 14.5M0.5 6.1H13.1" stroke="#A9B4C4" strokeLinecap="round" strokeLinejoin="round"/>
@@ -22,11 +24,21 @@ export default function YourProgress() {
         <span className="text-[#95ACCB] text-sm font-mona-sans ml-auto">7</span>
       </div>
 
-      {/* Progress Tracker Placeholder */}
-      <div className="mb-6 p-8 bg-white/5 rounded-2xl border border-dashed border-white/20">
-        <p className="text-white/60 text-center font-mona-sans text-sm">
-          To be developed
-        </p>
+      {/* Progress Tracker */}
+      <div className="mb-6">
+        <ProgressTracker 
+          totalSteps={7} 
+          currentStep={2}
+          stepLabels={[
+            "Onboarding Complete",
+            "CV Review",
+            "CV Optimisation",
+            "LinkedIn Setup",
+            "Applications",
+            "Interview Prep",
+            "Complete"
+          ]}
+        />
       </div>
 
       {/* CV Optimization Card */}
