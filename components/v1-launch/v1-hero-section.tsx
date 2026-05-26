@@ -121,20 +121,6 @@ export default function V1HeroSection() {
                 </video>
               </div>
 
-              {/* Video Controls - Bottom Center */}
-              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex items-center gap-3 bg-black/50 backdrop-blur-sm px-4 py-2 rounded-full">
-                <button className="text-white/80 hover:text-white">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <rect x="6" y="5" width="4" height="14" rx="1" fill="currentColor"/>
-                    <rect x="14" y="5" width="4" height="14" rx="1" fill="currentColor"/>
-                  </svg>
-                </button>
-                <button className="text-white/80 hover:text-white text-sm">00:18</button>
-                <button className="text-white/80 hover:text-white text-sm">Full Screen</button>
-                <button className="bg-red-500 hover:bg-red-600 text-white px-4 py-1 rounded-full text-sm font-semibold">
-                  End Call
-                </button>
-              </div>
             </div>
           </div>
 

@@ -22,7 +22,7 @@ function SignUpContent() {
 
   // Render V1 signup form for jobseekers when v1=true
   if (isV1) {
-    return <V1SignupForm isEmailVerification={isEmailVerification} />;
+    return <V1SignupForm />;
   }
 
   // Render original signup form for all other cases

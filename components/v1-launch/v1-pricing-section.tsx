@@ -2,7 +2,10 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import Link from "next/link";
+
+interface V1PricingSectionProps {
+  onStartNow?: (planId: string) => void;
+}
 
 const PCIcon = () => (
   <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -87,11 +90,17 @@ const pricingPlans = [
   }
 ];
 
-export default function V1PricingSection() {
+export default function V1PricingSection({ onStartNow }: V1PricingSectionProps) {
   const [selectedPlan, setSelectedPlan] = useState("premium");
   const [hoveredPlan, setHoveredPlan] = useState<string | null>(null);
 
   const activePlan = pricingPlans.find(plan => plan.id === selectedPlan) || pricingPlans[1];
+
+  const handleStartNow = () => {
+    if (onStartNow) {
+      onStartNow(selectedPlan);
+    }
+  };
 
   return (
     <section className="relative py-20 lg:py-32">
@@ -220,16 +229,16 @@ export default function V1PricingSection() {
               </div>
 
               {/* Start Now Button */}
-              <Link
-                href="/signup?v1=true"
-                className="block w-full text-center px-8 py-4 rounded-[30px] font-mona-sans text-base font-semibold text-white hover:opacity-90 transition-opacity"
+              <button
+                onClick={handleStartNow}
+                className="w-full px-8 py-4 rounded-[30px] font-mona-sans text-base font-semibold text-white hover:opacity-90 transition-opacity"
                 style={{
                   background: "linear-gradient(90deg, #071522 25%, #A2CE3A 100%)",
                   boxShadow: "0px -6px 4px 0px #FFFFFF4D inset"
                 }}
               >
                 Start Now
-              </Link>
+              </button>
             </motion.div>
           </div>
         </motion.div>

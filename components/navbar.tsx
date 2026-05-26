@@ -24,16 +24,12 @@ export function Navbar({ v1Launch }: {v1Launch?: boolean;}) {
 
   useEffect(() => {
     const handleScroll = () => {
-      // Check if user has scrolled past the hero section (adjust threshold as needed)
-      const heroHeight = window.innerHeight; // Assuming hero section is full viewport height
+      const heroHeight = window.innerHeight;
       const scrollPosition = window.scrollY;
-
       setIsScrolled(scrollPosition > heroHeight * 0.1); 
     };
 
     window.addEventListener("scroll", handleScroll);
-
-    // Check initial scroll position
     handleScroll();
 
     return () => {
@@ -60,17 +56,24 @@ export function Navbar({ v1Launch }: {v1Launch?: boolean;}) {
     };
   }, [showSignUpDropdown, showMobileSidebar]);
 
+  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, link: string) => {
+    e.preventDefault();
+    const targetId = link.replace('#', '');
+    const targetElement = document.getElementById(targetId);
+    if (targetElement) {
+      targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
   return (
     <div className="fixed top-0 inset-x-0 z-50">
       <div className="relative w-full">
-        {/* Background layer with fade animation */}
         <div
           className={`absolute inset-0 bg-[url('/homepage/bg1.svg')] bg-cover bg-center shadow-lg transition-opacity duration-700 ease-in-out ${
             isScrolled ? "opacity-100" : "opacity-0"
           }`}
         />
         
-        {/* Content layer */}
         <div className="relative mx-auto flex w-full max-w-[1400px] items-center justify-between gap-4 px-6 py-6">
           <div className="flex items-center gap-3">
             <button
@@ -97,7 +100,8 @@ export function Navbar({ v1Launch }: {v1Launch?: boolean;}) {
               <a
                 href={link.link}
                 key={link.text}
-                className="text-sm font-normal text-white/60 transition-colors hover:text-white font-sora"
+                onClick={(e) => handleNavClick(e, link.link)}
+                className="text-sm font-normal text-white/60 transition-colors hover:text-white font-sora cursor-pointer"
               >
                 {link.text}
               </a>
@@ -195,16 +199,32 @@ export function Navbar({ v1Launch }: {v1Launch?: boolean;}) {
             </div>
 
             <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-2">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.text}
-                  href={link.link}
-                  className="block rounded-lg bg-[#FFFFFF26] px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#FFFFFF33] font-mona-sans"
-                  onClick={() => setShowMobileSidebar(false)}
-                >
-                  {link.text}
-                </Link>
-              ))}
+              {v1Launch ? (
+                v1Navlinks.map((link) => (
+                  <a
+                    key={link.text}
+                    href={link.link}
+                    onClick={(e) => {
+                      handleNavClick(e, link.link);
+                      setShowMobileSidebar(false);
+                    }}
+                    className="block rounded-lg bg-[#FFFFFF26] px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#FFFFFF33] font-mona-sans cursor-pointer"
+                  >
+                    {link.text}
+                  </a>
+                ))
+              ) : (
+                navLinks.map((link) => (
+                  <Link
+                    key={link.text}
+                    href={link.link}
+                    className="block rounded-lg bg-[#FFFFFF26] px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#FFFFFF33] font-mona-sans"
+                    onClick={() => setShowMobileSidebar(false)}
+                  >
+                    {link.text}
+                  </Link>
+                ))
+              )}
             </nav>
 
             {!session && (

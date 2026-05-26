@@ -34,10 +34,10 @@ export default function FileCard({ name, description, status, icon }: FileCardPr
         <div className="flex-shrink-0">
           {status === "Ready" ? (
             <div
-              className="px-4 py-2 rounded-lg"
+              className="px-4 py-2 rounded-[100px]"
               style={{
-                background: "rgba(20, 174, 92, 0.1)",
-                border: "1px solid rgba(255, 255, 255, 0.06)",
+                background: "#14AE5C1A",
+                border: "1px solid #FFFFFF0F",
               }}
             >
               <span
@@ -49,10 +49,10 @@ export default function FileCard({ name, description, status, icon }: FileCardPr
             </div>
           ) : (
             <div
-              className="px-4 py-2 rounded-lg"
+              className="px-4 py-2 rounded-[100px]"
               style={{
-                background: "rgba(0, 0, 0, 0.12)",
-                border: "1px solid rgba(255, 255, 255, 0.06)",
+                background: "#00C8B31A",
+                border: "1px solid #FFFFFF0F",
               }}
             >
               <span className="text-sm font-mona-sans font-medium text-white">
@@ -63,7 +63,7 @@ export default function FileCard({ name, description, status, icon }: FileCardPr
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center gap-3 flex-shrink-0">
+        <div className="flex items-center gap-3 flex-shrink-0 lg:ml-5">
           {/* Preview Button */}
           <button
             className="px-6 py-2.5 rounded-lg font-mona-sans font-medium text-sm transition-opacity hover:opacity-80"

@@ -1414,10 +1414,10 @@ cosmiconfig@^7.0.0:
     path-type "^4.0.0"
     yaml "^1.10.0"
 
-country-flag-icons@^1.5.17:
-  version "1.6.13"
-  resolved "https://registry.npmjs.org/country-flag-icons/-/country-flag-icons-1.6.13.tgz"
-  integrity sha512-mR9GoTXtj3zAXoZXBkb3J4QvyDllFEPtEfZvHb9U23TAHYXfkJyP03pRtZiR0spxo6Ibja3R/hn6a68T4LHBuA==
+country-flag-icons@^1.6.14:
+  version "1.6.17"
+  resolved "https://registry.npmjs.org/country-flag-icons/-/country-flag-icons-1.6.17.tgz"
+  integrity sha512-Nmik0289ZVZSI3c7mJR/amg6DyY7Z59b0sTFSKayeX72mHfPzCPJygwJs2pYgQULzuAyWeCUgwAJ+Dq8OR+JFw==
 
 cross-spawn@^7.0.6:
   version "7.0.6"
@@ -2666,10 +2666,10 @@ levn@^0.4.1:
     prelude-ls "^1.2.1"
     type-check "~0.4.0"
 
-libphonenumber-js@^1.12.27:
-  version "1.12.36"
-  resolved "https://registry.npmjs.org/libphonenumber-js/-/libphonenumber-js-1.12.36.tgz"
-  integrity sha512-woWhKMAVx1fzzUnMCyOzglgSgf6/AFHLASdOBcchYCyvWSGWt12imw3iu2hdI5d4dGZRsNWAmWiz37sDKUPaRQ==
+libphonenumber-js@^1.12.37:
+  version "1.13.3"
+  resolved "https://registry.npmjs.org/libphonenumber-js/-/libphonenumber-js-1.13.3.tgz"
+  integrity sha512-xMkdAMqcyG7iN2WZZmGIfWbYxW4orRkny+0/AXIbwL0xll2zkDX0Vzo/BXFa6+7mh2UvJl9MbcTtHk0YXkFtBA==
 
 lie@3.1.1:
   version "3.1.1"
@@ -3229,15 +3229,15 @@ react-is@^18.3.1:
   resolved "https://registry.npmjs.org/react-is/-/react-is-18.3.1.tgz"
   integrity sha512-/LLMVyas0ljjAtoYiPqYiL8VWXzUUdThrmU5+n20DZv+a+ClRoevUzw5JxU+Ieh5/c87ytoTBV9G1FiKfNJdmg==
 
-react-phone-number-input@^3.4.14:
-  version "3.4.14"
-  resolved "https://registry.npmjs.org/react-phone-number-input/-/react-phone-number-input-3.4.14.tgz"
-  integrity sha512-T9MziNuvthzv6+JAhKD71ab/jVXW5U20nQZRBJd6+q+ujmkC+/ISOf2GYo8pIi4VGjdIYRIHDftMAYn3WKZT3w==
+react-phone-number-input@^3.4.16:
+  version "3.4.16"
+  resolved "https://registry.npmjs.org/react-phone-number-input/-/react-phone-number-input-3.4.16.tgz"
+  integrity sha512-ix1+SIyGuLxnlAeW+XQNhwOmmDd4Zmr6Ng1eQl0E2XS8xIuue3gdZeBG4LGTMjTIFneOTO9pUPL+AEDhV6+r+A==
   dependencies:
     classnames "^2.5.1"
-    country-flag-icons "^1.5.17"
+    country-flag-icons "^1.6.14"
     input-format "^0.3.14"
-    libphonenumber-js "^1.12.27"
+    libphonenumber-js "^1.12.37"
     prop-types "^15.8.1"
 
 react-player@^3.4.0:

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import ExpertDetailsModal from "./ExpertDetailsModal";
 
 // Mock data for experts
 const mockExperts = [
@@ -12,7 +13,7 @@ const mockExperts = [
     rating: 5.0,
     specialty: "Finance",
     sessions: "100+ Interview Prep Sessions",
-    image: "/coaches/coach1.jpg",
+    image: "/Image-1.png",
     languages: ["English", "French", "Spanish"]
   },
   {
@@ -21,7 +22,7 @@ const mockExperts = [
     rating: 4.9,
     specialty: "Marketing",
     sessions: "100+ Interview Prep Sessions",
-    image: "/coaches/coach2.jpg",
+    image: "/Image-2.png",
     languages: ["English", "German"]
   },
   {
@@ -30,7 +31,7 @@ const mockExperts = [
     rating: 4.8,
     specialty: "Engineering",
     sessions: "100+ Interview Prep Sessions",
-    image: "/coaches/coach3.jpg",
+    image: "/Image-3.png",
     languages: ["English", "Spanish"]
   },
   {
@@ -39,7 +40,7 @@ const mockExperts = [
     rating: 4.9,
     specialty: "Design",
     sessions: "90+ Interview Prep Sessions",
-    image: "/coaches/coach4.jpg",
+    image: "/Image-4.png",
     languages: ["English", "French"]
   },
   {
@@ -48,7 +49,7 @@ const mockExperts = [
     rating: 5.0,
     specialty: "Product",
     sessions: "120+ Interview Prep Sessions",
-    image: "/coaches/coach5.jpg",
+    image: "/Image-5.png",
     languages: ["English", "Spanish", "Portuguese"]
   },
   {
@@ -57,7 +58,7 @@ const mockExperts = [
     rating: 4.8,
     specialty: "Data Science",
     sessions: "85+ Interview Prep Sessions",
-    image: "/coaches/coach6.jpg",
+    image: "/Image-1.png",
     languages: ["English", "Mandarin"]
   },
   {
@@ -66,7 +67,7 @@ const mockExperts = [
     rating: 4.9,
     specialty: "Sales",
     sessions: "95+ Interview Prep Sessions",
-    image: "/coaches/coach1.jpg",
+    image: "/Image-2.png",
     languages: ["English", "Spanish"]
   },
   {
@@ -75,7 +76,7 @@ const mockExperts = [
     rating: 5.0,
     specialty: "Operations",
     sessions: "110+ Interview Prep Sessions",
-    image: "/coaches/coach2.jpg",
+    image: "/Image-3.png",
     languages: ["English", "German", "French"]
   },
   {
@@ -84,7 +85,7 @@ const mockExperts = [
     rating: 4.7,
     specialty: "HR",
     sessions: "80+ Interview Prep Sessions",
-    image: "/coaches/coach3.jpg",
+    image: "/Image-4.png",
     languages: ["English"]
   },
   {
@@ -93,7 +94,7 @@ const mockExperts = [
     rating: 4.9,
     specialty: "Finance",
     sessions: "105+ Interview Prep Sessions",
-    image: "/coaches/coach4.jpg",
+    image: "/Image-5.png",
     languages: ["English", "Korean"]
   },
   {
@@ -102,7 +103,7 @@ const mockExperts = [
     rating: 5.0,
     specialty: "Marketing",
     sessions: "115+ Interview Prep Sessions",
-    image: "/coaches/coach5.jpg",
+    image: "/Image-1.png",
     languages: ["English", "French"]
   },
   {
@@ -111,7 +112,7 @@ const mockExperts = [
     rating: 4.8,
     specialty: "Engineering",
     sessions: "92+ Interview Prep Sessions",
-    image: "/coaches/coach6.jpg",
+    image: "/Image-2.png",
     languages: ["English", "Spanish"]
   },
   {
@@ -120,7 +121,7 @@ const mockExperts = [
     rating: 4.9,
     specialty: "Design",
     sessions: "88+ Interview Prep Sessions",
-    image: "/coaches/coach1.jpg",
+    image: "/Image-3.png",
     languages: ["English", "Hindi"]
   },
   {
@@ -129,7 +130,7 @@ const mockExperts = [
     rating: 5.0,
     specialty: "Product",
     sessions: "125+ Interview Prep Sessions",
-    image: "/coaches/coach2.jpg",
+    image: "/Image-4.png",
     languages: ["English", "German"]
   },
   {
@@ -138,7 +139,7 @@ const mockExperts = [
     rating: 4.8,
     specialty: "Data Science",
     sessions: "78+ Interview Prep Sessions",
-    image: "/coaches/coach3.jpg",
+    image: "/Image-5.png",
     languages: ["English", "Mandarin"]
   },
   {
@@ -147,7 +148,7 @@ const mockExperts = [
     rating: 4.9,
     specialty: "Sales",
     sessions: "98+ Interview Prep Sessions",
-    image: "/coaches/coach4.jpg",
+    image: "/Image-1.png",
     languages: ["English", "Spanish", "Portuguese"]
   },
   {
@@ -156,7 +157,7 @@ const mockExperts = [
     rating: 5.0,
     specialty: "Operations",
     sessions: "108+ Interview Prep Sessions",
-    image: "/coaches/coach5.jpg",
+    image: "/Image-2.png",
     languages: ["English", "French"]
   },
   {
@@ -165,7 +166,7 @@ const mockExperts = [
     rating: 4.7,
     specialty: "HR",
     sessions: "82+ Interview Prep Sessions",
-    image: "/coaches/coach6.jpg",
+    image: "/Image-3.png",
     languages: ["English"]
   }
 ];
@@ -175,6 +176,8 @@ const EXPERTS_PER_PAGE = 6;
 export default function V1ExpertsSection() {
   const [currentPage, setCurrentPage] = useState(1);
   const [hoveredCard, setHoveredCard] = useState<number | null>(null);
+  const [selectedExpert, setSelectedExpert] = useState<typeof mockExperts[0] | null>(null);
+  const [showModal, setShowModal] = useState(false);
 
   const totalPages = Math.ceil(mockExperts.length / EXPERTS_PER_PAGE);
   const startIndex = (currentPage - 1) * EXPERTS_PER_PAGE;
@@ -291,7 +294,13 @@ export default function V1ExpertsSection() {
                   </div>
 
                   {/* More Details Button */}
-                  <div
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setSelectedExpert(expert);
+                      setShowModal(true);
+                    }}
                     className="w-fit px-6 py-3 rounded-[30px] font-mona-sans text-sm font-semibold transition-all duration-500 ease-in-out"
                     style={{
                       background: hoveredCard === expert.id
@@ -302,7 +311,7 @@ export default function V1ExpertsSection() {
                     }}
                   >
                     {hoveredCard === expert.id ? "View More Details" : "More Details"}
-                  </div>
+                  </button>
                 </div>
               </motion.div>
             </Link>
@@ -355,6 +364,16 @@ export default function V1ExpertsSection() {
           </button>
         </motion.div>
       </div>
+
+      {/* Expert Details Modal */}
+      <ExpertDetailsModal
+        isOpen={showModal}
+        onClose={() => {
+          setShowModal(false);
+          setSelectedExpert(null);
+        }}
+        expert={selectedExpert}
+      />
     </section>
   );
 }

@@ -21,50 +21,39 @@ const userTypes = [
 const columnImages = [
   // Column 1
   [
-    { name: "Chloe Ramirez", role: "UX Designer", image: "/coaches/coach1.jpg" },
-    { name: "Sofia Chen", role: "Product Manager", image: "/coaches/coach2.jpg" },
-    { name: "Nina Torres", role: "Content Strategist", image: "/coaches/coach3.jpg" },
-    { name: "Ethan Brooks", role: "Software Engineer", image: "/coaches/coach4.jpg" },
-    { name: "Richard Malick", role: "Data Analyst", image: "/coaches/coach5.jpg" },
-    { name: "Andrew Jones", role: "Marketing Manager", image: "/coaches/coach6.jpg" }
+    { name: "Chloe Ramirez", role: "UX Designer", image: "/Image-1.png" },
+    { name: "Sofia Chen", role: "Product Manager", image: "/Image-2.png" },
+    { name: "Nina Torres", role: "Content Strategist", image: "/Image-3.png" },
+    { name: "Ethan Brooks", role: "Software Engineer", image: "/Image-4.png" },
+    { name: "Richard Malick", role: "Data Analyst", image: "/Image-5.png" },
+    // { name: "Andrew Jones", role: "Marketing Manager", image: "/Image-6.png" }
   ],
   // Column 2
   [
-    { name: "Liam O'Reilly", role: "Sales Director", image: "/coaches/coach3.jpg" },
-    { name: "Maya Patel", role: "HR Specialist", image: "/coaches/coach4.jpg" },
-    { name: "James Wilson", role: "Financial Analyst", image: "/coaches/coach5.jpg" },
-    { name: "Emma Davis", role: "Operations Manager", image: "/coaches/coach6.jpg" },
-    { name: "Alex Kim", role: "Product Designer", image: "/coaches/coach1.jpg" },
-    { name: "Sarah Johnson", role: "Business Analyst", image: "/coaches/coach2.jpg" }
+    { name: "Sofia Chen", role: "Product Manager", image: "/Image-2.png" },
+    { name: "Chloe Ramirez", role: "UX Designer", image: "/Image-1.png" },
+    { name: "Ethan Brooks", role: "Software Engineer", image: "/Image-4.png" },
+    { name: "Nina Torres", role: "Content Strategist", image: "/Image-3.png" },
+    { name: "Richard Malick", role: "Data Analyst", image: "/Image-5.png" },
+    // { name: "Andrew Jones", role: "Marketing Manager", image: "/Image-6.png" }
   ],
   // Column 3
-  [
-    { name: "Michael Brown", role: "DevOps Engineer", image: "/coaches/coach5.jpg" },
-    { name: "Lisa Anderson", role: "Project Manager", image: "/coaches/coach6.jpg" },
-    { name: "David Chen", role: "Growth Marketer", image: "/coaches/coach1.jpg" },
-    { name: "Rachel Green", role: "Content Writer", image: "/coaches/coach2.jpg" },
-    { name: "Tom Martinez", role: "Sales Manager", image: "/coaches/coach3.jpg" },
-    { name: "Anna Lee", role: "UX Researcher", image: "/coaches/coach4.jpg" }
-  ]
+ [
+   { name: "Richard Malick", role: "Data Analyst", image: "/Image-5.png" },
+   { name: "Sofia Chen", role: "Product Manager", image: "/Image-2.png" },
+   { name: "Ethan Brooks", role: "Software Engineer", image: "/Image-4.png" },
+   { name: "Chloe Ramirez", role: "UX Designer", image: "/Image-1.png" },
+   { name: "Nina Torres", role: "Content Strategist", image: "/Image-3.png" },
+    // { name: "Andrew Jones", role: "Marketing Manager", image: "/Image-6.png" }
+  ],
 ];
 
 export default function V1WhoIsForSection() {
   return (
     <section className="relative py-20 lg:py-32 overflow-hidden">
       <div className="max-w-[1400px] mx-auto px-3 lg:px-6">
-        {/* Section Heading */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          viewport={{ once: true }}
-          className="text-center mb-16"
-        >
-          <h2 className="text-4xl lg:text-6xl font-sora font-bold text-white mb-4">
-            WHO TALENTLOOP.AI IS FOR
-          </h2>
-        </motion.div>
-
+    
+     
         <div className="flex flex-col lg:flex-row gap-12 items-start">
           {/* Left Side - Checkmark List */}
           <motion.div
@@ -72,8 +61,26 @@ export default function V1WhoIsForSection() {
             whileInView={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8 }}
             viewport={{ once: true }}
-            className="lg:w-1/3 space-y-6"
+            className="lg:w-[50%] space-y-6"
           >
+
+   <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          viewport={{ once: true }}
+          className="mb-5 lg:mb-16 w-[100px]"
+        >
+          <h2 className="text-4xl lg:text-[54px] font-sora font-bold leading-normal text-white mb-4">
+            WHO
+            <span className="text-[#A2CE3A] font-sora mx-2">
+            TALENTLOOP.AI 
+              </span> 
+            IS FOR
+          </h2>
+        </motion.div>
+
+              {/* Section Heading */}
             {userTypes.map((type, index) => (
               <motion.div
                 key={index}
@@ -90,7 +97,7 @@ export default function V1WhoIsForSection() {
           </motion.div>
 
           {/* Right Side - Scrolling Image Columns */}
-          <div className="lg:w-2/3 flex flex-row gap-5 h-[600px] overflow-hidden">
+          <div className="lg:w-[50%] flex flex-row gap-5 h-[600px] overflow-hidden">
             {columnImages.map((column, columnIndex) => (
               <div
                 key={columnIndex}
@@ -112,12 +119,12 @@ export default function V1WhoIsForSection() {
                   {column.map((user, index) => (
                     <div
                       key={`first-${index}`}
-                      className="relative w-full h-[150px] rounded-[12px] overflow-hidden flex-shrink-0"
+                      className="relative w-full h-[150px] bg-white/10 rounded-[12px] overflow-hidden flex-shrink-0"
                     >
                       <img
                         src={user.image}
                         alt={user.name}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-contain"
                       />
                       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3">
                         <p className="text-white font-mona-sans text-sm font-semibold">

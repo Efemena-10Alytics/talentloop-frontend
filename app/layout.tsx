@@ -1,21 +1,31 @@
 import type { Metadata } from "next";
-import { Mona_Sans, Sora, Plus_Jakarta_Sans } from 'next/font/google'
+import localFont from 'next/font/local'
+import { Plus_Jakarta_Sans } from 'next/font/google'
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { SessionProvider } from "@/components/providers/SessionProvider";
 import { QueryProvider } from "@/components/providers/QueryProvider";
 
-const monaSans = Mona_Sans({
-  subsets: ['latin'],
-  weight: ['200', '300', '400', '500', '600', '700', '800', '900'],
+const monaSans = localFont({
+  src: [
+    {
+      path: '../public/fonts/Mona_Sans/MonaSans-VariableFont_wdth,wght.ttf',
+      style: 'normal',
+    },
+    {
+      path: '../public/fonts/Mona_Sans/MonaSans-Italic-VariableFont_wdth,wght.ttf',
+      style: 'italic',
+    },
+  ],
   variable: '--font-mona-sans',
+  display: 'swap',
 })
 
-const sora = Sora({
-  subsets: ['latin'],
-  weight: ['100', '200', '300', '400', '500', '600', '700', '800'],
+const sora = localFont({
+  src: '../public/fonts/Sora-VariableFont_wght.ttf',
   variable: '--font-sora',
+  display: 'swap',
 })
 
 const jakartaSans = Plus_Jakarta_Sans({

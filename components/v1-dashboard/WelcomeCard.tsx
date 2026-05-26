@@ -24,6 +24,8 @@ export default function WelcomeCard({ userName, cvScore, managerName, deliveryDa
         <p className="text-white text-sm font-mona-sans mb-2">
           Welcome to Your Dashboard
         </p>
+        <span className="text-4xl lg:text-5xl font-mona-sans font-bold flex gap-2">
+
         <h2
           className="text-4xl lg:text-5xl font-mona-sans font-bold mb-6"
           style={{
@@ -33,8 +35,10 @@ export default function WelcomeCard({ userName, cvScore, managerName, deliveryDa
             backgroundClip: "text",
           }}
         >
-          Hello {userName} 👋
+          Hello {userName} 
         </h2>
+        👋
+        </span>
       </div>
 
       {/* CV Score Section */}
