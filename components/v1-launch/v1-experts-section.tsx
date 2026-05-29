@@ -4,8 +4,15 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import ExpertDetailsModal from "./ExpertDetailsModal";
+import { useVisibleExperts } from "@/lib/hooks/useExperts";
+import type { Expert } from "@/lib/services/experts.service";
 
-// Mock data for experts
+// Helper function to format sessions count
+const formatSessionsCount = (count: number) => {
+  return `${count}+ Interview Prep Sessions`;
+};
+
+// Mock data for experts (keeping as fallback)
 const mockExperts = [
   {
     id: 1,
@@ -173,15 +180,32 @@ const mockExperts = [
 
 const EXPERTS_PER_PAGE = 6;
 
+// Type for modal expert (matches ExpertDetailsModal interface)
+interface ModalExpert {
+  id: number;
+  name: string;
+  rating: number;
+  specialty: string;
+  sessions: string;
+  image: string;
+  languages: string[];
+}
+
 export default function V1ExpertsSection() {
   const [currentPage, setCurrentPage] = useState(1);
   const [hoveredCard, setHoveredCard] = useState<number | null>(null);
-  const [selectedExpert, setSelectedExpert] = useState<typeof mockExperts[0] | null>(null);
+  const [selectedExpert, setSelectedExpert] = useState<ModalExpert | null>(null);
   const [showModal, setShowModal] = useState(false);
 
-  const totalPages = Math.ceil(mockExperts.length / EXPERTS_PER_PAGE);
+  // Fetch experts from API using Tanstack Query
+  const { data: apiExperts, isLoading, isError } = useVisibleExperts();
+
+  // Use API data if available, otherwise fallback to mock data
+  const experts = apiExperts && apiExperts.length > 0 ? apiExperts : mockExperts;
+
+  const totalPages = Math.ceil(experts.length / EXPERTS_PER_PAGE);
   const startIndex = (currentPage - 1) * EXPERTS_PER_PAGE;
-  const currentExperts = mockExperts.slice(startIndex, startIndex + EXPERTS_PER_PAGE);
+  const currentExperts = experts.slice(startIndex, startIndex + EXPERTS_PER_PAGE);
 
   return (
     <section className="relative py-20 lg:py-32">
@@ -217,109 +241,147 @@ export default function V1ExpertsSection() {
           </motion.div>
         </div>
 
+        {/* Loading State */}
+        {isLoading && (
+          <div className="flex items-center justify-center py-20">
+            <div className="text-white/60 font-mona-sans text-lg">Loading experts...</div>
+          </div>
+        )}
+
+        {/* Error State */}
+        {isError && !isLoading && (
+          <div className="flex items-center justify-center py-20">
+            <div className="text-red-500 font-mona-sans text-lg">Failed to load experts. Please try again later.</div>
+          </div>
+        )}
+
         {/* Experts Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-          {currentExperts.map((expert, index) => (
-            <Link
-              key={expert.id}
-              href={`/coaches/${expert.id}`}
-              onMouseEnter={() => setHoveredCard(expert.id)}
-              onMouseLeave={() => setHoveredCard(null)}
-            >
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: index * 0.1 }}
-                viewport={{ once: true }}
-                className="rounded-[24px] overflow-hidden transition-all duration-500 ease-in-out cursor-pointer"
-                style={{
-                  background: hoveredCard === expert.id
-                    ? "linear-gradient(0deg, rgba(21, 16, 25, 0.7), rgba(21, 16, 25, 0.7)), radial-gradient(163.24% 100% at 50% 100%, rgba(162, 206, 58, 0.3) 0%, rgba(11, 13, 15, 0.3) 42.49%)"
-                    : "#151019B2",
-                  border: hoveredCard === expert.id ? "1px solid #FFFFFF0F" : "1px solid transparent"
-                }}
-              >
-                {/* Expert Image */}
-                <div className="relative h-64 overflow-hidden">
-                  <img
-                    src={expert.image}
-                    alt={expert.name}
-                    className="w-full h-full object-cover transition-transform duration-500 ease-in-out"
+        {!isLoading && !isError && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+            {currentExperts.map((expert, index) => {
+              const isApiExpert = 'photo_url' in expert;
+              const expertImage = isApiExpert ? (expert as Expert).photo_url : (expert as typeof mockExperts[0]).image;
+              const expertSpecialty = isApiExpert ? (expert as Expert).job_title : (expert as typeof mockExperts[0]).specialty;
+              const expertSessions = isApiExpert 
+                ? formatSessionsCount((expert as Expert).interview_prep_counts)
+                : (expert as typeof mockExperts[0]).sessions;
+              const expertRating = isApiExpert ? 5.0 : (expert as typeof mockExperts[0]).rating;
+              const expertLanguages = isApiExpert ? ['English'] : (expert as typeof mockExperts[0]).languages;
+
+              return (
+                <Link
+                  key={expert.id}
+                  href={`/coaches/${expert.id}`}
+                  onMouseEnter={() => setHoveredCard(expert.id)}
+                  onMouseLeave={() => setHoveredCard(null)}
+                >
+                  <motion.div
+                    initial={{ opacity: 0, y: 30 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: index * 0.1 }}
+                    viewport={{ once: true }}
+                    className="rounded-[24px] overflow-hidden transition-all duration-500 ease-in-out cursor-pointer"
                     style={{
-                      transform: hoveredCard === expert.id ? "scale(1.05)" : "scale(1)"
+                      background: hoveredCard === expert.id
+                        ? "linear-gradient(0deg, rgba(21, 16, 25, 0.7), rgba(21, 16, 25, 0.7)), radial-gradient(163.24% 100% at 50% 100%, rgba(162, 206, 58, 0.3) 0%, rgba(11, 13, 15, 0.3) 42.49%)"
+                        : "#151019B2",
+                      border: hoveredCard === expert.id ? "1px solid #FFFFFF0F" : "1px solid transparent"
                     }}
-                  />
-                  {/* Specialty Badge */}
-                  <div className="absolute top-4 left-4 px-3 py-1.5 bg-[#A2CE3A] rounded-full transition-all duration-300">
-                    <span className="text-[#090B0E] font-mona-sans text-xs font-semibold">
-                      {expert.specialty}
-                    </span>
-                  </div>
-                </div>
+                  >
+                    {/* Expert Image */}
+                    <div className="relative h-64 overflow-hidden">
+                      <img
+                        src={expertImage}
+                        alt={expert.name}
+                        className="w-full h-full object-cover transition-transform duration-500 ease-in-out"
+                        style={{
+                          transform: hoveredCard === expert.id ? "scale(1.05)" : "scale(1)"
+                        }}
+                      />
+                      {/* Specialty Badge */}
+                      <div className="absolute top-4 left-4 px-3 py-1.5 bg-[#A2CE3A] rounded-full transition-all duration-300">
+                        <span className="text-[#090B0E] font-mona-sans text-xs font-semibold">
+                          {expertSpecialty}
+                        </span>
+                      </div>
+                    </div>
 
                 {/* Expert Info */}
                 <div className="p-6">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-white font-mona-sans text-xl font-bold">
-                      {expert.name}
-                    </h3>
-                    <div className="flex items-center gap-1">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#A2CE3A"/>
-                      </svg>
-                      <span className="text-white font-mona-sans text-sm font-semibold">
-                        {expert.rating}
-                      </span>
-                    </div>
-                  </div>
-
-                  <p className="text-white/60 font-sora text-sm mb-4">
-                    {expert.sessions}
-                  </p>
-
-                  {/* Languages */}
-                  <div className="flex items-center gap-2 mb-4">
-                    {expert.languages.slice(0, 4).map((lang, idx) => (
-                      <div key={idx} className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center">
-                        <span className="text-white/60 text-xs font-mona-sans">
-                          {lang.charAt(0)}
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-white font-mona-sans text-xl font-bold">
+                        {expert.name}
+                      </h3>
+                      <div className="flex items-center gap-1">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#A2CE3A"/>
+                        </svg>
+                        <span className="text-white font-mona-sans text-sm font-semibold">
+                          {expertRating}
                         </span>
                       </div>
-                    ))}
-                    {expert.languages.length > 4 && (
-                      <span className="text-white/60 text-xs font-mona-sans">
-                        +{expert.languages.length - 4}
-                      </span>
-                    )}
-                  </div>
+                    </div>
 
-                  {/* More Details Button */}
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      setSelectedExpert(expert);
-                      setShowModal(true);
-                    }}
-                    className="w-fit px-6 py-3 rounded-[30px] font-mona-sans text-sm font-semibold transition-all duration-500 ease-in-out"
-                    style={{
-                      background: hoveredCard === expert.id
-                        ? "linear-gradient(90deg, #A2CE3A 0%, #52681D 100%)"
-                        : "linear-gradient(180deg, #0E0912 0%, #22162B 100%)",
-                      border: "1px solid #FFFFFF0F",
-                      color: "#FFFFFF"
-                    }}
-                  >
-                    {hoveredCard === expert.id ? "View More Details" : "More Details"}
-                  </button>
-                </div>
-              </motion.div>
-            </Link>
-          ))}
-        </div>
+                    <p className="text-white/60 font-sora text-sm mb-4">
+                      {expertSessions}
+                    </p>
+
+                    {/* Languages */}
+                    <div className="flex items-center gap-2 mb-4">
+                      {expertLanguages.slice(0, 4).map((lang, idx) => (
+                        <div key={idx} className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center">
+                          <span className="text-white/60 text-xs font-mona-sans">
+                            {lang.charAt(0)}
+                          </span>
+                        </div>
+                      ))}
+                      {expertLanguages.length > 4 && (
+                        <span className="text-white/60 text-xs font-mona-sans">
+                          +{expertLanguages.length - 4}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* More Details Button */}
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        // Convert to ModalExpert type
+                        const modalExpert: ModalExpert = {
+                          id: expert.id,
+                          name: expert.name,
+                          rating: expertRating,
+                          specialty: expertSpecialty,
+                          sessions: expertSessions,
+                          image: expertImage,
+                          languages: expertLanguages,
+                        };
+                        setSelectedExpert(modalExpert);
+                        setShowModal(true);
+                      }}
+                      className="w-fit px-6 py-3 rounded-[30px] font-mona-sans text-sm font-semibold transition-all duration-500 ease-in-out"
+                      style={{
+                        background: hoveredCard === expert.id
+                          ? "linear-gradient(90deg, #A2CE3A 0%, #52681D 100%)"
+                          : "linear-gradient(180deg, #0E0912 0%, #22162B 100%)",
+                        border: "1px solid #FFFFFF0F",
+                        color: "#FFFFFF"
+                      }}
+                    >
+                      {hoveredCard === expert.id ? "View More Details" : "More Details"}
+                    </button>
+                  </div>
+                </motion.div>
+              </Link>
+            );
+            })}
+          </div>
+        )}
 
         {/* Pagination */}
-        <motion.div
+        {!isLoading && !isError && (
+          <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
@@ -362,7 +424,8 @@ export default function V1ExpertsSection() {
               <path d="M9 18L15 12L9 6" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </button>
-        </motion.div>
+          </motion.div>
+        )}
       </div>
 
       {/* Expert Details Modal */}

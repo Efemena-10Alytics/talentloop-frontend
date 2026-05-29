@@ -255,14 +255,16 @@ export default function V1SignupFormContent({
     setLoading(true);
 
     try {
-      const response = await fetch(`${getApiUrl()}/api/auth/register`, {
+      const response = await fetch(`${getApiUrl()}/api/v1/auth/register`, {
         method: "POST",
-        headers: getHeaders(),
+        headers: {
+          "Accept": "application/json",
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
           email,
           password,
           password_confirmation: confirmPassword,
-          role: "jobseeker",
         }),
       });
 
@@ -278,9 +280,8 @@ export default function V1SignupFormContent({
         return;
       }
 
-      if (data.data?.token) {
-        localStorage.setItem("auth_token", data.data.token);
-      }
+      // v1 API doesn't return token on registration, only after email verification
+      // Store email for verification step
 
       toast({
         variant: "success",
@@ -303,10 +304,9 @@ export default function V1SignupFormContent({
 
   const handleResend = async () => {
     try {
-      const response = await fetch(`${getApiUrl()}/api/auth/resend-otp`, {
+      const response = await fetch(`${getApiUrl()}/api/v1/auth/verify-email/resend-otp`, {
         method: "POST",
         headers: getHeaders(),
-        credentials: "include",
         body: JSON.stringify({ email }),
       });
 
@@ -339,7 +339,7 @@ export default function V1SignupFormContent({
     setVerifying(true);
 
     try {
-      const response = await fetch(`${getApiUrl()}/api/auth/verify-email`, {
+      const response = await fetch(`${getApiUrl()}/api/v1/auth/verify-email`, {
         method: "POST",
         headers: getHeaders(),
         body: JSON.stringify({
@@ -366,8 +366,11 @@ export default function V1SignupFormContent({
         description: "Your email has been verified successfully",
       });
 
-      const token = localStorage.getItem("auth_token");
-      if (token) {
+      // v1 API returns token after email verification
+      if (data.token) {
+        localStorage.setItem("auth_token", data.token);
+        
+        // Sign in with NextAuth using credentials
         await signIn("credentials", {
           email,
           password,
@@ -375,15 +378,24 @@ export default function V1SignupFormContent({
         });
       }
 
+      // Check if user has stripe_customer_id to determine redirect
+      const hasStripeCustomerId = data.user?.stripe_customer_id;
+
       // If modal mode, call onSuccess callback instead of redirecting
       if (isModal && onSuccess) {
         setTimeout(() => {
           onSuccess();
         }, 1000);
       } else {
-        // Regular flow - redirect to profile completion
+        // Redirect based on stripe_customer_id presence
         setTimeout(() => {
-          window.location.href = "/complete-your-profile/jobseeker";
+          if (hasStripeCustomerId) {
+            // User has paid, redirect to v1 dashboard
+            window.location.href = "/v1/dashboard";
+          } else {
+            // User hasn't paid, redirect to homepage
+            window.location.href = "/";
+          }
         }, 1000);
       }
     } catch (err: any) {
