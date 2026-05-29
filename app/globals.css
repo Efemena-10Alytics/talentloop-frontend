@@ -227,3 +227,15 @@ body {
 .phone-input-custom .PhoneInput:focus-within {
   border-color: rgba(255, 255, 255, 0.2);
 }
+
+/* Phone Input Country Dropdown Styles */
+.phone-input-custom .PhoneInputCountrySelect option {
+  background: #0F1416;
+  color: #FFFFFF;
+  padding: 8px;
+}
+
+.phone-input-custom .PhoneInputCountrySelect {
+  background: transparent;
+  color: #FFFFFF;
+}

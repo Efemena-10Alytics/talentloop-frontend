@@ -136,7 +136,7 @@ export function Navbar({ v1Launch }: {v1Launch?: boolean;}) {
             <>
             {v1Launch ? (
               <Link
-                href="/signup?type=jobseeker"
+                href="/signup?v1=true"
                 className="rounded-full bg-[#0B0D0F] border border-[#A2CE3A] px-8 py-2.5 text-sm font-semibold text-white transition-all hover:bg-[#A2CE3A] hover:text-[#0B0D0F] font-mona-sans"
               >
                 Sign Up

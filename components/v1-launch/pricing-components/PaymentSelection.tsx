@@ -37,16 +37,18 @@ export default function PaymentSelection({
   const { data: session, status } = useSession();
   const [selectedPayment, setSelectedPayment] = useState<"full" | "installments">("full");
   const [showSignupModal, setShowSignupModal] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  // TEMPORARY: Simulating authenticated user for testing registered user flow
+  const [isAuthenticated, setIsAuthenticated] = useState(true);
 
   const planDetails = paymentPlans[planId as keyof typeof paymentPlans] || paymentPlans.premium;
 
   useEffect(() => {
-    if (status === "authenticated" && session) {
-      setIsAuthenticated(true);
-    } else if (status === "unauthenticated") {
-      setIsAuthenticated(false);
-    }
+    // TEMPORARY: Commented out to simulate authenticated user
+    // if (status === "authenticated" && session) {
+    //   setIsAuthenticated(true);
+    // } else if (status === "unauthenticated") {
+    //   setIsAuthenticated(false);
+    // }
   }, [session, status]);
 
   const handlePaymentChange = (type: "full" | "installments") => {

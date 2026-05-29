@@ -4,6 +4,14 @@ import { useState } from "react";
 import BookingCalendar from "./BookingCalendar";
 import BookingDetailsForm, { BookingFormData } from "./BookingDetailsForm";
 import PaymentSelection, { PaymentOption } from "./PaymentSelection";
+import EnrollmentConfirmation from "./EnrollmentConfirmation";
+import EditPersonalDataModal, { PersonalData } from "./EditPersonalDataModal";
+import CompleteProfileSection from "./CompleteProfileSection";
+import CareerInfoSection, { CareerFormData } from "./CareerInfoSection";
+import EducationalInfoSection, { EducationFormData } from "./EducationalInfoSection";
+import JobApplicationInfoSection, { JobApplicationFormData } from "./JobApplicationInfoSection";
+import CredentialsUploadSection, { CredentialsFormData } from "./CredentialsUploadSection";
+import DisclaimerSection, { DisclaimerFormData } from "./DisclaimerSection";
 
 const GoogleMeetIcon = () => (
   <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -39,10 +47,19 @@ interface BookingFlowProps {
 }
 
 export default function BookingFlow({ planId = "premium", planType = "premium" }: BookingFlowProps) {
-  const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
+  const [currentStep, setCurrentStep] = useState<1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10>(1);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [bookingFormData, setBookingFormData] = useState<BookingFormData | null>(null);
+  const [paymentOption, setPaymentOption] = useState<PaymentOption | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [personalData, setPersonalData] = useState<PersonalData>({
+    firstName: "Ricky",
+    lastName: "Samson",
+    email: "ricky@amdari.io",
+    phone: "(+234) 081 2345 678",
+    location: "Nigeria",
+  });
 
   const handleContinue = () => {
     if (selectedDate && selectedTime) {
@@ -56,10 +73,31 @@ export default function BookingFlow({ planId = "premium", planType = "premium" }
 
   const handleFormSubmit = (formData: BookingFormData) => {
     setBookingFormData(formData);
+    // Update personal data from booking form
+    setPersonalData({
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+      email: formData.email,
+      phone: formData.phone,
+      location: personalData.location, // Keep existing location or default
+    });
     setCurrentStep(3);
   };
 
-  const handlePaymentSelect = (paymentOption: PaymentOption) => {
+  const handlePaymentSelect = (selectedPayment: PaymentOption) => {
+    setPaymentOption(selectedPayment);
+    setCurrentStep(4);
+  };
+
+  const handleEditData = () => {
+    setShowEditModal(true);
+  };
+
+  const handleSavePersonalData = (data: PersonalData) => {
+    setPersonalData(data);
+  };
+
+  const handleEnrollmentProceed = async () => {
     // Collect all data
     const completeBookingData = {
       planId,
@@ -68,9 +106,71 @@ export default function BookingFlow({ planId = "premium", planType = "premium" }
       time: selectedTime,
       ...bookingFormData,
       payment: paymentOption,
+      personalData,
     };
     console.log("Complete Booking Data:", completeBookingData);
     // TODO: Send to API or redirect to payment gateway
+    // Return promise for modal to wait
+    return Promise.resolve();
+  };
+
+  const handleCompleteOnboarding = () => {
+    setCurrentStep(5);
+  };
+
+  const handleProfileBack = () => {
+    setCurrentStep(4);
+  };
+
+  const handleProfileProceed = (receiptFile: File | null) => {
+    console.log("Receipt uploaded:", receiptFile);
+    // TODO: Upload receipt
+    setCurrentStep(6);
+  };
+
+  const handleCareerInfoBack = () => {
+    setCurrentStep(5);
+  };
+
+  const handleCareerInfoProceed = (careerData: CareerFormData) => {
+    console.log("Career data:", careerData);
+    setCurrentStep(7);
+  };
+
+  const handleEducationInfoBack = () => {
+    setCurrentStep(6);
+  };
+
+  const handleEducationInfoProceed = (educationData: EducationFormData) => {
+    console.log("Education data:", educationData);
+    setCurrentStep(8);
+  };
+
+  const handleJobApplicationInfoBack = () => {
+    setCurrentStep(7);
+  };
+
+  const handleJobApplicationInfoProceed = (jobAppData: JobApplicationFormData) => {
+    console.log("Job Application data:", jobAppData);
+    setCurrentStep(9);
+  };
+
+  const handleCredentialsUploadBack = () => {
+    setCurrentStep(8);
+  };
+
+  const handleCredentialsUploadProceed = (credentialsData: CredentialsFormData) => {
+    console.log("Credentials data:", credentialsData);
+    setCurrentStep(10);
+  };
+
+  const handleDisclaimerBack = () => {
+    setCurrentStep(9);
+  };
+
+  const handleDisclaimerProceed = (disclaimerData: DisclaimerFormData) => {
+    console.log("Disclaimer data:", disclaimerData);
+    // TODO: Submit all enrollment data and redirect to dashboard or show final success
   };
 
   // Show payment selection on step 3
@@ -81,6 +181,109 @@ export default function BookingFlow({ planId = "premium", planType = "premium" }
         planType={planType}
         planPrice="£250"
         onPaymentSelect={handlePaymentSelect}
+      />
+    );
+  }
+
+  // Show enrollment confirmation on step 4
+  if (currentStep === 4 && paymentOption) {
+    const planNames: Record<string, string> = {
+      basic: "Basic Plan",
+      premium: "Premium Plan",
+      comprehensive: "Comprehensive Plan",
+      platinum: "Platinum Plan",
+    };
+
+    return (
+      <>
+        <EnrollmentConfirmation
+          personalData={personalData}
+          paymentPlan={{
+            planName: paymentOption.type === "installments" ? "2 Installments" : "Full Payment",
+            paymentType: paymentOption.type,
+            firstPayment: paymentOption.installmentDetails?.first,
+            secondPayment: paymentOption.installmentDetails?.second,
+            nextPaymentDate: "Jun 21, 2026",
+            preferredCohort: selectedDate ? selectedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : "May 7, 2024",
+          }}
+          onEditData={handleEditData}
+          onProceed={handleEnrollmentProceed}
+          onCompleteOnboarding={handleCompleteOnboarding}
+        />
+        <EditPersonalDataModal
+          isOpen={showEditModal}
+          onClose={() => setShowEditModal(false)}
+          onSave={handleSavePersonalData}
+          initialData={personalData}
+        />
+      </>
+    );
+  }
+
+  // Show complete profile section on step 5
+  if (currentStep === 5) {
+    const planNames: Record<string, string> = {
+      basic: "Basic Plan",
+      premium: "Premium Plan",
+      comprehensive: "Comprehensive Plan",
+      platinum: "Platinum Plan",
+    };
+
+    return (
+      <CompleteProfileSection
+        packageName={planNames[planId as keyof typeof planNames] || "Premium Plan"}
+        onBack={handleProfileBack}
+        onProceed={handleProfileProceed}
+      />
+    );
+  }
+
+  // Show career info section on step 6
+  if (currentStep === 6) {
+    return (
+      <CareerInfoSection
+        onBack={handleCareerInfoBack}
+        onProceed={handleCareerInfoProceed}
+      />
+    );
+  }
+
+  // Show educational info section on step 7
+  if (currentStep === 7) {
+    return (
+      <EducationalInfoSection
+        onBack={handleEducationInfoBack}
+        onProceed={handleEducationInfoProceed}
+      />
+    );
+  }
+
+  // Show job application info section on step 8
+  if (currentStep === 8) {
+    return (
+      <JobApplicationInfoSection
+        onBack={handleJobApplicationInfoBack}
+        onProceed={handleJobApplicationInfoProceed}
+      />
+    );
+  }
+
+  // Show credentials upload section on step 9
+  if (currentStep === 9) {
+    return (
+      <CredentialsUploadSection
+        onBack={handleCredentialsUploadBack}
+        onProceed={handleCredentialsUploadProceed}
+      />
+    );
+  }
+
+  // Show disclaimer section on step 10
+  if (currentStep === 10) {
+    return (
+      <DisclaimerSection
+        onBack={handleDisclaimerBack}
+        onProceed={handleDisclaimerProceed}
       />
     );
   }
