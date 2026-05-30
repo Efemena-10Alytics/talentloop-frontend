@@ -12,15 +12,22 @@ import V1WhoIsForSection from "@/components/v1-launch/v1-who-is-for-section";
 import V1WhyDifferentSection from "@/components/v1-launch/v1-why-different-section";
 import PricingFlowWrapper from "@/components/v1-launch/pricing-components/PricingFlowWrapper";
 import BookingFlow from "@/components/v1-launch/pricing-components/BookingFlow";
+import { useActivePricingPlans } from "@/lib/hooks/usePricing";
 
 export default function Home() {
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
+  const { data: pricingPlans } = useActivePricingPlans();
 
   const handleStartNow = (planId: string) => {
     setSelectedPlan(planId);
     setShowBookingModal(true);
   };
+
+  // Get the selected pricing plan details
+  const selectedPlanData = pricingPlans?.find(
+    (plan) => String(plan.id) === selectedPlan || plan.title.toLowerCase() === selectedPlan?.toLowerCase()
+  );
 
   const handleCloseModal = () => {
     setShowBookingModal(false);
@@ -34,7 +41,14 @@ export default function Home() {
         <V1CareerSection />
         <V1ExpertsSection />
         {showBookingModal && selectedPlan ? (
-          <BookingFlow planId={selectedPlan} planType={selectedPlan} />
+          <BookingFlow 
+            planId={selectedPlanData?.id || selectedPlan} 
+            planType={selectedPlanData?.title || selectedPlan}
+            planPrice={selectedPlanData?.amount ? `£${selectedPlanData.amount}` : "£250"}
+            planAmount={selectedPlanData?.amount}
+            planInstallments={selectedPlanData?.installments}
+            onBackToPricing={handleCloseModal}
+          />
         ) : (
           <div id="pricing">
             <V1PricingSection onStartNow={handleStartNow} />

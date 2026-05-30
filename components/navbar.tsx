@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import { useUserData } from "@/hooks/useUserData";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/ui/use-toast";
@@ -127,6 +127,7 @@ export function Navbar({ v1Launch }: {v1Launch?: boolean;}) {
 
           {session ? (
             <>
+            <div className="flex items-center gap-3">
             {v1Launch ? (
               <div
                 onClick={() => {
@@ -169,6 +170,20 @@ export function Navbar({ v1Launch }: {v1Launch?: boolean;}) {
                 />
               </Link>
             )}
+            
+            {/* Logout Icon */}
+            <button
+              onClick={() => signOut({ callbackUrl: '/' })}
+              className="w-10 h-10 rounded-full bg-white/10 hover:bg-red-500/20 flex items-center justify-center transition-all hover:ring-2 hover:ring-red-500"
+              title="Logout"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M9 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H9" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M16 17L21 12L16 7" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M21 12H9" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+            </div>
             </>
           ) : (
             <>
@@ -265,29 +280,125 @@ export function Navbar({ v1Launch }: {v1Launch?: boolean;}) {
               )}
             </nav>
 
-            {!session && (
+            {session ? (
+              <div className="px-4 pb-6 border-t border-white/10 pt-4">
+                {v1Launch ? (
+                  <div
+                    onClick={() => {
+                      // Check if user has stripe_customer_id
+                      if (userData?.user?.stripe_customer_id) {
+                        // User has a plan, redirect to dashboard
+                        router.push(session.user?.role === 'coach' ? '#' : '/v1/dashboard');
+                        setShowMobileSidebar(false);
+                      } else {
+                        // User doesn't have a plan, show toast and scroll to pricing
+                        toast({
+                          variant: "success",
+                          title: "Get a Plan First",
+                          description: "Please choose an acceleration tier to access your dashboard.",
+                        });
+                        
+                        // Close sidebar and scroll to pricing section
+                        setShowMobileSidebar(false);
+                        const pricingSection = document.querySelector('#pricing');
+                        if (pricingSection) {
+                          pricingSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }
+                      }
+                    }}
+                    className="flex items-center gap-3 p-4 rounded-lg bg-white/5 hover:bg-white/10 transition-all cursor-pointer"
+                  >
+                    <div className="w-12 h-12 rounded-full bg-white/20 overflow-hidden">
+                      <img
+                        src={userData?.user?.photo || session.user?.image || '/coaches/coach1.jpg'}
+                        alt="User avatar"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-white font-mona-sans text-sm font-semibold">
+                        {userData?.user?.name || session.user?.name || 'User'}
+                      </p>
+                      <p className="text-white/60 font-mona-sans text-xs">
+                        View Dashboard
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <Link
+                    href={session.user?.role === 'coach' ? '/dashboard?us=coach' : '/dashboard'}
+                    className="flex items-center gap-3 p-4 rounded-lg bg-white/5 hover:bg-white/10 transition-all"
+                    onClick={() => setShowMobileSidebar(false)}
+                  >
+                    <div className="w-12 h-12 rounded-full bg-white/20 overflow-hidden">
+                      <img
+                        src={userData?.user?.photo || session.user?.image || '/coaches/coach1.jpg'}
+                        alt="User avatar"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-white font-mona-sans text-sm font-semibold">
+                        {userData?.user?.name || session.user?.name || 'User'}
+                      </p>
+                      <p className="text-white/60 font-mona-sans text-xs">
+                        View Dashboard
+                      </p>
+                    </div>
+                  </Link>
+                )}
+                
+                {/* Logout Button */}
+                <button
+                  onClick={() => {
+                    signOut({ callbackUrl: '/' });
+                    setShowMobileSidebar(false);
+                  }}
+                  className="w-full mt-3 flex items-center justify-center gap-2 p-4 rounded-lg bg-red-500/10 hover:bg-red-500/20 transition-all border border-red-500/30"
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M9 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H9" stroke="#EF4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M16 17L21 12L16 7" stroke="#EF4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M21 12H9" stroke="#EF4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  <span className="text-red-400 font-mona-sans text-sm font-semibold">Logout</span>
+                </button>
+              </div>
+            ) : (
               <div className="px-4 pb-6 space-y-3 border-t border-white/10 pt-4">
-                <Link
-                  href="/signup?type=jobseeker"
-                  className="block rounded-lg bg-[#151A20] px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#1a2028] font-mona-sans text-center"
-                  onClick={() => setShowMobileSidebar(false)}
-                >
-                  Sign Up as Jobseeker
-                </Link>
-                <Link
-                  href="/signup?type=coach"
-                  className="block rounded-lg bg-[#A2CE3A] px-5 py-3 text-sm font-semibold text-[#121212] transition-colors hover:bg-[#92BE2A] font-mona-sans text-center"
-                  onClick={() => setShowMobileSidebar(false)}
-                >
-                  Sign Up as Coach
-                </Link>
-                <Link
-                  href="/signin"
-                  className="block rounded-lg border border-white/20 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/5 font-mona-sans text-center"
-                  onClick={() => setShowMobileSidebar(false)}
-                >
-                  Sign In
-                </Link>
+                {v1Launch ? (
+                  <Link
+                    href="/signup?v1=true"
+                    className="block rounded-lg bg-[#A2CE3A] px-5 py-3 text-sm font-semibold text-[#121212] transition-colors hover:bg-[#92BE2A] font-mona-sans text-center"
+                    onClick={() => setShowMobileSidebar(false)}
+                  >
+                    Sign Up
+                  </Link>
+                ) : (
+                  <>
+                    <Link
+                      href="/signup?type=jobseeker"
+                      className="block rounded-lg bg-[#151A20] px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#1a2028] font-mona-sans text-center"
+                      onClick={() => setShowMobileSidebar(false)}
+                    >
+                      Sign Up as Jobseeker
+                    </Link>
+                    <Link
+                      href="/signup?type=coach"
+                      className="block rounded-lg bg-[#A2CE3A] px-5 py-3 text-sm font-semibold text-[#121212] transition-colors hover:bg-[#92BE2A] font-mona-sans text-center"
+                      onClick={() => setShowMobileSidebar(false)}
+                    >
+                      Sign Up as Coach
+                    </Link>
+                    <Link
+                      href="/signin"
+                      className="block rounded-lg border border-white/20 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/5 font-mona-sans text-center"
+                      onClick={() => setShowMobileSidebar(false)}
+                    >
+                      Sign In
+                    </Link>
+                  </>
+                )}
               </div>
             )}
           </div>

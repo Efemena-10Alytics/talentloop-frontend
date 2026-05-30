@@ -34,7 +34,7 @@ export default function PricingFlowWrapper({
             onClick={(e) => e.stopPropagation()}
             className="w-full max-w-6xl"
           >
-            <BookingFlow />
+            <BookingFlow onBackToPricing={onClose} />
           </motion.div>
         </motion.div>
       )}

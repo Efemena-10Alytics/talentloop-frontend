@@ -6,10 +6,13 @@ import { useSession } from "next-auth/react";
 import SignupModal from "@/components/auth/SignupModal";
 
 interface PaymentSelectionProps {
-  planId: string;
+  planId: string | number;
   planType: string;
   planPrice: string;
+  planAmount?: string;
+  planInstallments?: number[][] | null;
   onPaymentSelect: (paymentOption: PaymentOption) => void;
+  onBack?: () => void;
 }
 
 export interface PaymentOption {
@@ -21,7 +24,8 @@ export interface PaymentOption {
   };
 }
 
-const paymentPlans = {
+// Fallback payment plans (used if API data not provided)
+const fallbackPaymentPlans = {
   basic: { price: "£70", fullAmount: "£70" },
   premium: { price: "£250", fullAmount: "£250", installment1: "£160", installment2: "£90" },
   comprehensive: { price: "£350", fullAmount: "£350", installment1: "£225", installment2: "£125" },
@@ -32,34 +36,42 @@ export default function PaymentSelection({
   planId,
   planType,
   planPrice,
+  planAmount,
+  planInstallments,
   onPaymentSelect,
+  onBack,
 }: PaymentSelectionProps) {
   const { data: session, status } = useSession();
   const [selectedPayment, setSelectedPayment] = useState<"full" | "installments">("full");
   const [showSignupModal, setShowSignupModal] = useState(false);
-  // TEMPORARY: Simulating authenticated user for testing registered user flow
-  const [isAuthenticated, setIsAuthenticated] = useState(true);
 
-  const planDetails = paymentPlans[planId as keyof typeof paymentPlans] || paymentPlans.premium;
+  // Use API data if provided, otherwise fallback to hardcoded plans
+  const planDetails = planAmount
+    ? {
+        price: planPrice,
+        fullAmount: planPrice,
+        ...(planInstallments && planInstallments.length > 0 && {
+          installment1: `£${planInstallments[0][0]}`,
+          installment2: `£${planInstallments[0][1]}`,
+        }),
+      }
+    : (fallbackPaymentPlans[String(planId).toLowerCase() as keyof typeof fallbackPaymentPlans] || fallbackPaymentPlans.premium);
 
-  useEffect(() => {
-    // TEMPORARY: Commented out to simulate authenticated user
-    // if (status === "authenticated" && session) {
-    //   setIsAuthenticated(true);
-    // } else if (status === "unauthenticated") {
-    //   setIsAuthenticated(false);
-    // }
-  }, [session, status]);
 
   const handlePaymentChange = (type: "full" | "installments") => {
     setSelectedPayment(type);
   };
 
   const handleProceed = () => {
-    // Check if user is authenticated
-    if (!isAuthenticated && status !== "loading") {
+    // Check if user is authenticated using NextAuth session
+    if (status === "unauthenticated") {
       // Show signup modal for unregistered users
       setShowSignupModal(true);
+      return;
+    }
+
+    // Don't proceed if still loading session
+    if (status === "loading") {
       return;
     }
 
@@ -67,10 +79,10 @@ export default function PaymentSelection({
     const paymentOption: PaymentOption = {
       type: selectedPayment,
       amount: planDetails.fullAmount,
-      ...(selectedPayment === "installments" && "installment1" in planDetails && {
+      ...(selectedPayment === "installments" && "installment1" in planDetails && "installment2" in planDetails && {
         installmentDetails: {
-          first: planDetails.installment1,
-          second: planDetails.installment2,
+          first: String(planDetails.installment1),
+          second: String(planDetails.installment2),
         },
       }),
     };
@@ -78,18 +90,18 @@ export default function PaymentSelection({
   };
 
   const handleSignupSuccess = () => {
-    // Close modal and set authenticated state
+    // Close modal
     setShowSignupModal(false);
-    setIsAuthenticated(true);
     
+    // Note: Session will be automatically updated by NextAuth after successful signup
     // Automatically proceed to payment after successful signup
     const paymentOption: PaymentOption = {
       type: selectedPayment,
       amount: planDetails.fullAmount,
-      ...(selectedPayment === "installments" && "installment1" in planDetails && {
+      ...(selectedPayment === "installments" && "installment1" in planDetails && "installment2" in planDetails && {
         installmentDetails: {
-          first: planDetails.installment1,
-          second: planDetails.installment2,
+          first: String(planDetails.installment1),
+          second: String(planDetails.installment2),
         },
       }),
     };
@@ -104,25 +116,42 @@ export default function PaymentSelection({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="text-center mb-12"
+          className="mb-12"
         >
-          <h1 className="text-4xl lg:text-6xl font-mona-sans font-bold text-white mb-4">
-            Confirm Your Enrollment
-          </h1>
-          <p className="text-white/40 font-sora text-sm">
-            Please choose a payment plan that works for you to proceed.
-          </p>
+          {/* Back Button */}
+          {onBack && (
+            <button
+              onClick={onBack}
+              className="flex items-center gap-2 mb-6 text-white/60 hover:text-white transition-colors group"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="group-hover:-translate-x-1 transition-transform">
+                <path d="M19 12H5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M12 19L5 12L12 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              <span className="font-mona-sans text-sm font-semibold">Back</span>
+            </button>
+          )}
+          
+          <div className="text-center">
+            <h1 className="text-4xl lg:text-6xl font-mona-sans font-bold text-white mb-4">
+              Confirm Your Enrollment
+            </h1>
+            <p className="text-white/40 font-sora text-sm">
+              Please choose a payment plan that works for you to proceed.
+            </p>
+          </div>
         </motion.div>
 
         {/* Payment Container */}
-        <div className="flex flex-col lg:flex-row gap-8 bg-[#1E1F2180] rounded-[24px] p-4 lg:p-6">
+        <div className="w-full flex flex-col lg:flex-row gap-8 bg-[#1E1F2180] rounded-[24px] p-4 lg:p-6">
           {/* Left Side - Payment Options */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
+            className="lg:w-[65%]"
           >
-            <h2 className="lg:w-[65%] text-white font-mona-sans font-bold text-2xl mb-6">
+            <h2 className="text-white font-mona-sans font-bold text-2xl mb-6">
               Payment Options
             </h2>
 
@@ -168,7 +197,8 @@ export default function PaymentSelection({
                 </div>
               </button>
 
-              {/* 2 Installments Option */}
+              {/* 2 Installments Option - Only show if installments are available */}
+              {"installment1" in planDetails && "installment2" in planDetails && (
               <button
                 onClick={() => handlePaymentChange("installments")}
                 className="w-full rounded-[24px] p-6 transition-all duration-300"
@@ -208,6 +238,7 @@ export default function PaymentSelection({
                   </div>
                 </div>
               </button>
+              )}
             </div>
           </motion.div>
 
@@ -263,11 +294,11 @@ export default function PaymentSelection({
               >
                 <div className="flex items-center justify-between font-sora text-sm" style={{ color: "#CCCCCC" }}>
                   <span>First installment-</span>
-                  <span className="font-semibold">{'installment1' in planDetails ? planDetails.installment1 : ''}</span>
+                  <span className="font-semibold">{'installment1' in planDetails ? String(planDetails.installment1) : ''}</span>
                 </div>
                 <div className="flex items-center justify-between font-sora text-sm" style={{ color: "#CCCCCC" }}>
                   <span>Second installment-</span>
-                  <span className="font-semibold">{'installment2' in planDetails ? planDetails.installment2 : ''}</span>
+                  <span className="font-semibold">{'installment2' in planDetails ? String(planDetails.installment2) : ''}</span>
                 </div>
               </div>
             )}

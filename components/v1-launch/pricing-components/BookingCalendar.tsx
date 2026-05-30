@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface BookingCalendarProps {
@@ -81,6 +81,13 @@ export default function BookingCalendar({
       onTimeSelect(`${selectedHour}:${minute}`);
     }
   };
+
+  // Automatically set default time on mount
+  useEffect(() => {
+    if (onTimeSelect) {
+      onTimeSelect(`${selectedHour}:${selectedMinute}`);
+    }
+  }, []);
 
   return (
     <div

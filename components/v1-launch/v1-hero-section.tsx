@@ -3,9 +3,11 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
+import ClaritySessionModal from "./ClaritySessionModal";
 
 export default function V1HeroSection() {
   const [currentImage, setCurrentImage] = useState(0);
+  const [showBookingModal, setShowBookingModal] = useState(false);
 
   // Auto-switch between images every 4 seconds
   useEffect(() => {
@@ -65,15 +67,15 @@ export default function V1HeroSection() {
           >
             Start My Career Upgrade
           </Link>
-          <Link 
-            href="/coaches"
+          <button
+            onClick={() => setShowBookingModal(true)}
             className="px-8 py-4 text-center rounded-[30px] text-white font-mona-sans text-base font-semibold hover:opacity-90 transition-opacity"
             style={{
               background: "linear-gradient(180deg, #0E0912 0%, #22162B 100%)"
             }}
           >
             Book a Clarity Session
-          </Link>
+          </button>
         </motion.div>
 
         {/* Video Component Container */}
@@ -191,6 +193,12 @@ export default function V1HeroSection() {
           </div>
         </motion.div>
       </div>
+
+      {/* Clarity Session Booking Modal */}
+      <ClaritySessionModal
+        isOpen={showBookingModal}
+        onClose={() => setShowBookingModal(false)}
+      />
     </section>
   );
 }

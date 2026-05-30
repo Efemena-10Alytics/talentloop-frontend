@@ -42,11 +42,22 @@ const MicIcon = () => (
 );
 
 interface BookingFlowProps {
-  planId?: string;
+  planId?: string | number;
   planType?: string;
+  planPrice?: string;
+  planAmount?: string;
+  planInstallments?: number[][] | null;
+  onBackToPricing?: () => void;
 }
 
-export default function BookingFlow({ planId = "premium", planType = "premium" }: BookingFlowProps) {
+export default function BookingFlow({ 
+  planId = "premium", 
+  planType = "premium",
+  planPrice = "£250",
+  planAmount,
+  planInstallments,
+  onBackToPricing
+}: BookingFlowProps) {
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10>(1);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
@@ -68,7 +79,13 @@ export default function BookingFlow({ planId = "premium", planType = "premium" }
   };
 
   const handleBack = () => {
-    setCurrentStep(1);
+    if (currentStep === 1 && onBackToPricing) {
+      // On step 1, go back to pricing selection
+      onBackToPricing();
+    } else {
+      // On other steps, go back to step 1
+      setCurrentStep(1);
+    }
   };
 
   const handleFormSubmit = (formData: BookingFormData) => {
@@ -179,8 +196,11 @@ export default function BookingFlow({ planId = "premium", planType = "premium" }
       <PaymentSelection
         planId={planId}
         planType={planType}
-        planPrice="£250"
+        planPrice={planPrice}
+        planAmount={planAmount}
+        planInstallments={planInstallments}
         onPaymentSelect={handlePaymentSelect}
+        onBack={handleBack}
       />
     );
   }
@@ -305,7 +325,7 @@ export default function BookingFlow({ planId = "premium", planType = "premium" }
             }}
           >
             <span className="text-[#00C063] font-mona-sans text-sm font-semibold">
-              1/2
+              {currentStep}/2
             </span>
           </div>
 

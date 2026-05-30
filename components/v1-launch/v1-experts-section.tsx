@@ -229,7 +229,7 @@ export default function V1ExpertsSection() {
             viewport={{ once: true }}
           >
             <Link
-              href="/coaches"
+              href="#"
               className="px-8 py-3.5 rounded-[30px] text-white font-mona-sans text-sm font-semibold hover:opacity-90 transition-opacity inline-block"
               style={{
                 background: "linear-gradient(90deg, #071522 25%, #A2CE3A 100%)",
