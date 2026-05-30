@@ -219,7 +219,7 @@ export default function V1ExpertsSection() {
             viewport={{ once: true }}
             className="text-4xl lg:text-6xl font-mona-sans font-bold text-[#A2CE3A] mb-6 sm:mb-0"
           >
-            MEET OUR EXPERTS
+            Meet Our Experts
           </motion.h2>
 
           <motion.div

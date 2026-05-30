@@ -30,9 +30,9 @@ export default function V1HeroSection() {
           transition={{ duration: 0.6 }}
           className="flex justify-center mb-8"
         >
-          <img 
-            src="/Testimonials_header.png" 
-            alt="5-star testimonials" 
+          <img
+            src="/Testimonials_header.png"
+            alt="5-star testimonials"
             className="h-12 object-contain"
           />
         </motion.div>
@@ -45,10 +45,25 @@ export default function V1HeroSection() {
           className="text-center mb-12"
         >
           <h1 className="text-4xl lg:text-7xl font-mona-sans font-bold leading-tight">
-            <span className="text-white">YOU DON'T NEED MORE APPLICATIONS.</span>
+            <span className="text-white">
+              You Don't Need More Applications.
+            </span>
             <br />
-            <span className="text-[#A2CE3A]">YOU NEED BETTER POSITIONING.</span>
+            <span className="text-[#A2CE3A]">You Need Better Positioning.</span>
           </h1>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.2 }}
+          className="max-w-2xl mx-auto text-center mb-12"
+        >
+          <span className="text-lg lg:text-xl font-mona-sans text-center text-white leading-tight">
+            The global job market is competitive. TalentLoop helps you compete
+            strategically with optimized materials, expert guidance, and managed
+            career support tuned for the UK, US, and Canada.
+          </span>
         </motion.div>
 
         {/* CTA Buttons */}
@@ -58,11 +73,12 @@ export default function V1HeroSection() {
           transition={{ duration: 0.8, delay: 0.4 }}
           className="flex flex-col sm:flex-row justify-center gap-4 mb-16"
         >
-          <Link 
+          <Link
             href="/signup?v1=true"
             className="px-8 py-4 text-center rounded-[30px] text-[#090B0E] font-mona-sans text-base font-semibold hover:opacity-90 transition-opacity"
             style={{
-              background: "linear-gradient(88.9deg, #A2CE3A 24.91%, #52681D 92.25%)"
+              background:
+                "linear-gradient(88.9deg, #A2CE3A 24.91%, #52681D 92.25%)",
             }}
           >
             Start My Career Upgrade
@@ -71,7 +87,7 @@ export default function V1HeroSection() {
             onClick={() => setShowBookingModal(true)}
             className="px-8 py-4 text-center rounded-[30px] text-white font-mona-sans text-base font-semibold hover:opacity-90 transition-opacity"
             style={{
-              background: "linear-gradient(180deg, #0E0912 0%, #22162B 100%)"
+              background: "linear-gradient(180deg, #0E0912 0%, #22162B 100%)",
             }}
           >
             Book a Clarity Session
@@ -86,7 +102,7 @@ export default function V1HeroSection() {
           className="relative p-6 lg:p-10 rounded-[30px] border overflow-hidden"
           style={{
             background: "#1563741A",
-            borderColor: "#FFFFFF1A"
+            borderColor: "#FFFFFF1A",
           }}
         >
           {/* Video Section */}
@@ -123,6 +139,13 @@ export default function V1HeroSection() {
                 </video>
               </div>
 
+              <div className="absolute bottom-4 flex justify-center w-full">
+                <img
+                  src="/Frame 1321318298.png"
+                  alt=""
+                  className="object-contain h-20"
+                />
+              </div>
             </div>
           </div>
 
@@ -132,16 +155,39 @@ export default function V1HeroSection() {
             <div className="bg-[#0A0F0C] border border-white/10 rounded-xl p-4">
               <div className="flex items-center gap-2 mb-2">
                 <div className="w-8 h-8 rounded-full bg-[#A2CE3A]/20 flex items-center justify-center">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M9 11L12 14L22 4" stroke="#A2CE3A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    <path d="M21 12V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H16" stroke="#A2CE3A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M9 11L12 14L22 4"
+                      stroke="#A2CE3A"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <path
+                      d="M21 12V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H16"
+                      stroke="#A2CE3A"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
                   </svg>
                 </div>
-                <span className="text-white/60 text-sm font-mona-sans">Mock Interview Score</span>
+                <span className="text-white/60 text-sm font-mona-sans">
+                  Mock Interview Score
+                </span>
               </div>
               <div className="text-4xl font-bold text-white mb-2">78</div>
               <div className="w-full bg-white/10 rounded-full h-2">
-                <div className="bg-[#A2CE3A] h-2 rounded-full" style={{ width: '78%' }}></div>
+                <div
+                  className="bg-[#A2CE3A] h-2 rounded-full"
+                  style={{ width: "78%" }}
+                ></div>
               </div>
             </div>
 
@@ -149,41 +195,75 @@ export default function V1HeroSection() {
             <div className="bg-[#0A0F0C] border border-white/10 rounded-xl p-4">
               <div className="flex items-center gap-2 mb-2">
                 <div className="w-8 h-8 rounded-full bg-[#A2CE3A]/20 flex items-center justify-center">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" stroke="#A2CE3A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"
+                      stroke="#A2CE3A"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
                   </svg>
                 </div>
-                <span className="text-white/60 text-sm font-mona-sans">Hire Likelihood</span>
+                <span className="text-white/60 text-sm font-mona-sans">
+                  Hire Likelihood
+                </span>
               </div>
               <div className="text-2xl font-bold text-white mb-1">Moderate</div>
-              <p className="text-white/50 text-xs">Still needs work for rejection-proof</p>
+              <p className="text-white/50 text-xs">
+                Still needs work for rejection-proof
+              </p>
             </div>
 
             {/* Key Insights Card */}
             <div className="bg-[#0A0F0C] border border-white/10 rounded-xl p-4">
               <div className="flex items-center gap-2 mb-2">
                 <div className="w-8 h-8 rounded-full bg-[#A2CE3A]/20 flex items-center justify-center">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M13 2L3 14H12L11 22L21 10H12L13 2Z" stroke="#A2CE3A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M13 2L3 14H12L11 22L21 10H12L13 2Z"
+                      stroke="#A2CE3A"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
                   </svg>
                 </div>
-                <span className="text-white/60 text-sm font-mona-sans">Key Insights</span>
+                <span className="text-white/60 text-sm font-mona-sans">
+                  Key Insights
+                </span>
               </div>
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <div className="w-1.5 h-1.5 rounded-full bg-[#A2CE3A]"></div>
                   <span className="text-white/70 text-xs">Strengths</span>
                 </div>
-                <p className="text-white text-sm font-semibold">Areas to Improve</p>
+                <p className="text-white text-sm font-semibold">
+                  Areas to Improve
+                </p>
               </div>
             </div>
 
             {/* Sign Up Component - 4th Grid Item */}
             <div className="bg-[#0A0F0C] border border-white/10 rounded-xl p-4 flex flex-col justify-between">
               <p className="text-white/60 text-sm font-sora mb-4">
-                We prep you using the actual CV version submitted, with role-specific coaching and tailored mock sessions until you're ready to compete.
+                We prep you using the actual CV version submitted, with
+                role-specific coaching and tailored mock sessions until you're
+                ready to compete.
               </p>
-              <Link 
+              <Link
                 href="/signup?v1=true"
                 className="inline-block text-center px-6 py-2.5 bg-[#090B0E] hover:bg-[#0E0912] border border-white/10 rounded-full text-white font-mona-sans text-sm font-semibold transition-colors"
               >

@@ -72,11 +72,11 @@ export default function V1WhoIsForSection() {
           className="mb-5 lg:mb-16 w-[100px]"
         >
           <h2 className="text-4xl lg:text-[54px] font-sora font-bold leading-normal text-white mb-4">
-            WHO
+            Who
             <span className="text-[#A2CE3A] font-sora mx-2">
-            TALENTLOOP.AI 
+            TalentLoop.ai 
               </span> 
-            IS FOR
+            Is For
           </h2>
         </motion.div>
 

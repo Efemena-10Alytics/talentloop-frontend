@@ -7,15 +7,19 @@ import { useUserData } from "@/hooks/useUserData";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/ui/use-toast";
 
-const navLinks = [{text: "Find Interview Coach", link:"/coaches"}, {text: "Auto Apply", link:"/auto-apply"}, {text: "AI Copilot", link:"/ai-copilot"}];
-
-const v1Navlinks = [
-  {text: "How it works", link: "#how-it-works"},
-  {text: "Pricing Plan", link: "#pricing"},
-  {text: "FAQs", link: "#faqs"}
+const navLinks = [
+  { text: "Find Interview Coach", link: "/coaches" },
+  { text: "Auto Apply", link: "/auto-apply" },
+  { text: "AI Copilot", link: "/ai-copilot" },
 ];
 
-export function Navbar({ v1Launch }: {v1Launch?: boolean;}) {
+const v1Navlinks = [
+  { text: "How it works", link: "#how-it-works" },
+  { text: "Pricing Plan", link: "#pricing" },
+  { text: "FAQs", link: "#faqs" },
+];
+
+export function Navbar({ v1Launch }: { v1Launch?: boolean }) {
   const { data: session } = useSession();
   const { userData } = useUserData();
   const router = useRouter();
@@ -30,7 +34,7 @@ export function Navbar({ v1Launch }: {v1Launch?: boolean;}) {
     const handleScroll = () => {
       const heroHeight = window.innerHeight;
       const scrollPosition = window.scrollY;
-      setIsScrolled(scrollPosition > heroHeight * 0.1); 
+      setIsScrolled(scrollPosition > heroHeight * 0.1);
     };
 
     window.addEventListener("scroll", handleScroll);
@@ -43,10 +47,16 @@ export function Navbar({ v1Launch }: {v1Launch?: boolean;}) {
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setShowSignUpDropdown(false);
       }
-      if (mobileSidebarRef.current && !mobileSidebarRef.current.contains(event.target as Node)) {
+      if (
+        mobileSidebarRef.current &&
+        !mobileSidebarRef.current.contains(event.target as Node)
+      ) {
         setShowMobileSidebar(false);
       }
     };
@@ -60,12 +70,15 @@ export function Navbar({ v1Launch }: {v1Launch?: boolean;}) {
     };
   }, [showSignUpDropdown, showMobileSidebar]);
 
-  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, link: string) => {
+  const handleNavClick = (
+    e: React.MouseEvent<HTMLAnchorElement>,
+    link: string,
+  ) => {
     e.preventDefault();
-    const targetId = link.replace('#', '');
+    const targetId = link.replace("#", "");
     const targetElement = document.getElementById(targetId);
     if (targetElement) {
-      targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      targetElement.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   };
 
@@ -77,7 +90,7 @@ export function Navbar({ v1Launch }: {v1Launch?: boolean;}) {
             isScrolled ? "opacity-100" : "opacity-0"
           }`}
         />
-        
+
         <div className="relative mx-auto flex w-full max-w-[1400px] items-center justify-between gap-4 px-6 py-6">
           <div className="flex items-center gap-3">
             <button
@@ -85,146 +98,206 @@ export function Navbar({ v1Launch }: {v1Launch?: boolean;}) {
               className="lg:hidden text-white p-2 hover:bg-white/10 rounded-lg transition-colors"
               aria-label="Open menu"
             >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M3 12H21M3 6H21M3 18H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M3 12H21M3 6H21M3 18H21"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
               </svg>
             </button>
             <a href="/">
-            <img
-              src="/logo.svg"
-              alt="Talentloop logo"
-              className="h-12 w-auto object-contain"
-            />
+              <img
+                src="/logo.svg"
+                alt="Talentloop logo"
+                className="h-12 w-auto object-contain"
+              />
             </a>
           </div>
 
-{v1Launch ? (
-          <nav className="hidden items-center gap-8 lg:flex">
-            {v1Navlinks.map((link) => (
-              <a
-                href={link.link}
-                key={link.text}
-                onClick={(e) => handleNavClick(e, link.link)}
-                className="text-sm font-normal text-white/60 transition-colors hover:text-white font-sora cursor-pointer"
-              >
-                {link.text}
-              </a>
-            ))}
-          </nav>
-): (
-          <nav className="hidden items-center gap-3 lg:flex">
-            {navLinks.map((link) => (
-              <Link
-                href={link.link}
-                key={link.text}
-                className="rounded-full bg-[#FFFFFF26] px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#FFFFFF33] font-mona-sans"
-              >
-                {link.text}
-              </Link>
-            ))}
-          </nav>
-)}
+          {v1Launch ? (
+            <nav className="hidden items-center gap-8 lg:flex">
+              {v1Navlinks.map((link) => (
+                <a
+                  href={link.link}
+                  key={link.text}
+                  onClick={(e) => handleNavClick(e, link.link)}
+                  className="text-sm font-normal text-[#B9B7BA] transition-colors hover:text-white hover:bg-[#FFFFFF0F] hover:rounded-[30px] px-5 py-2 font-mona-sans cursor-pointer"
+                >
+                  {link.text}
+                </a>
+              ))}
+            </nav>
+          ) : (
+            <nav className="hidden items-center gap-3 lg:flex">
+              {navLinks.map((link) => (
+                <Link
+                  href={link.link}
+                  key={link.text}
+                  className="rounded-full bg-[#FFFFFF26] px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#FFFFFF33] font-mona-sans"
+                >
+                  {link.text}
+                </Link>
+              ))}
+            </nav>
+          )}
 
           {session ? (
             <>
-            <div className="flex items-center gap-3">
-            {v1Launch ? (
-              <div
-                onClick={() => {
-                  // Check if user has stripe_customer_id
-                  if (userData?.user?.stripe_customer_id) {
-                    // User has a plan, redirect to dashboard
-                    router.push(session.user?.role === 'coach' ? '#' : '/v1/dashboard');
-                  } else {
-                    // User doesn't have a plan, show toast and scroll to pricing
-                    toast({
-                      variant: "success",
-                      title: "Get a Plan First",
-                      description: "Please choose an acceleration tier to access your dashboard.",
-                    });
-                    
-                    // Scroll to pricing section
-                    const pricingSection = document.querySelector('#pricing');
-                    if (pricingSection) {
-                      pricingSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              <div className="flex items-center gap-3">
+                {v1Launch ? (
+                  <div
+                    onClick={() => {
+                      // Check if user has stripe_customer_id
+                      if (userData?.user?.stripe_customer_id) {
+                        // User has a plan, redirect to dashboard
+                        router.push(
+                          session.user?.role === "coach"
+                            ? "#"
+                            : "/v1/dashboard",
+                        );
+                      } else {
+                        // User doesn't have a plan, show toast and scroll to pricing
+                        toast({
+                          variant: "success",
+                          title: "Get a Plan First",
+                          description:
+                            "Please choose an acceleration tier to access your dashboard.",
+                        });
+
+                        // Scroll to pricing section
+                        const pricingSection =
+                          document.querySelector("#pricing");
+                        if (pricingSection) {
+                          pricingSection.scrollIntoView({
+                            behavior: "smooth",
+                            block: "start",
+                          });
+                        }
+                      }
+                    }}
+                    className="w-10 h-10 rounded-full bg-white/20 overflow-hidden hover:ring-2 hover:ring-[#A2CE3A] transition-all cursor-pointer"
+                  >
+                    <img
+                      src={
+                        userData?.user?.photo ||
+                        session.user?.image ||
+                        "/coaches/coach1.jpg"
+                      }
+                      alt="User avatar"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ) : (
+                  <Link
+                    href={
+                      session.user?.role === "coach"
+                        ? "/dashboard?us=coach"
+                        : "/dashboard"
                     }
-                  }
-                }}
-                className="w-10 h-10 rounded-full bg-white/20 overflow-hidden hover:ring-2 hover:ring-[#A2CE3A] transition-all cursor-pointer"
-              >
-                <img
-                  src={userData?.user?.photo || session.user?.image || '/coaches/coach1.jpg'}
-                  alt="User avatar"
-                  className="w-full h-full object-cover"
-                />
+                    className="w-10 h-10 rounded-full bg-white/20 overflow-hidden hover:ring-2 hover:ring-[#A2CE3A] transition-all cursor-pointer"
+                  >
+                    <img
+                      src={
+                        userData?.user?.photo ||
+                        session.user?.image ||
+                        "/coaches/coach1.jpg"
+                      }
+                      alt="User avatar"
+                      className="w-full h-full object-cover"
+                    />
+                  </Link>
+                )}
+
+                {/* Logout Icon */}
+                <button
+                  onClick={() => signOut({ callbackUrl: "/" })}
+                  className="w-10 h-10 rounded-full bg-white/10 hover:bg-red-500/20 flex items-center justify-center transition-all hover:ring-2 hover:ring-red-500"
+                  title="Logout"
+                >
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M9 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H9"
+                      stroke="#FFFFFF"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <path
+                      d="M16 17L21 12L16 7"
+                      stroke="#FFFFFF"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <path
+                      d="M21 12H9"
+                      stroke="#FFFFFF"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </button>
               </div>
-            ) : (
-              <Link
-                href={session.user?.role === 'coach' ? '/dashboard?us=coach' : '/dashboard'}
-                className="w-10 h-10 rounded-full bg-white/20 overflow-hidden hover:ring-2 hover:ring-[#A2CE3A] transition-all cursor-pointer"
-              >
-                <img
-                  src={userData?.user?.photo || session.user?.image || '/coaches/coach1.jpg'}
-                  alt="User avatar"
-                  className="w-full h-full object-cover"
-                />
-              </Link>
-            )}
-            
-            {/* Logout Icon */}
-            <button
-              onClick={() => signOut({ callbackUrl: '/' })}
-              className="w-10 h-10 rounded-full bg-white/10 hover:bg-red-500/20 flex items-center justify-center transition-all hover:ring-2 hover:ring-red-500"
-              title="Logout"
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M9 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H9" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M16 17L21 12L16 7" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M21 12H9" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </button>
-            </div>
             </>
           ) : (
             <>
-            {v1Launch ? (
-              <Link
-                href="/signup?v1=true"
-                className="rounded-full bg-[#0B0D0F] border border-[#A2CE3A] px-8 py-2.5 text-sm font-semibold text-white transition-all hover:bg-[#A2CE3A] hover:text-[#0B0D0F] font-mona-sans"
-              >
-                Sign Up
-              </Link>
-            ) : (
+              {v1Launch ? (
+                <Link
+                  href="/signup?v1=true"
+   className="px-8 py-3.5 rounded-[30px] text-white font-mona-sans text-sm font-semibold hover:opacity-90 transition-opacity inline-block"
+              style={{
+                background: "linear-gradient(90deg, #071522 25%, #A2CE3A 100%)",
+                boxShadow: "0px -6px 4px 0px #FFFFFF4D inset"
+              }}
+                >
+                  Sign Up
+                </Link>
+              ) : (
+                <div className="relative" ref={dropdownRef}>
+                  <button
+                    type="button"
+                    onClick={() => setShowSignUpDropdown(!showSignUpDropdown)}
+                    className="rounded-full bg-[#A2CE3A] px-9 py-2 text-sm font-semibold text-[#121212] transition-transform hover:scale-[1.02] font-mona-sans"
+                  >
+                    Sign Up
+                  </button>
 
-              <div className="relative" ref={dropdownRef}>
-             <button
-                type="button"
-                onClick={() => setShowSignUpDropdown(!showSignUpDropdown)}
-                className="rounded-full bg-[#A2CE3A] px-9 py-2 text-sm font-semibold text-[#121212] transition-transform hover:scale-[1.02] font-mona-sans"
-              >
-                Sign Up
-              </button>
-  
-                {showSignUpDropdown && (
-                  <div className="absolute right-0 top-full mt-2 w-[175px] rounded-[10px] bg-[#1D242D] p-2 shadow-lg">
-                    <Link
-                      href="/signup?type=jobseeker"
-                      className="block rounded-[8px] bg-[#151A20] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#1a2028] font-mona-sans mb-2"
-                      onClick={() => setShowSignUpDropdown(false)}
-                    >
-                      As Jobseeker
-                    </Link>
-                    <Link
-                      href="/signup?type=coach"
-                      className="block rounded-[8px] bg-[#151A20] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#1a2028] font-mona-sans"
-                      onClick={() => setShowSignUpDropdown(false)}
-                    >
-                      As Interview Coach
-                    </Link>
-                  </div>
-                )}
-              </div>
-            )}
+                  {showSignUpDropdown && (
+                    <div className="absolute right-0 top-full mt-2 w-[175px] rounded-[10px] bg-[#1D242D] p-2 shadow-lg">
+                      <Link
+                        href="/signup?type=jobseeker"
+                        className="block rounded-[8px] bg-[#151A20] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#1a2028] font-mona-sans mb-2"
+                        onClick={() => setShowSignUpDropdown(false)}
+                      >
+                        As Jobseeker
+                      </Link>
+                      <Link
+                        href="/signup?type=coach"
+                        className="block rounded-[8px] bg-[#151A20] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#1a2028] font-mona-sans"
+                        onClick={() => setShowSignUpDropdown(false)}
+                      >
+                        As Interview Coach
+                      </Link>
+                    </div>
+                  )}
+                </div>
+              )}
             </>
           )}
         </div>
@@ -233,51 +306,68 @@ export function Navbar({ v1Launch }: {v1Launch?: boolean;}) {
       {/* Mobile Sidebar */}
       {showMobileSidebar && (
         <div className="fixed inset-0 z-[100] lg:hidden">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setShowMobileSidebar(false)} />
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={() => setShowMobileSidebar(false)}
+          />
           <div
             ref={mobileSidebarRef}
             className="absolute left-0 top-0 h-full w-[280px] bg-[#0B0D0F] border-r border-white/10 flex flex-col"
           >
             <div className="flex items-center justify-between px-6 py-6 border-b border-white/10">
-              <img src="/logo.svg" alt="TalentLoop" className="h-10 w-auto object-contain" />
+              <img
+                src="/logo.svg"
+                alt="TalentLoop"
+                className="h-10 w-auto object-contain"
+              />
               <button
                 onClick={() => setShowMobileSidebar(false)}
                 className="text-white p-2 hover:bg-white/10 rounded-lg transition-colors"
                 aria-label="Close menu"
               >
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <svg
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M18 6L6 18M6 6L18 18"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
                 </svg>
               </button>
             </div>
 
             <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-2">
-              {v1Launch ? (
-                v1Navlinks.map((link) => (
-                  <a
-                    key={link.text}
-                    href={link.link}
-                    onClick={(e) => {
-                      handleNavClick(e, link.link);
-                      setShowMobileSidebar(false);
-                    }}
-                    className="block rounded-lg bg-[#FFFFFF26] px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#FFFFFF33] font-mona-sans cursor-pointer"
-                  >
-                    {link.text}
-                  </a>
-                ))
-              ) : (
-                navLinks.map((link) => (
-                  <Link
-                    key={link.text}
-                    href={link.link}
-                    className="block rounded-lg bg-[#FFFFFF26] px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#FFFFFF33] font-mona-sans"
-                    onClick={() => setShowMobileSidebar(false)}
-                  >
-                    {link.text}
-                  </Link>
-                ))
-              )}
+              {v1Launch
+                ? v1Navlinks.map((link) => (
+                    <a
+                      key={link.text}
+                      href={link.link}
+                      onClick={(e) => {
+                        handleNavClick(e, link.link);
+                        setShowMobileSidebar(false);
+                      }}
+                      className="block rounded-lg bg-[#FFFFFF26] px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#FFFFFF33] font-mona-sans cursor-pointer"
+                    >
+                      {link.text}
+                    </a>
+                  ))
+                : navLinks.map((link) => (
+                    <Link
+                      key={link.text}
+                      href={link.link}
+                      className="block rounded-lg bg-[#FFFFFF26] px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#FFFFFF33] font-mona-sans"
+                      onClick={() => setShowMobileSidebar(false)}
+                    >
+                      {link.text}
+                    </Link>
+                  ))}
             </nav>
 
             {session ? (
@@ -288,21 +378,30 @@ export function Navbar({ v1Launch }: {v1Launch?: boolean;}) {
                       // Check if user has stripe_customer_id
                       if (userData?.user?.stripe_customer_id) {
                         // User has a plan, redirect to dashboard
-                        router.push(session.user?.role === 'coach' ? '#' : '/v1/dashboard');
+                        router.push(
+                          session.user?.role === "coach"
+                            ? "#"
+                            : "/v1/dashboard",
+                        );
                         setShowMobileSidebar(false);
                       } else {
                         // User doesn't have a plan, show toast and scroll to pricing
                         toast({
                           variant: "success",
                           title: "Get a Plan First",
-                          description: "Please choose an acceleration tier to access your dashboard.",
+                          description:
+                            "Please choose an acceleration tier to access your dashboard.",
                         });
-                        
+
                         // Close sidebar and scroll to pricing section
                         setShowMobileSidebar(false);
-                        const pricingSection = document.querySelector('#pricing');
+                        const pricingSection =
+                          document.querySelector("#pricing");
                         if (pricingSection) {
-                          pricingSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                          pricingSection.scrollIntoView({
+                            behavior: "smooth",
+                            block: "start",
+                          });
                         }
                       }
                     }}
@@ -310,14 +409,18 @@ export function Navbar({ v1Launch }: {v1Launch?: boolean;}) {
                   >
                     <div className="w-12 h-12 rounded-full bg-white/20 overflow-hidden">
                       <img
-                        src={userData?.user?.photo || session.user?.image || '/coaches/coach1.jpg'}
+                        src={
+                          userData?.user?.photo ||
+                          session.user?.image ||
+                          "/coaches/coach1.jpg"
+                        }
                         alt="User avatar"
                         className="w-full h-full object-cover"
                       />
                     </div>
                     <div className="flex-1">
                       <p className="text-white font-mona-sans text-sm font-semibold">
-                        {userData?.user?.name || session.user?.name || 'User'}
+                        {userData?.user?.name || session.user?.name || "User"}
                       </p>
                       <p className="text-white/60 font-mona-sans text-xs">
                         View Dashboard
@@ -326,20 +429,28 @@ export function Navbar({ v1Launch }: {v1Launch?: boolean;}) {
                   </div>
                 ) : (
                   <Link
-                    href={session.user?.role === 'coach' ? '/dashboard?us=coach' : '/dashboard'}
+                    href={
+                      session.user?.role === "coach"
+                        ? "/dashboard?us=coach"
+                        : "/dashboard"
+                    }
                     className="flex items-center gap-3 p-4 rounded-lg bg-white/5 hover:bg-white/10 transition-all"
                     onClick={() => setShowMobileSidebar(false)}
                   >
                     <div className="w-12 h-12 rounded-full bg-white/20 overflow-hidden">
                       <img
-                        src={userData?.user?.photo || session.user?.image || '/coaches/coach1.jpg'}
+                        src={
+                          userData?.user?.photo ||
+                          session.user?.image ||
+                          "/coaches/coach1.jpg"
+                        }
                         alt="User avatar"
                         className="w-full h-full object-cover"
                       />
                     </div>
                     <div className="flex-1">
                       <p className="text-white font-mona-sans text-sm font-semibold">
-                        {userData?.user?.name || session.user?.name || 'User'}
+                        {userData?.user?.name || session.user?.name || "User"}
                       </p>
                       <p className="text-white/60 font-mona-sans text-xs">
                         View Dashboard
@@ -347,21 +458,47 @@ export function Navbar({ v1Launch }: {v1Launch?: boolean;}) {
                     </div>
                   </Link>
                 )}
-                
+
                 {/* Logout Button */}
                 <button
                   onClick={() => {
-                    signOut({ callbackUrl: '/' });
+                    signOut({ callbackUrl: "/" });
                     setShowMobileSidebar(false);
                   }}
                   className="w-full mt-3 flex items-center justify-center gap-2 p-4 rounded-lg bg-red-500/10 hover:bg-red-500/20 transition-all border border-red-500/30"
                 >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M9 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H9" stroke="#EF4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    <path d="M16 17L21 12L16 7" stroke="#EF4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    <path d="M21 12H9" stroke="#EF4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M9 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H9"
+                      stroke="#EF4444"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <path
+                      d="M16 17L21 12L16 7"
+                      stroke="#EF4444"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <path
+                      d="M21 12H9"
+                      stroke="#EF4444"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
                   </svg>
-                  <span className="text-red-400 font-mona-sans text-sm font-semibold">Logout</span>
+                  <span className="text-red-400 font-mona-sans text-sm font-semibold">
+                    Logout
+                  </span>
                 </button>
               </div>
             ) : (

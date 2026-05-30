@@ -58,9 +58,9 @@ export default function V1CareerSection() {
           className="text-center mb-20"
         >
           <h2 className="text-4xl lg:text-6xl font-mona-sans font-bold leading-tight">
-            <span className="text-white">AN OPERATING SYSTEM FOR </span>
+            <span className="text-white">An Operating System For </span>
             <br />
-            <span className="text-[#A2CE3A]">YOUR CAREER.</span>
+            <span className="text-[#A2CE3A]">Your Career.</span>
           </h2>
         </motion.div>
 

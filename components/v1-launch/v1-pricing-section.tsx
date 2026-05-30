@@ -133,8 +133,8 @@ export default function V1PricingSection({ onStartNow }: V1PricingSectionProps) 
           className="text-center mb-6"
         >
           <h2 className="text-4xl lg:text-6xl font-mona-sans font-bold leading-tight mb-4">
-            <span className="text-white">CHOOSE YOUR </span>
-            <span className="text-[#A2CE3A]">ACCELERATION TIER.</span>
+            <span className="text-white">Choose Your </span>
+            <span className="text-[#A2CE3A]">Acceleration Tier.</span>
           </h2>
           <p className="text-white/40 font-sora text-sm">
             Transparent pricing. No fake guarantees. Every package is built around the outcome you actually need.

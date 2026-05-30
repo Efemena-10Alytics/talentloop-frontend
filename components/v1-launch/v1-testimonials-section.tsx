@@ -46,35 +46,30 @@ const ArrowRightIcon = () => (
 const testimonials = [
   {
     id: 1,
-    name: "Amara O.",
-    role: "Talentloop Expert",
-    image: "/coaches/coach1.jpg",
-    rating: 4.5,
-    average: 4.92,
-    quote: "Three interviews in the first 11 days after my CV relaunch, including two from companies I'd been rejected from before. The positioning rewrite changed everything.",
-    details: "She explained all requirement and provide details feedback. You should work with her."
+    image: "/_brithishA_interview 1.png",
   },
   {
     id: 2,
-    name: "James Wilson",
-    role: "Career Switcher",
-    image: "/coaches/coach2.jpg",
-    rating: 5.0,
-    average: 4.95,
-    quote: "I went from zero responses to 5 interviews in 3 weeks. The LinkedIn optimization was a game-changer for my profile visibility.",
-    details: "Highly professional and results-driven. Worth every penny."
+    image: "/_brithishA_interview 1-1.png",
   },
   {
     id: 3,
-    name: "Sarah Chen",
-    role: "Senior Developer",
-    image: "/coaches/coach3.jpg",
-    rating: 4.8,
-    average: 4.88,
-    quote: "The job application service saved me hours of work. They applied to 50+ positions and I got callbacks from 8 companies.",
-    details: "Amazing attention to detail and personalized approach."
-  }
+    image: "/_brithishA_interview 1-2.png",
+  },
+  {
+    id: 4,
+    image: "/_brithishA_interview 1-3.png",
+  },
+  {
+    id: 5,
+    image: "/_brithishA_interview 1-4.png",
+  },
+  {
+    id: 6,
+    image: "/_brithishA_interview 1-5.png",
+  },
 ];
+
 
 export default function V1TestimonialsSection() {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -106,7 +101,7 @@ export default function V1TestimonialsSection() {
                 <img
                   key={index}
                   src={testimonial.image}
-                  alt={testimonial.name}
+                  alt=""
                   className="w-8 h-8 rounded-full border-2 border-[#0B0D0F] object-cover"
                 />
               ))}
@@ -131,10 +126,10 @@ export default function V1TestimonialsSection() {
           className="text-center mb-16"
         >
           <h2 className="text-4xl lg:text-6xl font-mona-sans font-bold text-white mb-4">
-            Real moves, by real professionals.
+            Real Moves, By Real Professionals.
           </h2>
           <p className="text-white/60 font-sora text-base">
-            Our happy clients, who shared her experience with us!
+            Our Happy Clients, Who Shared Her Experience With Us!
           </p>
         </motion.div>
 
@@ -157,64 +152,9 @@ export default function V1TestimonialsSection() {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -100 }}
               transition={{ duration: 0.5 }}
-              className="rounded-[20px] p-8 lg:p-12"
-              style={{
-                background: "#1563741A",
-                boxShadow: "0px 12px 24px 0px #00000005, 0px 8px 16px 0px #00000005, 0px 4px 8px 0px #00000005"
-              }}
+              className="rounded-[20px] overflow-hidden"
             >
-              {/* Quotation Mark */}
-              <div className="mb-6">
-                <QuotationIcon />
-              </div>
-
-              {/* Profile Section */}
-              <div className="flex items-start justify-between mb-8">
-                <div className="flex items-center gap-4">
-                  <img
-                    src={currentTestimonial.image}
-                    alt={currentTestimonial.name}
-                    className="w-16 h-16 rounded-full object-cover"
-                  />
-                  <div>
-                    <h3 className="text-white font-mona-sans text-xl font-bold">
-                      {currentTestimonial.name}
-                    </h3>
-                    <p className="text-white/60 font-sora text-sm">
-                      {currentTestimonial.role}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Ratings */}
-                <div className="flex gap-8">
-                  <div className="text-center">
-                    <div className="text-white font-mona-sans text-2xl font-bold mb-1">
-                      {currentTestimonial.average}
-                    </div>
-                    <div className="text-white/40 font-sora text-xs">Average</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="flex items-center gap-1 mb-1">
-                      <StarIcon />
-                      <span className="text-white font-mona-sans text-2xl font-bold">
-                        {currentTestimonial.rating}
-                      </span>
-                    </div>
-                    <div className="text-white/40 font-sora text-xs">Sarah's rating</div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Quote */}
-              <p className="text-white font-sora text-lg mb-6 leading-relaxed">
-                "{currentTestimonial.quote}"
-              </p>
-
-              {/* Details */}
-              <p className="text-white/60 font-sora text-sm">
-                {currentTestimonial.details}
-              </p>
+                <img src={currentTestimonial.image || ""} alt="" className="h-full w-full object-cover" />
             </motion.div>
           </AnimatePresence>
 

@@ -10,6 +10,7 @@ import V1PricingSection from "@/components/v1-launch/v1-pricing-section";
 import V1TestimonialsSection from "@/components/v1-launch/v1-testimonials-section";
 import V1WhoIsForSection from "@/components/v1-launch/v1-who-is-for-section";
 import V1WhyDifferentSection from "@/components/v1-launch/v1-why-different-section";
+import V1FooterSection from "@/components/v1-launch/v1-footer-section";
 import PricingFlowWrapper from "@/components/v1-launch/pricing-components/PricingFlowWrapper";
 import BookingFlow from "@/components/v1-launch/pricing-components/BookingFlow";
 import { useActivePricingPlans } from "@/lib/hooks/usePricing";
@@ -58,10 +59,8 @@ export default function Home() {
         <V1WhoIsForSection />
         <V1TestimonialsSection />
         <V1CTASection />
+        <V1FooterSection />
       </div>
-
-    
-    
     </div>
   );
 }
