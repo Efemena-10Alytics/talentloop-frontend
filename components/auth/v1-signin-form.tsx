@@ -85,7 +85,7 @@ export default function V1SigninForm({ isEmailVerification }: V1SigninFormProps)
       }
 
       const headers = await getAuthHeaders();
-      const userResponse = await fetch(`${getApiUrl()}/api/auth/me`, {
+      const userResponse = await fetch(`${getApiUrl()}/api/v1/auth/me`, {
         method: "GET",
         headers,
       });

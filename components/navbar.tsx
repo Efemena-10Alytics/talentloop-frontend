@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { useUserData } from "@/hooks/useUserData";
+import { useRouter } from "next/navigation";
+import { useToast } from "@/components/ui/use-toast";
 
 const navLinks = [{text: "Find Interview Coach", link:"/coaches"}, {text: "Auto Apply", link:"/auto-apply"}, {text: "AI Copilot", link:"/ai-copilot"}];
 
@@ -16,6 +18,8 @@ const v1Navlinks = [
 export function Navbar({ v1Launch }: {v1Launch?: boolean;}) {
   const { data: session } = useSession();
   const { userData } = useUserData();
+  const router = useRouter();
+  const { toast } = useToast();
   const [isScrolled, setIsScrolled] = useState(false);
   const [showSignUpDropdown, setShowSignUpDropdown] = useState(false);
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
@@ -122,16 +126,50 @@ export function Navbar({ v1Launch }: {v1Launch?: boolean;}) {
 )}
 
           {session ? (
-            <Link
-              href={session.user?.role === 'coach' ? '/dashboard?us=coach' : '/dashboard'}
-              className="w-10 h-10 rounded-full bg-white/20 overflow-hidden hover:ring-2 hover:ring-[#A2CE3A] transition-all cursor-pointer"
-            >
-              <img
-                src={userData?.user?.photo || session.user?.image || '/coaches/coach1.jpg'}
-                alt="User avatar"
-                className="w-full h-full object-cover"
-              />
-            </Link>
+            <>
+            {v1Launch ? (
+              <div
+                onClick={() => {
+                  // Check if user has stripe_customer_id
+                  if (userData?.user?.stripe_customer_id) {
+                    // User has a plan, redirect to dashboard
+                    router.push(session.user?.role === 'coach' ? '#' : '/v1/dashboard');
+                  } else {
+                    // User doesn't have a plan, show toast and scroll to pricing
+                    toast({
+                      variant: "success",
+                      title: "Get a Plan First",
+                      description: "Please choose an acceleration tier to access your dashboard.",
+                    });
+                    
+                    // Scroll to pricing section
+                    const pricingSection = document.querySelector('#pricing');
+                    if (pricingSection) {
+                      pricingSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                  }
+                }}
+                className="w-10 h-10 rounded-full bg-white/20 overflow-hidden hover:ring-2 hover:ring-[#A2CE3A] transition-all cursor-pointer"
+              >
+                <img
+                  src={userData?.user?.photo || session.user?.image || '/coaches/coach1.jpg'}
+                  alt="User avatar"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            ) : (
+              <Link
+                href={session.user?.role === 'coach' ? '/dashboard?us=coach' : '/dashboard'}
+                className="w-10 h-10 rounded-full bg-white/20 overflow-hidden hover:ring-2 hover:ring-[#A2CE3A] transition-all cursor-pointer"
+              >
+                <img
+                  src={userData?.user?.photo || session.user?.image || '/coaches/coach1.jpg'}
+                  alt="User avatar"
+                  className="w-full h-full object-cover"
+                />
+              </Link>
+            )}
+            </>
           ) : (
             <>
             {v1Launch ? (

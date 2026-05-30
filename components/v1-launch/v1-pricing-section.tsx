@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
+import { useActivePricingPlans } from "@/lib/hooks/usePricing";
+import type { PricingPlan } from "@/lib/services/pricing.service";
 
 interface V1PricingSectionProps {
   onStartNow?: (planId: string) => void;
@@ -36,7 +38,8 @@ const CheckmarkIcon = () => (
   </svg>
 );
 
-const pricingPlans = [
+// Mock pricing plans (keeping as fallback)
+const mockPricingPlans = [
   {
     id: "basic",
     name: "Basic",
@@ -91,14 +94,30 @@ const pricingPlans = [
 ];
 
 export default function V1PricingSection({ onStartNow }: V1PricingSectionProps) {
-  const [selectedPlan, setSelectedPlan] = useState("premium");
-  const [hoveredPlan, setHoveredPlan] = useState<string | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState<number | string>("premium");
+  const [hoveredPlan, setHoveredPlan] = useState<number | string | null>(null);
+
+  // Fetch pricing plans from API using Tanstack Query
+  const { data: apiPlans, isLoading, isError } = useActivePricingPlans();
+
+  // Transform API plans to match component structure
+  const pricingPlans = apiPlans && apiPlans.length > 0
+    ? apiPlans.map((plan: PricingPlan) => ({
+        id: plan.id,
+        name: plan.title,
+        price: `£${plan.amount}`,
+        description: plan.description,
+        features: plan.tags || [],
+        isMostPopular: plan.is_popular,
+        installments: plan.installments,
+      }))
+    : mockPricingPlans;
 
   const activePlan = pricingPlans.find(plan => plan.id === selectedPlan) || pricingPlans[1];
 
   const handleStartNow = () => {
     if (onStartNow) {
-      onStartNow(selectedPlan);
+      onStartNow(String(selectedPlan));
     }
   };
 
@@ -122,7 +141,22 @@ export default function V1PricingSection({ onStartNow }: V1PricingSectionProps) 
           </p>
         </motion.div>
 
+        {/* Loading State */}
+        {isLoading && (
+          <div className="flex items-center justify-center py-20">
+            <div className="text-white/60 font-mona-sans text-lg">Loading pricing plans...</div>
+          </div>
+        )}
+
+        {/* Error State */}
+        {isError && !isLoading && (
+          <div className="flex items-center justify-center py-20">
+            <div className="text-red-500 font-mona-sans text-lg">Failed to load pricing plans. Please try again later.</div>
+          </div>
+        )}
+
         {/* Pricing Container */}
+        {!isLoading && !isError && (
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -242,6 +276,7 @@ export default function V1PricingSection({ onStartNow }: V1PricingSectionProps) 
             </motion.div>
           </div>
         </motion.div>
+        )}
       </div>
     </section>
   );

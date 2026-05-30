@@ -10,6 +10,7 @@ interface UserData {
   status: string;
   email_verified_at: string;
   photo: string;
+  stripe_customer_id?: string | null;
 }
 
 interface ProfileSummary {
@@ -48,7 +49,7 @@ export function useUserData() {
 
       try {
         const headers = await getAuthHeaders();
-        const response = await fetch(`${getApiUrl()}/api/auth/me`, {
+        const response = await fetch(`${getApiUrl()}/api/v1/auth/me`, {
           method: "GET",
           headers,
         });
