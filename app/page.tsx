@@ -14,6 +14,7 @@ import V1FooterSection from "@/components/v1-launch/v1-footer-section";
 import PricingFlowWrapper from "@/components/v1-launch/pricing-components/PricingFlowWrapper";
 import BookingFlow from "@/components/v1-launch/pricing-components/BookingFlow";
 import { useActivePricingPlans } from "@/lib/hooks/usePricing";
+import V1VideoTestimonialSection from "@/components/v1-launch/v1-video-testimonials-section";
 
 export default function Home() {
   const [showBookingModal, setShowBookingModal] = useState(false);
@@ -27,7 +28,9 @@ export default function Home() {
 
   // Get the selected pricing plan details
   const selectedPlanData = pricingPlans?.find(
-    (plan) => String(plan.id) === selectedPlan || plan.title.toLowerCase() === selectedPlan?.toLowerCase()
+    (plan) =>
+      String(plan.id) === selectedPlan ||
+      plan.title.toLowerCase() === selectedPlan?.toLowerCase(),
   );
 
   const handleCloseModal = () => {
@@ -42,10 +45,12 @@ export default function Home() {
         <V1CareerSection />
         <V1ExpertsSection />
         {showBookingModal && selectedPlan ? (
-          <BookingFlow 
-            planId={selectedPlanData?.id || selectedPlan} 
+          <BookingFlow
+            planId={selectedPlanData?.id || selectedPlan}
             planType={selectedPlanData?.title || selectedPlan}
-            planPrice={selectedPlanData?.amount ? `£${selectedPlanData.amount}` : "£250"}
+            planPrice={
+              selectedPlanData?.amount ? `£${selectedPlanData.amount}` : "£250"
+            }
             planAmount={selectedPlanData?.amount}
             planInstallments={selectedPlanData?.installments}
             onBackToPricing={handleCloseModal}
@@ -55,9 +60,10 @@ export default function Home() {
             <V1PricingSection onStartNow={handleStartNow} />
           </div>
         )}
-        <V1WhyDifferentSection />
-        <V1WhoIsForSection />
+        <V1VideoTestimonialSection />
         <V1TestimonialsSection />
+        <V1WhoIsForSection />
+        <V1WhyDifferentSection />
         <V1CTASection />
         <V1FooterSection />
       </div>

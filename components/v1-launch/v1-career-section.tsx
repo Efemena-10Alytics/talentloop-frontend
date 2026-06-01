@@ -3,23 +3,24 @@
 import { motion } from "framer-motion";
 
 const SeparatorDot = () => (
-  <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <g filter="url(#filter0_d_1782_3041)">
-      <rect x="8" y="8" width="16" height="16" rx="8" fill="#A2CE3A"/>
-    </g>
-    <defs>
-      <filter id="filter0_d_1782_3041" x="0" y="0" width="32" height="32" filterUnits="userSpaceOnUse" colorInterpolationFilters="sRGB">
-        <feFlood floodOpacity="0" result="BackgroundImageFix"/>
-        <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
-        <feMorphology radius="8" operator="dilate" in="SourceAlpha" result="effect1_dropShadow_1782_3041"/>
-        <feOffset/>
-        <feComposite in2="hardAlpha" operator="out"/>
-        <feColorMatrix type="matrix" values="0 0 0 0 0.635294 0 0 0 0 0.807843 0 0 0 0 0.227451 0 0 0 0.2 0"/>
-        <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_1782_3041"/>
-        <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_1782_3041" result="shape"/>
-      </filter>
-    </defs>
-  </svg>
+ <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g filter="url(#filter0_d_1_1458)">
+<rect x="8" y="8" width="16" height="16" rx="8" fill="#A2CE3A"/>
+</g>
+<defs>
+<filter id="filter0_d_1_1458" x="0" y="0" width="32" height="32" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+<feMorphology radius="8" operator="dilate" in="SourceAlpha" result="effect1_dropShadow_1_1458"/>
+<feOffset/>
+<feComposite in2="hardAlpha" operator="out"/>
+<feColorMatrix type="matrix" values="0 0 0 0 0.635294 0 0 0 0 0.807843 0 0 0 0 0.227451 0 0 0 0.2 0"/>
+<feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_1_1458"/>
+<feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_1_1458" result="shape"/>
+</filter>
+</defs>
+</svg>
+
 );
 
 const steps = [
@@ -47,7 +48,7 @@ const steps = [
 
 export default function V1CareerSection() {
   return (
-    <section className="relative py-20 lg:py-32">
+    <section className="relative py-14 lg:py-20">
       <div className="max-w-[1400px] mx-auto px-3 lg:px-6">
         {/* Section Heading */}
         <motion.div
@@ -55,14 +56,20 @@ export default function V1CareerSection() {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
           viewport={{ once: true }}
-          className="text-center mb-20"
+          className="text-center space-y-5 mb-10"
         >
-          <h2 className="text-4xl lg:text-6xl font-mona-sans font-bold leading-tight">
-            <span className="text-white">An Operating System For </span>
+          <h2 className="text-4xl lg:text-5xl font-semibold leading-tight mb-5">
+            <span className="text-white font-mona-sans">An Operating System For </span>
             <br />
-            <span className="text-[#A2CE3A]">Your Career.</span>
+            <span className="text-[#A2CE3A] font-mona-sans">Your Career.</span>
           </h2>
+ <span className="text-lg font-mona-sans text-center text-white leading-tight">
+          Five deliberate steps that take you from generic applicant to strategically 
+          <br/>
+          positioned candidate.
+          </span>
         </motion.div>
+
 
         {/* Timeline Steps */}
         <div className="max-w-4xl mx-auto">
@@ -73,7 +80,7 @@ export default function V1CareerSection() {
               whileInView={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6, delay: index * 0.15 }}
               viewport={{ once: true }}
-              className="relative flex gap-8 mb-16 last:mb-0"
+              className="relative flex gap-5 last:mb-0"
             >
               {/* Left Side - Separator Dot and Line */}
               <div className="flex flex-col items-center">
@@ -90,10 +97,10 @@ export default function V1CareerSection() {
                     Step {step.number}
                   </span>
                 </div>
-                <h3 className="text-2xl lg:text-3xl font-mona-sans font-bold text-white mb-4">
+                <h3 className="text-2xl lg:text-3xl font-mona-sans font-bold text-[#F3F4F6] mb-1">
                   {step.title}
                 </h3>
-                <p className="text-white/60 font-sora text-base leading-relaxed">
+                <p className="text-[#9CA3AF] font-jakarta-sans text-base leading-relaxed">
                   {step.description}
                 </p>
               </div>

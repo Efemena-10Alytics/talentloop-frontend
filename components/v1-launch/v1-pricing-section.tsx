@@ -122,7 +122,7 @@ export default function V1PricingSection({ onStartNow }: V1PricingSectionProps) 
   };
 
   return (
-    <section className="relative py-20 lg:py-32">
+    <section className="relative py-14 lg:py-20">
       <div className="max-w-[1400px] mx-auto px-3 lg:px-6">
         {/* Section Heading */}
         <motion.div
@@ -132,11 +132,12 @@ export default function V1PricingSection({ onStartNow }: V1PricingSectionProps) 
           viewport={{ once: true }}
           className="text-center mb-6"
         >
-          <h2 className="text-4xl lg:text-6xl font-mona-sans font-bold leading-tight mb-4">
-            <span className="text-white">Choose Your </span>
-            <span className="text-[#A2CE3A]">Acceleration Tier.</span>
+          
+          <h2 className="text-4xl lg:text-5xl  font-semibold leading-tight mb-4">
+            <span className="text-white font-mona-sans">Choose Your </span>
+            <span className="text-[#A2CE3A] font-mona-sans">Acceleration Tier.</span>
           </h2>
-          <p className="text-white/40 font-sora text-sm">
+          <p className="text-[#CCCCCC] font-sora text-sm">
             Transparent pricing. No fake guarantees. Every package is built around the outcome you actually need.
           </p>
         </motion.div>

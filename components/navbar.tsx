@@ -15,6 +15,7 @@ const navLinks = [
 
 const v1Navlinks = [
   { text: "How it works", link: "#how-it-works" },
+    { text: "Experts", link: "#experts" },
   { text: "Pricing Plan", link: "#pricing" },
   { text: "FAQs", link: "#faqs" },
 ];
@@ -27,6 +28,7 @@ export function Navbar({ v1Launch }: { v1Launch?: boolean }) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [showSignUpDropdown, setShowSignUpDropdown] = useState(false);
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
+  const [activeSection, setActiveSection] = useState<string>("");
   const dropdownRef = useRef<HTMLDivElement>(null);
   const mobileSidebarRef = useRef<HTMLDivElement>(null);
 
@@ -35,6 +37,26 @@ export function Navbar({ v1Launch }: { v1Launch?: boolean }) {
       const heroHeight = window.innerHeight;
       const scrollPosition = window.scrollY;
       setIsScrolled(scrollPosition > heroHeight * 0.1);
+
+      // Detect active section for v1 nav links
+      if (v1Launch) {
+        const sections = v1Navlinks.map(link => link.link.replace('#', ''));
+        let currentSection = "";
+
+        for (const sectionId of sections) {
+          const element = document.getElementById(sectionId);
+          if (element) {
+            const rect = element.getBoundingClientRect();
+            // Check if section is in viewport (with offset for navbar)
+            if (rect.top <= 150 && rect.bottom >= 150) {
+              currentSection = `#${sectionId}`;
+              break;
+            }
+          }
+        }
+
+        setActiveSection(currentSection);
+      }
     };
 
     window.addEventListener("scroll", handleScroll);
@@ -43,7 +65,7 @@ export function Navbar({ v1Launch }: { v1Launch?: boolean }) {
     return () => {
       window.removeEventListener("scroll", handleScroll);
     };
-  }, []);
+  }, [v1Launch]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -91,7 +113,7 @@ export function Navbar({ v1Launch }: { v1Launch?: boolean }) {
           }`}
         />
 
-        <div className="relative mx-auto flex w-full max-w-[1400px] items-center justify-between gap-4 px-6 py-6">
+        <div className="relative mx-auto flex w-full max-w-[1400px] shadow-lg border-b border-[#FFFFFF0F] items-center justify-between gap-4 px-6 py-6">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setShowMobileSidebar(true)}
@@ -125,16 +147,23 @@ export function Navbar({ v1Launch }: { v1Launch?: boolean }) {
 
           {v1Launch ? (
             <nav className="hidden items-center gap-8 lg:flex">
-              {v1Navlinks.map((link) => (
-                <a
-                  href={link.link}
-                  key={link.text}
-                  onClick={(e) => handleNavClick(e, link.link)}
-                  className="text-sm font-normal text-[#B9B7BA] transition-colors hover:text-white hover:bg-[#FFFFFF0F] hover:rounded-[30px] px-5 py-2 font-mona-sans cursor-pointer"
-                >
-                  {link.text}
-                </a>
-              ))}
+              {v1Navlinks.map((link) => {
+                const isActive = activeSection === link.link;
+                return (
+                  <a
+                    href={link.link}
+                    key={link.text}
+                    onClick={(e) => handleNavClick(e, link.link)}
+                    className={`text-sm font-normal transition-colors px-5 py-2 font-mona-sans cursor-pointer ${
+                      isActive
+                        ? "text-white bg-[#FFFFFF0F] rounded-[30px]"
+                        : "text-[#B9B7BA] hover:text-white hover:bg-[#FFFFFF0F] hover:rounded-[30px]"
+                    }`}
+                  >
+                    {link.text}
+                  </a>
+                );
+              })}
             </nav>
           ) : (
             <nav className="hidden items-center gap-3 lg:flex">
@@ -345,19 +374,26 @@ export function Navbar({ v1Launch }: { v1Launch?: boolean }) {
 
             <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-2">
               {v1Launch
-                ? v1Navlinks.map((link) => (
-                    <a
-                      key={link.text}
-                      href={link.link}
-                      onClick={(e) => {
-                        handleNavClick(e, link.link);
-                        setShowMobileSidebar(false);
-                      }}
-                      className="block rounded-lg bg-[#FFFFFF26] px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#FFFFFF33] font-mona-sans cursor-pointer"
-                    >
-                      {link.text}
-                    </a>
-                  ))
+                ? v1Navlinks.map((link) => {
+                    const isActive = activeSection === link.link;
+                    return (
+                      <a
+                        key={link.text}
+                        href={link.link}
+                        onClick={(e) => {
+                          handleNavClick(e, link.link);
+                          setShowMobileSidebar(false);
+                        }}
+                        className={`block rounded-lg px-5 py-3 text-sm font-semibold transition-colors font-mona-sans cursor-pointer ${
+                          isActive
+                            ? "text-white bg-[#FFFFFF0F]"
+                            : "bg-[#FFFFFF26] text-white hover:bg-[#FFFFFF33]"
+                        }`}
+                      >
+                        {link.text}
+                      </a>
+                    );
+                  })
                 : navLinks.map((link) => (
                     <Link
                       key={link.text}
@@ -505,7 +541,7 @@ export function Navbar({ v1Launch }: { v1Launch?: boolean }) {
               <div className="px-4 pb-6 space-y-3 border-t border-white/10 pt-4">
                 {v1Launch ? (
                   <Link
-                    href="/signup?v1=true"
+                    href="/signin?v1=true"
                     className="block rounded-lg bg-[#A2CE3A] px-5 py-3 text-sm font-semibold text-[#121212] transition-colors hover:bg-[#92BE2A] font-mona-sans text-center"
                     onClick={() => setShowMobileSidebar(false)}
                   >
