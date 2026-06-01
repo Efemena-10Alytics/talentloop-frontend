@@ -42,8 +42,12 @@ export default function Home() {
       <div className="p-3">
         <Navbar v1Launch />
         <V1HeroSection />
-        <V1CareerSection />
-        <V1ExpertsSection />
+        <div id="how-it-works">
+          <V1CareerSection />
+        </div>
+        <div id="experts">
+          <V1ExpertsSection />
+        </div>
         {showBookingModal && selectedPlan ? (
           <BookingFlow
             planId={selectedPlanData?.id || selectedPlan}

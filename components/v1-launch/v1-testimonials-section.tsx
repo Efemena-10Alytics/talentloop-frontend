@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useVisibleImageTestimonials } from "@/lib/hooks/useTestimonials";
 
 const QuotationIcon = () => (
   <svg width="39" height="28" viewBox="0 0 39 28" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -43,79 +44,37 @@ const ArrowRightIcon = () => (
   </svg>
 );
 
-const testimonials = [
-  {
-    id: 1,
-    image: "/_brithishA_interview 1.png",
-  },
-  {
-    id: 2,
-    image: "/_brithishA_interview 1-1.png",
-  },
-  {
-    id: 3,
-    image: "/_brithishA_interview 1-2.png",
-  },
-  {
-    id: 4,
-    image: "/_brithishA_interview 1-3.png",
-  },
-  {
-    id: 5,
-    image: "/_brithishA_interview 1-4.png",
-  },
-  {
-    id: 6,
-    image: "/_brithishA_interview 1-5.png",
-  },
-];
-
-
 export default function V1TestimonialsSection() {
+  const { data: testimonials, isLoading, isError } = useVisibleImageTestimonials();
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const handlePrevious = () => {
+    if (!testimonials || testimonials.length === 0) return;
     setCurrentIndex((prev) => (prev === 0 ? testimonials.length - 1 : prev - 1));
   };
 
   const handleNext = () => {
+    if (!testimonials || testimonials.length === 0) return;
     setCurrentIndex((prev) => (prev === testimonials.length - 1 ? 0 : prev + 1));
   };
 
-  const currentTestimonial = testimonials[currentIndex];
+  const currentTestimonial = testimonials && testimonials.length > 0 ? testimonials[currentIndex] : null;
 
   return (
-    <section className="relative py-20 lg:py-32" style={{ background: "#01090BB2" }}>
+    <section className="relative py-14 lg:py-20" style={{ background: "#01090BB2" }}>
       <div className="max-w-[1400px] mx-auto px-3 lg:px-6">
         {/* Profile Info Badge */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          viewport={{ once: true }}
-          className="flex justify-center mb-8"
-        >
-          <div className="flex items-center gap-3 bg-[#0B0D0F] rounded-full px-5 py-3 border border-white/10">
-            <div className="flex -space-x-2">
-              {testimonials.slice(0, 3).map((testimonial, index) => (
-                <img
-                  key={index}
-                  src={testimonial.image}
-                  alt=""
-                  className="w-8 h-8 rounded-full border-2 border-[#0B0D0F] object-cover"
-                />
-              ))}
-            </div>
-            <span className="text-white/60 font-sora text-sm">
-              Trusted by <span className="text-white font-semibold">600+</span> good customers
-            </span>
-            <div className="w-8 h-8 rounded-full bg-[#A2CE3A] flex items-center justify-center">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M20 6L9 17L4 12" stroke="#0B0D0F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </div>
-          </div>
-        </motion.div>
+        {!isLoading && testimonials && testimonials.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+            className="flex justify-center mb-8"
+          >
+          <img src="/Profile Info.png" alt="" className="h-14 object-contain" />
+          </motion.div>
+        )}
 
         {/* Section Heading */}
         <motion.div
@@ -125,64 +84,89 @@ export default function V1TestimonialsSection() {
           viewport={{ once: true }}
           className="text-center mb-16"
         >
-          <h2 className="text-4xl lg:text-6xl font-mona-sans font-bold text-white mb-4">
+          <h2 className="text-4xl lg:text-5xl text-white font-mona-sans font-semibold mb-4">
             Real Moves, By Real Professionals.
           </h2>
-          <p className="text-white/60 font-sora text-base">
+          <p className="text-white/60 font-jakarta-sans text-base">
             Our Happy Clients, Who Shared Her Experience With Us!
           </p>
         </motion.div>
 
+        {/* Loading State */}
+        {isLoading && (
+          <div className="flex items-center justify-center py-20">
+            <div className="flex items-center gap-3">
+              {/* Spinner */}
+              <svg className="animate-spin h-6 w-6 text-[#A2CE3A]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <div className="text-white/60 font-mona-sans text-lg">Loading testimonials...</div>
+            </div>
+          </div>
+        )}
+
+        {/* Error State */}
+        {isError && !isLoading && (
+          <div className="flex items-center justify-center py-20">
+            <div className="text-red-500 font-mona-sans text-lg">Failed to load testimonials. Please try again later.</div>
+          </div>
+        )}
+
         {/* Testimonial Card with Navigation */}
-        <div className="relative max-w-4xl mx-auto">
-          {/* Left Arrow */}
-          <button
-            onClick={handlePrevious}
-            className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-16 z-10 hover:opacity-80 transition-opacity hidden lg:block"
-            aria-label="Previous testimonial"
-          >
-            <ArrowLeftIcon />
-          </button>
+        {!isLoading && !isError && testimonials && testimonials.length > 0 && currentTestimonial && (
+          <>
+            <div className="relative max-w-4xl mx-auto">
+              {/* Left Arrow */}
+              <button
+                onClick={handlePrevious}
+                className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-16 z-10 hover:opacity-80 transition-opacity hidden lg:block"
+                aria-label="Previous testimonial"
+              >
+                <ArrowLeftIcon />
+              </button>
 
-          {/* Testimonial Card */}
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={currentTestimonial.id}
-              initial={{ opacity: 0, x: 100 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -100 }}
-              transition={{ duration: 0.5 }}
-              className="rounded-[20px] overflow-hidden"
-            >
-                <img src={currentTestimonial.image || ""} alt="" className="h-full w-full object-cover" />
-            </motion.div>
-          </AnimatePresence>
+              {/* Testimonial Card */}
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={currentTestimonial!.id}
+                  initial={{ opacity: 0, x: 100 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -100 }}
+                  transition={{ duration: 0.5 }}
+                  className="rounded-[20px] border-2 border-[#A2CE3A] overflow-hidden"
+                >
+                    <img src={currentTestimonial!.file_url || ""} alt={currentTestimonial!.title || "Testimonial"} className="h-full w-full object-cover" />
+                </motion.div>
+              </AnimatePresence>
 
-          {/* Right Arrow */}
-          <button
-            onClick={handleNext}
-            className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-16 z-10 hover:opacity-80 transition-opacity hidden lg:block"
-            aria-label="Next testimonial"
-          >
-            <ArrowRightIcon />
-          </button>
-        </div>
+              {/* Right Arrow */}
+              <button
+                onClick={handleNext}
+                className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-16 z-10 hover:opacity-80 transition-opacity hidden lg:block"
+                aria-label="Next testimonial"
+              >
+                <ArrowRightIcon />
+              </button>
+            </div>
 
-        {/* Pagination Dots */}
-        <div className="flex justify-center gap-2 mt-12">
-          {testimonials.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => setCurrentIndex(index)}
-              className={`h-2 rounded-full transition-all ${
-                index === currentIndex
-                  ? "w-8 bg-[#A2CE3A]"
-                  : "w-2 bg-white/20 hover:bg-white/40"
-              }`}
-              aria-label={`Go to testimonial ${index + 1}`}
-            />
-          ))}
-        </div>
+            {/* Pagination Dots */}
+            <div className="flex justify-center gap-2 mt-12">
+              {testimonials.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentIndex(index)}
+                  className={`h-2 rounded-full transition-all ${
+                    index === currentIndex
+                      ? "w-8 bg-[#A2CE3A]"
+                      : "w-2 bg-white/20 hover:bg-white/40"
+                  }`}
+                  aria-label={`Go to testimonial ${index + 1}`}
+                />
+              ))}
+            </div>
+          </>
+        )}
 
         {/* Mobile Navigation */}
         <div className="flex justify-center gap-4 mt-8 lg:hidden">

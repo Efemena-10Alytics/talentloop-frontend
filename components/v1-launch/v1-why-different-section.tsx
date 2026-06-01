@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 
 export default function V1WhyDifferentSection() {
   return (
-    <section className="relative py-20 lg:py-32">
+    <section className="relative py-14 lg:py-20">
       <div className="max-w-[1400px] mx-auto px-3 lg:px-6">
         {/* Section Heading */}
         <motion.div
@@ -14,10 +14,10 @@ export default function V1WhyDifferentSection() {
           viewport={{ once: true }}
           className="text-center mb-16"
         >
-          <h2 className="text-4xl lg:text-6xl font-mona-sans font-bold mb-4">
-            <span className="text-white">Why </span>
-            <span className="text-[#A2CE3A]">TalentLoop.ai</span>
-            <span className="text-white"> Is Different</span>
+          <h2 className="text-4xl lg:text-5xl font-mona-sans font-semibold mb-4">
+            <span className="text-white font-mona-sans">Why </span>
+            <span className="text-[#A2CE3A] font-mona-sans">TalentLoop.ai</span>
+            <span className="text-white font-mona-sans"> Is Different</span>
           </h2>
         </motion.div>
 
@@ -29,29 +29,45 @@ export default function V1WhyDifferentSection() {
             whileInView={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8 }}
             viewport={{ once: true }}
-            className="rounded-[24px] p-8 lg:p-10"
+            className="rounded-[24px] h-fit p-8 lg:p-10 bg-cover bg-center bg-no-repeat"
             style={{
-              background: "linear-gradient(135deg, rgba(21, 99, 116, 0.2) 0%, rgba(162, 206, 58, 0.2) 100%)"
+              backgroundImage: "url('/Intelligent Conversations (1).png')"
             }}
           >
-            <h3 className="text-white font-mona-sans text-2xl font-bold mb-6">
+            <h3 className="text-white font-mona-sans text-2xl font-bold mb-1">
               Intelligent Conversations
             </h3>
-            <p className="text-white/60 font-sora text-sm mb-8">
+            <p className="text-white/60 font-jakarta-sans text-sm mb-10">
               We don't just edit. You talk. We ask. We refine. No better. Most platforms make you DIY. We make it collaborative.
             </p>
 
             <div className="space-y-3">
-              <div className="bg-[#FFFFFF0D] rounded-full px-5 py-3 border border-[#A2CE3A]/20">
+              <div 
+                 style={{
+              background: "linear-gradient#A2CE3A 0%, #A2CE3A33 100%)"
+            }}
+              className="bg-[#FFFFFF0D] rounded-full px-5 py-3 border border-[#A2CE3A]/20 w-fit">
                 <span className="text-white/80 font-sora text-sm">Identifies experience gaps</span>
               </div>
-              <div className="bg-[#FFFFFF0D] rounded-full px-5 py-3 border border-[#A2CE3A]/20">
+              <div 
+                 style={{
+              background: "linear-gradient#A2CE3A 0%, #A2CE3A33 100%)"
+            }}
+              className="bg-[#FFFFFF0D] rounded-full px-5 py-3 border border-[#A2CE3A]/20 w-fit">
                 <span className="text-white/80 font-sora text-sm">Forces accountability</span>
               </div>
-              <div className="bg-[#FFFFFF0D] rounded-full px-5 py-3 border border-[#A2CE3A]/20">
+              <div 
+                 style={{
+              background: "linear-gradient#A2CE3A 0%, #A2CE3A33 100%)"
+            }}
+              className="bg-[#FFFFFF0D] rounded-full px-5 py-3 border border-[#A2CE3A]/20 w-fit">
                 <span className="text-white/80 font-sora text-sm">Guides real skill growth</span>
               </div>
-              <div className="bg-[#FFFFFF0D] rounded-full px-5 py-3 border border-[#A2CE3A]/20">
+              <div 
+                 style={{
+              background: "linear-gradient#A2CE3A 0%, #A2CE3A33 100%)"
+            }}
+              className="bg-[#FFFFFF0D] rounded-full px-5 py-3 border border-[#A2CE3A]/20 w-fit">
                 <span className="text-white/80 font-sora text-sm">Aligns your profile with market reality</span>
               </div>
             </div>
@@ -63,7 +79,7 @@ export default function V1WhyDifferentSection() {
             whileInView={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8 }}
             viewport={{ once: true }}
-            className="rounded-[24px] p-8 lg:p-10"
+            className="rounded-[24px] p-4"
             style={{
               background: "#FFFFFF08",
               border: "1px solid #A2CE3A33",
@@ -71,10 +87,10 @@ export default function V1WhyDifferentSection() {
               backdropFilter: "blur(11.56px)"
             }}
           >
-            <div className="space-y-6">
+            <div className="space-y-3">
               {/* Applications Sent */}
-              <div className="bg-[#FFFFFF0D] rounded-[16px] p-4 border border-[#A2CE3A]/10">
-                <div className="flex items-center justify-between mb-2">
+              <div className="bg-[#FFFFFF0D] rounded-[24px] py-2 px-3">
+                <div className="flex items-center justify-between">
                   <span className="text-white/40 font-sora text-xs uppercase">Applications Sent</span>
                   <svg width="39" height="39" viewBox="0 0 39 39" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <rect x="0.545" y="0.238" width="38.5475" height="38.5475" rx="19.2737" fill="#A2CE3A" fillOpacity="0.1"/>
@@ -85,8 +101,8 @@ export default function V1WhyDifferentSection() {
               </div>
 
               {/* Interviews Secured */}
-              <div className="bg-[#FFFFFF0D] rounded-[16px] p-4 border border-[#A2CE3A]/10">
-                <div className="flex items-center justify-between mb-2">
+              <div className="bg-[#FFFFFF0D] rounded-[24px] py-2 px-3">
+                <div className="flex items-center justify-between">
                   <span className="text-white/40 font-sora text-xs uppercase">Interviews Secured</span>
                   <svg width="39" height="39" viewBox="0 0 39 39" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <rect width="38.5475" height="38.5475" rx="19.2737" fill="#A2CE3A" fillOpacity="0.1"/>
@@ -97,8 +113,8 @@ export default function V1WhyDifferentSection() {
               </div>
 
               {/* Avg. Response Time */}
-              <div className="bg-[#FFFFFF0D] rounded-[16px] p-4 border border-[#A2CE3A]/10">
-                <div className="flex items-center justify-between mb-2">
+              <div className="bg-[#FFFFFF0D] rounded-[24px] py-2 px-3">
+                <div className="flex items-center justify-between">
                   <span className="text-white/40 font-sora text-xs uppercase">Avg. Response Time</span>
                   <svg width="39" height="39" viewBox="0 0 39 39" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <rect width="38.5475" height="38.5475" rx="19.2737" fill="#A2CE3A" fillOpacity="0.1"/>
@@ -110,7 +126,7 @@ export default function V1WhyDifferentSection() {
             </div>
 
             {/* Analytics Title and Description - Positioned Below Cards */}
-            <div className="mt-8">
+            <div className="mt-6">
               <h3 className="text-white font-mona-sans text-2xl font-bold mb-3">
                 Analytics and Insights
               </h3>
@@ -119,6 +135,15 @@ export default function V1WhyDifferentSection() {
               </p>
             </div>
           </motion.div>
+        </div>
+      </div>
+            <div className="lg:pt-10">
+        <div className="absolute bottom-0 left-0 right-0 flex justify-center w-full pointer-events-none">
+          <img
+            src="/blush.png"
+            alt=""
+            className="w-full max-w-[1400px] object-contain"
+          />
         </div>
       </div>
     </section>

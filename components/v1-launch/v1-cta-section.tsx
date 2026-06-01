@@ -5,7 +5,7 @@ import Link from "next/link";
 
 export default function V1CTASection() {
   return (
-    <section className="relative py-20 lg:py-32">
+    <section className="relative py-14 lg:py-20">
       <div className="max-w-[1400px] mx-auto px-3 lg:px-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -37,6 +37,15 @@ export default function V1CTASection() {
             Sign Up
           </Link>
         </motion.div>
+      </div>
+            <div className="lg:pt-10">
+        <div className="absolute bottom-0 left-0 right-0 flex justify-center w-full pointer-events-none">
+          <img
+            src="/blush.png"
+            alt=""
+            className="w-full max-w-[1400px] object-contain"
+          />
+        </div>
       </div>
     </section>
   );

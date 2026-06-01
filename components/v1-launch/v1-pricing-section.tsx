@@ -186,21 +186,21 @@ export default function V1PricingSection({ onStartNow }: V1PricingSectionProps) 
                   onClick={() => setSelectedPlan(plan.id)}
                   onMouseEnter={() => setHoveredPlan(plan.id)}
                   onMouseLeave={() => setHoveredPlan(null)}
-                  className="rounded-[28px] p-6 cursor-pointer transition-all duration-500 ease-in-out relative"
+                  className="rounded-[28px] p-2 lg:p-6 cursor-pointer transition-all duration-500 ease-in-out relative"
                   style={{
                     background: selectedPlan === plan.id || hoveredPlan === plan.id
                       ? "linear-gradient(135deg, rgba(162, 206, 58, 0.2) 0%, rgba(21, 99, 116, 0.2) 100%)"
                       : "linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%)"
                   }}
                 >
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-start lg:items-center justify-between">
                     <div className="flex items-center gap-4">
                       <PCIcon />
                       <div>
-                        <h3 className="text-white font-mona-sans text-xl font-bold mb-1">
+                        <h3 className="text-white font-mona-sans text-base lg:text-xl font-bold mb-1">
                           {plan.name}
                         </h3>
-                        <p className="text-white/40 font-sora text-sm">
+                        <p className="text-white/40 font-sora text-[10px] lg:text-sm">
                           {plan.description}
                         </p>
                       </div>
@@ -208,16 +208,18 @@ export default function V1PricingSection({ onStartNow }: V1PricingSectionProps) 
 
                     <div className="flex flex-col items-end gap-2">
                       {plan.isMostPopular && (
+                        <div className="scale-75 lg:scale-100">
                         <MostPopularBadge />
+                        </div>
                       )}
                       <div className="flex items-center gap-4">
-                        <span className="text-white font-mona-sans text-3xl font-bold">
+                        <span className="text-white font-mona-sans text-lg lg:text-3xl font-bold">
                           {plan.price}
                         </span>
                         
                         {/* Radio Input */}
                         <div 
-                          className="w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300"
+                          className="w-5 lg:w-10 h-5 lg:h-10 rounded-full border flex items-center justify-center transition-all duration-300"
                           style={{
                             borderColor: "#FFFFFF",
                             borderWidth: "1px"

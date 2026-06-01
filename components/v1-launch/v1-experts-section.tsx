@@ -12,6 +12,21 @@ const formatSessionsCount = (count: number) => {
   return `${count}+ Interview Prep Sessions`;
 };
 
+// Random client images pool
+const clientImages = [
+  "/Image-1.png",
+  "/Image-2.png",
+  "/Image-3.png",
+  "/Image-4.png",
+  "/Image-5.png",
+];
+
+// Helper function to get random client images
+const getRandomClientImages = (count: number = 3) => {
+  const shuffled = [...clientImages].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, Math.min(count, 3));
+};
+
 // Mock data for experts (keeping as fallback)
 const mockExperts = [
   {
@@ -22,6 +37,7 @@ const mockExperts = [
     sessions: "100+ Interview Prep Sessions",
     image: "/Image-1.png",
     languages: ["English", "French", "Spanish"],
+    clients_counts: 120,
   },
   {
     id: 2,
@@ -31,6 +47,7 @@ const mockExperts = [
     sessions: "100+ Interview Prep Sessions",
     image: "/Image-2.png",
     languages: ["English", "German"],
+    clients_counts: 95,
   },
   {
     id: 3,
@@ -40,6 +57,7 @@ const mockExperts = [
     sessions: "100+ Interview Prep Sessions",
     image: "/Image-3.png",
     languages: ["English", "Spanish"],
+    clients_counts: 110,
   },
   {
     id: 4,
@@ -49,6 +67,7 @@ const mockExperts = [
     sessions: "90+ Interview Prep Sessions",
     image: "/Image-4.png",
     languages: ["English", "French"],
+    clients_counts: 85,
   },
   {
     id: 5,
@@ -58,6 +77,7 @@ const mockExperts = [
     sessions: "120+ Interview Prep Sessions",
     image: "/Image-5.png",
     languages: ["English", "Spanish", "Portuguese"],
+    clients_counts: 130,
   },
   {
     id: 6,
@@ -67,6 +87,7 @@ const mockExperts = [
     sessions: "85+ Interview Prep Sessions",
     image: "/Image-1.png",
     languages: ["English", "Mandarin"],
+    clients_counts: 78,
   },
   {
     id: 7,
@@ -76,6 +97,7 @@ const mockExperts = [
     sessions: "95+ Interview Prep Sessions",
     image: "/Image-2.png",
     languages: ["English", "Spanish"],
+    clients_counts: 92,
   },
   {
     id: 8,
@@ -85,6 +107,7 @@ const mockExperts = [
     sessions: "110+ Interview Prep Sessions",
     image: "/Image-3.png",
     languages: ["English", "German", "French"],
+    clients_counts: 105,
   },
   {
     id: 9,
@@ -94,6 +117,7 @@ const mockExperts = [
     sessions: "80+ Interview Prep Sessions",
     image: "/Image-4.png",
     languages: ["English"],
+    clients_counts: 72,
   },
   {
     id: 10,
@@ -103,6 +127,7 @@ const mockExperts = [
     sessions: "105+ Interview Prep Sessions",
     image: "/Image-5.png",
     languages: ["English", "Korean"],
+    clients_counts: 98,
   },
   {
     id: 11,
@@ -112,6 +137,7 @@ const mockExperts = [
     sessions: "115+ Interview Prep Sessions",
     image: "/Image-1.png",
     languages: ["English", "French"],
+    clients_counts: 112,
   },
   {
     id: 12,
@@ -121,6 +147,7 @@ const mockExperts = [
     sessions: "92+ Interview Prep Sessions",
     image: "/Image-2.png",
     languages: ["English", "Spanish"],
+    clients_counts: 88,
   },
   {
     id: 13,
@@ -130,6 +157,7 @@ const mockExperts = [
     sessions: "88+ Interview Prep Sessions",
     image: "/Image-3.png",
     languages: ["English", "Hindi"],
+    clients_counts: 82,
   },
   {
     id: 14,
@@ -139,6 +167,7 @@ const mockExperts = [
     sessions: "125+ Interview Prep Sessions",
     image: "/Image-4.png",
     languages: ["English", "German"],
+    clients_counts: 118,
   },
   {
     id: 15,
@@ -148,6 +177,7 @@ const mockExperts = [
     sessions: "78+ Interview Prep Sessions",
     image: "/Image-5.png",
     languages: ["English", "Mandarin"],
+    clients_counts: 70,
   },
   {
     id: 16,
@@ -157,6 +187,7 @@ const mockExperts = [
     sessions: "98+ Interview Prep Sessions",
     image: "/Image-1.png",
     languages: ["English", "Spanish", "Portuguese"],
+    clients_counts: 94,
   },
   {
     id: 17,
@@ -166,6 +197,7 @@ const mockExperts = [
     sessions: "108+ Interview Prep Sessions",
     image: "/Image-2.png",
     languages: ["English", "French"],
+    clients_counts: 102,
   },
   {
     id: 18,
@@ -175,6 +207,7 @@ const mockExperts = [
     sessions: "82+ Interview Prep Sessions",
     image: "/Image-3.png",
     languages: ["English"],
+    clients_counts: 76,
   },
 ];
 
@@ -225,10 +258,11 @@ export default function V1ExpertsSection() {
             viewport={{ once: true }}
             className="text-4xl lg:text-6xl font-mona-sans font-bold mb-6 sm:mb-0"
             style={{
-              background: "linear-gradient(188.62deg, #FFFFFF 6.55%, #A2CE3A 82.18%)",
+              background:
+                "linear-gradient(188.62deg, #FFFFFF 6.55%, #A2CE3A 82.18%)",
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
-              backgroundClip: "text"
+              backgroundClip: "text",
             }}
           >
             Meet Our Experts
@@ -238,8 +272,31 @@ export default function V1ExpertsSection() {
         {/* Loading State */}
         {isLoading && (
           <div className="flex items-center justify-center py-20">
-            <div className="text-white/60 font-mona-sans text-lg">
-              Loading experts...
+            <div className="flex items-center gap-3">
+              {/* Spinner */}
+              <svg
+                className="animate-spin h-6 w-6 text-[#A2CE3A]"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
+              </svg>
+              <div className="text-white/60 font-mona-sans text-lg">
+                Loading experts...
+              </div>
             </div>
           </div>
         )}
@@ -273,6 +330,9 @@ export default function V1ExpertsSection() {
               const expertLanguages = isApiExpert
                 ? ["English"]
                 : (expert as (typeof mockExperts)[0]).languages;
+              const clientCounts = isApiExpert
+                ? (expert as Expert).clients_counts
+                : (expert as (typeof mockExperts)[0]).clients_counts;
 
               return (
                 <Link
@@ -342,17 +402,30 @@ export default function V1ExpertsSection() {
                           </div>
                         </div>
                       </div>
-
                     </div>
-                      <div className="bg-transparent pt-4 flex items-center w-full">
-                        <div className="w-[85%]">
-                          <p className="text-white font-mona-sans text-sm mb-4">
-                            {expertSessions}
+                    <div className="bg-transparent pt-4 flex items-center w-full">
+                      <div className="w-[85%] flex flex-col gap-1">
+                        <p className="text-white font-mona-sans text-sm">
+                          {expertSessions}
+                        </p>
+
+                        <div className="flex items-center">
+                          {getRandomClientImages(3).map((imageSrc, index) => (
+                            <img
+                              key={index}
+                              src={imageSrc}
+                              alt=""
+                              className="h-5 w-5 rounded-full"
+                            />
+                          ))}
+                          <p className="text-white font-mona-sans text-xs m-2">
+                            +{clientCounts} more clients handled
                           </p>
                         </div>
+                      </div>
 
-                        <div className="w-[15%]">
-                          <Link href="#" target="_blank">
+                      <div className="w-[15%]">
+                        <Link href="#" target="_blank">
                           <svg
                             width="24"
                             height="24"
@@ -365,9 +438,9 @@ export default function V1ExpertsSection() {
                               fill="white"
                             />
                           </svg>
-                          </Link>
-                        </div>
+                        </Link>
                       </div>
+                    </div>
                   </motion.div>
                 </Link>
               );
@@ -378,54 +451,78 @@ export default function V1ExpertsSection() {
         {/* Pagination */}
         {!isLoading && !isError && (
           <div className="mx-auto w-full flex justify-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            viewport={{ once: true }}
-            className="bg-[#151019B2] rounded-[100px] border border-[#FFFFFF0F] w-fit flex items-center justify-center gap-2"
-          >
-            {/* Previous Button */}
-            <button
-              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-              disabled={currentPage === 1}
-              className="w-10 h-10 border-[#FFFFFF0F] border-r hover:bg-white/10 disabled:cursor-not-allowed transition-all flex items-center justify-center"
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              viewport={{ once: true }}
+              className="bg-[#151019B2] rounded-[100px] border border-[#FFFFFF0F] w-fit flex items-center justify-center gap-2"
             >
-             <svg width="16" height="13" viewBox="0 0 16 13" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M14.5 6.375H0.75M6.375 12L0.75 6.375L6.375 0.75" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-</svg>
-
-            </button>
-
-            {/* Page Numbers */}
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              {/* Previous Button */}
               <button
-                key={page}
-                onClick={() => setCurrentPage(page)}
-                className={`w-10 h-10 rounded-full font-mona-sans text-sm font-semibold transition-all ${
-                  currentPage === page
-                    ? "bg-[#A2CE3A] text-[#090B0E]"
-                    : "bg-white/5 text-white hover:bg-white/10"
-                }`}
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="w-10 h-10 border-[#FFFFFF0F] border-r hover:bg-white/10 disabled:cursor-not-allowed transition-all flex items-center justify-center"
               >
-                {page}
+                <svg
+                  width="16"
+                  height="13"
+                  viewBox="0 0 16 13"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M14.5 6.375H0.75M6.375 12L0.75 6.375L6.375 0.75"
+                    stroke="white"
+                    stroke-width="1.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
               </button>
-            ))}
 
-            {/* Next Button */}
-            <button
-              onClick={() =>
-                setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-              }
-              disabled={currentPage === totalPages}
-              className="w-10 h-10 border-[#FFFFFF0F] border-l hover:bg-white/10 disabled:cursor-not-allowed transition-all flex items-center justify-center"
-            >
-           <svg width="16" height="13" viewBox="0 0 16 13" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M0.75 6.375H14.5M8.875 12L14.5 6.375L8.875 0.75" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-</svg>
+              {/* Page Numbers */}
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                (page) => (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    className={`w-10 h-10 rounded-full font-mona-sans text-sm font-semibold transition-all ${
+                      currentPage === page
+                        ? "bg-[#A2CE3A] text-[#090B0E]"
+                        : "bg-white/5 text-white hover:bg-white/10"
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ),
+              )}
 
-            </button>
-          </motion.div>
+              {/* Next Button */}
+              <button
+                onClick={() =>
+                  setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                }
+                disabled={currentPage === totalPages}
+                className="w-10 h-10 border-[#FFFFFF0F] border-l hover:bg-white/10 disabled:cursor-not-allowed transition-all flex items-center justify-center"
+              >
+                <svg
+                  width="16"
+                  height="13"
+                  viewBox="0 0 16 13"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M0.75 6.375H14.5M8.875 12L14.5 6.375L8.875 0.75"
+                    stroke="white"
+                    stroke-width="1.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </button>
+            </motion.div>
           </div>
         )}
       </div>

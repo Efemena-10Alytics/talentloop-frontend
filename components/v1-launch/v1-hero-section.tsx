@@ -85,15 +85,15 @@ export default function V1HeroSection() {
           >
             Start My Career Upgrade
           </Link>
-          <button
-            onClick={() => setShowBookingModal(true)}
+          <Link
+            href="/v1/clarity-session"
             className="px-8 py-4 text-center rounded-[30px] text-white font-mona-sans text-base font-semibold hover:opacity-90 transition-opacity"
             style={{
               background: "linear-gradient(180deg, #0E0912 0%, #22162B 100%)",
             }}
           >
             Book a Clarity Session
-          </button>
+          </Link>
         </motion.div>
 
         {/* Video Component Container */}
