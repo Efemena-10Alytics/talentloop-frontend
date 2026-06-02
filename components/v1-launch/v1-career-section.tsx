@@ -26,23 +26,23 @@ const SeparatorDot = () => (
 const steps = [
   {
     number: "01",
-    title: "Upload your existing CV",
-    description: "We assess positioning, ATS compatibility, market competitiveness, visa eligibility, and career alignment in a single audit."
+    title: "Optimization and positioning:",
+    description: "Build a market-ready professional profile. Before opportunities can find you, your career story must be clear, compelling, and aligned with the roles you're targeting."
   },
   {
     number: "02",
-    title: "Rebuild your CV",
-    description: "We rebuild your CV, LinkedIn, cover letters, and application strategy with sharp, role-specific language designed to convert."
+    title: "Launch a strategic job search:",
+    description: "We help clients execute a structured and targeted search designed to generate traction."
   },
   {
     number: "03",
-    title: "Targeted applications",
-    description: "For Premium and above, dedicated managers apply on your behalf strategically targeted, professionally tracked, interview-focused."
+    title: "Turn opportunities into interviews and offers:",
+    description: "This phase focuses on helping clients perform confidently throughout the hiring process."
   },
   {
     number: "04",
-    title: "Interview support",
-    description: "We prep you using the actual CV version submitted, with role-specific coaching and tailored mock sessions until you're ready to compete."
+    title: "Build long-term career momentum:",
+    description: "The goal isn't just securing one opportunity; it's building a stronger career trajectory and ensuring success after placement."
   }
 ];
 
@@ -64,7 +64,7 @@ export default function V1CareerSection() {
             <span className="text-[#A2CE3A] font-mona-sans">Your Career.</span>
           </h2>
  <span className="text-lg font-mona-sans text-center text-white leading-tight">
-          Five deliberate steps that take you from generic applicant to strategically 
+          Four deliberate steps that take you from generic applicant to strategically 
           <br/>
           positioned candidate.
           </span>
@@ -94,7 +94,7 @@ export default function V1CareerSection() {
               <div className="flex-1 pb-8">
                 <div className="mb-3">
                   <span className="text-[#A2CE3A] font-mona-sans text-sm font-semibold">
-                    Step {step.number}
+                    Phase {step.number}
                   </span>
                 </div>
                 <h3 className="text-2xl lg:text-3xl font-mona-sans font-bold text-[#F3F4F6] mb-1">

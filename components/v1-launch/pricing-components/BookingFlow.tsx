@@ -224,7 +224,6 @@ export default function BookingFlow({
             firstPayment: paymentOption.installmentDetails?.first,
             secondPayment: paymentOption.installmentDetails?.second,
             nextPaymentDate: "Jun 21, 2026",
-            preferredCohort: selectedDate ? selectedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : "May 7, 2024",
           }}
           onEditData={handleEditData}
           onProceed={handleEnrollmentProceed}

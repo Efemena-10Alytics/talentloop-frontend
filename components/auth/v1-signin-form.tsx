@@ -7,38 +7,102 @@ import Link from "next/link";
 import { useToast } from "@/components/ui/use-toast";
 import { getApiUrl, getHeaders, getAuthHeaders } from "@/lib/api";
 import EmailVerification from "@/components/EmailVerification";
+import { RightSideComponent } from "./v1-right-side-component";
 
 /* ─── SVGs ─── */
 
 const EyeOpenSVG = () => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M12 5C5.636 5 2 12 2 12C2 12 5.636 19 12 19C18.364 19 22 12 22 12C22 12 18.364 5 12 5Z" stroke="#888" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-    <circle cx="12" cy="12" r="3" stroke="#888" strokeWidth="1.5"/>
+  <svg
+    width="22"
+    height="22"
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      d="M12 5C5.636 5 2 12 2 12C2 12 5.636 19 12 19C18.364 19 22 12 22 12C22 12 18.364 5 12 5Z"
+      stroke="#888"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <circle cx="12" cy="12" r="3" stroke="#888" strokeWidth="1.5" />
   </svg>
 );
 
 const EyeClosedSVG = () => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M2 12C2 12 5.636 5 12 5C18.364 5 22 12 22 12" stroke="#888" strokeWidth="1.5" strokeLinecap="round"/>
-    <path d="M2 12C2 12 5.636 19 12 19C18.364 19 22 12 22 12" stroke="#888" strokeWidth="1.5" strokeLinecap="round"/>
-    <path d="M3 3L21 21" stroke="#888" strokeWidth="1.5" strokeLinecap="round"/>
-    <circle cx="12" cy="12" r="3" stroke="#888" strokeWidth="1.5"/>
+  <svg
+    width="22"
+    height="22"
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      d="M2 12C2 12 5.636 5 12 5C18.364 5 22 12 22 12"
+      stroke="#888"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+    />
+    <path
+      d="M2 12C2 12 5.636 19 12 19C18.364 19 22 12 22 12"
+      stroke="#888"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+    />
+    <path
+      d="M3 3L21 21"
+      stroke="#888"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+    />
+    <circle cx="12" cy="12" r="3" stroke="#888" strokeWidth="1.5" />
   </svg>
 );
 
 const GoogleSVG = () => (
-  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M18.171 8.368H17.5V8.333H10V11.667H14.709C14.022 13.607 12.177 15 10 15C7.239 15 5 12.761 5 10C5 7.239 7.239 5 10 5C11.274 5 12.434 5.481 13.317 6.267L15.674 3.91C14.186 2.522 12.195 1.667 10 1.667C5.398 1.667 1.667 5.398 1.667 10C1.667 14.602 5.398 18.333 10 18.333C14.602 18.333 18.333 14.602 18.333 10C18.333 9.441 18.278 8.897 18.171 8.368Z" fill="#FFC107"/>
-    <path d="M2.628 6.121L5.366 8.129C6.107 6.295 7.9 5 10 5C11.274 5 12.434 5.481 13.317 6.267L15.674 3.91C14.186 2.522 12.195 1.667 10 1.667C6.946 1.667 4.308 3.474 2.628 6.121Z" fill="#FF3D00"/>
-    <path d="M10 18.333C12.152 18.333 14.107 17.51 15.579 16.17L13.011 13.987C12.166 14.625 11.117 15 10 15C7.832 15 5.992 13.618 5.299 11.688L2.582 13.783C4.245 16.482 6.901 18.333 10 18.333Z" fill="#4CAF50"/>
-    <path d="M18.171 8.368H17.5V8.333H10V11.667H14.709C14.382 12.588 13.784 13.382 13.01 13.987L15.579 16.17C15.403 16.332 18.333 14.167 18.333 10C18.333 9.441 18.278 8.897 18.171 8.368Z" fill="#1976D2"/>
+  <svg
+    width="20"
+    height="20"
+    viewBox="0 0 20 20"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      d="M18.171 8.368H17.5V8.333H10V11.667H14.709C14.022 13.607 12.177 15 10 15C7.239 15 5 12.761 5 10C5 7.239 7.239 5 10 5C11.274 5 12.434 5.481 13.317 6.267L15.674 3.91C14.186 2.522 12.195 1.667 10 1.667C5.398 1.667 1.667 5.398 1.667 10C1.667 14.602 5.398 18.333 10 18.333C14.602 18.333 18.333 14.602 18.333 10C18.333 9.441 18.278 8.897 18.171 8.368Z"
+      fill="#FFC107"
+    />
+    <path
+      d="M2.628 6.121L5.366 8.129C6.107 6.295 7.9 5 10 5C11.274 5 12.434 5.481 13.317 6.267L15.674 3.91C14.186 2.522 12.195 1.667 10 1.667C6.946 1.667 4.308 3.474 2.628 6.121Z"
+      fill="#FF3D00"
+    />
+    <path
+      d="M10 18.333C12.152 18.333 14.107 17.51 15.579 16.17L13.011 13.987C12.166 14.625 11.117 15 10 15C7.832 15 5.992 13.618 5.299 11.688L2.582 13.783C4.245 16.482 6.901 18.333 10 18.333Z"
+      fill="#4CAF50"
+    />
+    <path
+      d="M18.171 8.368H17.5V8.333H10V11.667H14.709C14.382 12.588 13.784 13.382 13.01 13.987L15.579 16.17C15.403 16.332 18.333 14.167 18.333 10C18.333 9.441 18.278 8.897 18.171 8.368Z"
+      fill="#1976D2"
+    />
   </svg>
 );
 
 const LinkedInSVG = () => (
-  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect width="20" height="20" rx="2" fill="#0A66C2"/>
-    <path d="M6.5 8.5V14M6.5 6V6.01M9 14V8.5M11.5 14V11C11.5 9.5 13 9 13.5 10.5V14" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+  <svg
+    width="20"
+    height="20"
+    viewBox="0 0 20 20"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <rect width="20" height="20" rx="2" fill="#0A66C2" />
+    <path
+      d="M6.5 8.5V14M6.5 6V6.01M9 14V8.5M11.5 14V11C11.5 9.5 13 9 13.5 10.5V14"
+      stroke="white"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
   </svg>
 );
 
@@ -46,7 +110,9 @@ interface V1SigninFormProps {
   isEmailVerification: boolean;
 }
 
-export default function V1SigninForm({ isEmailVerification }: V1SigninFormProps) {
+export default function V1SigninForm({
+  isEmailVerification,
+}: V1SigninFormProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [email, setEmail] = useState("");
@@ -92,7 +158,7 @@ export default function V1SigninForm({ isEmailVerification }: V1SigninFormProps)
 
       if (userResponse.ok) {
         const userData = await userResponse.json();
-        
+
         if (!userData.data?.user?.email_verified_at) {
           router.push("/signin?e_v=true&v1=true");
           setLoading(false);
@@ -152,11 +218,24 @@ export default function V1SigninForm({ isEmailVerification }: V1SigninFormProps)
       const data = await response.json();
 
       if (!response.ok) {
-        toast({
-          variant: "error",
-          title: "Verification failed",
-          description: data.message || "Invalid or expired code",
-        });
+        // Handle validation errors with specific field messages
+        if (data.errors) {
+          const firstErrorField = Object.keys(data.errors)[0];
+          const firstErrorMessage = data.errors[firstErrorField][0];
+
+          toast({
+            variant: "error",
+            title: "Verification failed",
+            description:
+              firstErrorMessage || data.message || "Invalid or expired code",
+          });
+        } else {
+          toast({
+            variant: "error",
+            title: "Verification failed",
+            description: data.message || "Invalid or expired code",
+          });
+        }
         setVerifying(false);
         return;
       }
@@ -195,11 +274,26 @@ export default function V1SigninForm({ isEmailVerification }: V1SigninFormProps)
       const data = await response.json();
 
       if (!response.ok) {
-        toast({
-          variant: "error",
-          title: "Resend failed",
-          description: data.message || "Failed to resend verification code",
-        });
+        // Handle validation errors with specific field messages
+        if (data.errors) {
+          const firstErrorField = Object.keys(data.errors)[0];
+          const firstErrorMessage = data.errors[firstErrorField][0];
+
+          toast({
+            variant: "error",
+            title: "Resend failed",
+            description:
+              firstErrorMessage ||
+              data.message ||
+              "Failed to resend verification code",
+          });
+        } else {
+          toast({
+            variant: "error",
+            title: "Resend failed",
+            description: data.message || "Failed to resend verification code",
+          });
+        }
         return;
       }
 
@@ -220,23 +314,25 @@ export default function V1SigninForm({ isEmailVerification }: V1SigninFormProps)
   return (
     <div className="h-screen bg-[#101014] flex items-center justify-center relative overflow-hidden">
       {/* Logo */}
-      <div className="absolute top-4 left-4 lg:top-6 lg:left-8 z-10">
+      <div className="absolute top-4 left-4 lg:left-8 z-10">
         <Link href="/">
           <img
             src="/logo.svg"
             alt="TalentLoop logo"
-            className="h-8 lg:h-10 w-auto object-contain"
+            className="h-8 lg:h-12 w-auto object-contain"
           />
         </Link>
       </div>
 
-      <div className="w-full h-full max-w-[1400px] mx-auto px-4 py-4 flex items-center justify-center lg:justify-between gap-8">
+      <div className="w-full h-full mx-auto px-4 flex items-center justify-center lg:justify-between gap-8">
         {/* Left Side - Sign In Form */}
-        <div className="w-full max-w-[420px] h-full flex items-center py-4">
+           <div className="w-full lg:w-[40%]">
+        <div className="w-full lg:max-w-[520px] h-full flex items-center py-4">
           <div
             className="rounded-[20px] p-6 lg:p-7 w-full max-h-full flex flex-col lg:scale-[90%] 2xl:scale-[100%]"
             style={{
-              background: "linear-gradient(0deg, #313035, #313035), linear-gradient(81.09deg, #222126 13.55%, #111116 187.95%)",
+              background:
+                "linear-gradient(0deg, #313035, #313035), linear-gradient(81.09deg, #222126 13.55%, #111116 187.95%)",
             }}
           >
             {isEmailVerification ? (
@@ -275,7 +371,9 @@ export default function V1SigninForm({ isEmailVerification }: V1SigninFormProps)
                   {/* Divider */}
                   <div className="flex items-center gap-3 mb-4">
                     <div className="flex-1 h-px bg-white/10" />
-                    <span className="text-white/50 text-xs font-mona-sans">or Sign In with</span>
+                    <span className="text-white/50 text-xs font-mona-sans">
+                      or Sign In with
+                    </span>
                     <div className="flex-1 h-px bg-white/10" />
                   </div>
 
@@ -318,7 +416,10 @@ export default function V1SigninForm({ isEmailVerification }: V1SigninFormProps)
 
                   {/* Forgot Password */}
                   <div className="mb-4 text-right">
-                    <Link href="/forgot-password" className="text-[#A2CE3A] font-mona-sans text-xs font-semibold hover:underline">
+                    <Link
+                      href="/forgot-password"
+                      className="text-[#A2CE3A] font-mona-sans text-xs font-semibold hover:underline"
+                    >
                       Forgot password?
                     </Link>
                   </div>
@@ -345,7 +446,9 @@ export default function V1SigninForm({ isEmailVerification }: V1SigninFormProps)
                     }`}
                     style={{
                       border: "1px solid #FFFFFF1A",
-                      boxShadow: loading ? "none" : "0px -6px 4px 0px #FFFFFF4D inset",
+                      boxShadow: loading
+                        ? "none"
+                        : "0px -6px 4px 0px #FFFFFF4D inset",
                     }}
                   >
                     {loading ? "Signing in..." : "Sign In"}
@@ -355,33 +458,10 @@ export default function V1SigninForm({ isEmailVerification }: V1SigninFormProps)
             )}
           </div>
         </div>
+           </div>
 
-        {/* Right Side - Image */}
-        <div 
-          className="hidden lg:flex flex-1 flex-col items-center justify-center h-full overflow-hidden relative px-6 py-8"
-          style={{
-            background: "linear-gradient(94.02deg, #222126 0%, #111116 100%)",
-          }}
-        >
-          {/* Tagline */}
-          <h2 className="absolute lg:top-12 2xl:top-28 left-32 text-white text-2xl xl:text-4xl font-mona-sans font-bold leading-tight z-10 max-w-md">
-            Apply Faster. Interview Smarter. Get Hired.{" "}
-            <span className="text-white mr-2">With</span>
-            <span className="text-[#A2CE3A]">TalentLoop.AI</span>
-          </h2>
-
-          {/* Dashboard Image */}
-          <div className="flex-1 w-full flex items-center justify-center">
-            <img
-              src="/Dashboard.svg"
-              alt="TalentLoop Dashboard Preview"
-              className="max-w-full max-h-full object-contain"
-              style={{
-                transform: "rotate(-1deg) translateX(-5%)",
-                transformOrigin: "center center",
-              }}
-            />
-          </div>
+        <div className="lg:w-[60%] h-full">
+    <RightSideComponent />
         </div>
       </div>
     </div>

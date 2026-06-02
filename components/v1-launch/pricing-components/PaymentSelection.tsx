@@ -11,6 +11,7 @@ interface PaymentSelectionProps {
   planPrice: string;
   planAmount?: string;
   planInstallments?: number[][] | null;
+  pricingPlanData?: any;
   onPaymentSelect: (paymentOption: PaymentOption) => void;
   onBack?: () => void;
 }
@@ -38,6 +39,7 @@ export default function PaymentSelection({
   planPrice,
   planAmount,
   planInstallments,
+  pricingPlanData,
   onPaymentSelect,
   onBack,
 }: PaymentSelectionProps) {
@@ -255,25 +257,27 @@ export default function PaymentSelection({
             {/* Most Popular Badge */}
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-white font-mona-sans font-bold text-2xl">
-                {planType.charAt(0).toUpperCase() + planType.slice(1)}
+                {pricingPlanData?.title || (planType.charAt(0).toUpperCase() + planType.slice(1))}
               </h3>
-              <div
-                className="px-4 py-2 rounded-full flex items-center gap-2"
-                style={{
-                  background: "linear-gradient(90deg, #A2CE3A 0%, #156374 100%)",
-                }}
-              >
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M8 1L10.163 5.38L15 6.12L11.5 9.53L12.326 14.34L8 12.08L3.674 14.34L4.5 9.53L1 6.12L5.837 5.38L8 1Z" fill="white" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-                <span className="text-white font-mona-sans font-semibold text-xs">
-                  Most Popular
-                </span>
-              </div>
+              {pricingPlanData?.is_popular && (
+                <div
+                  className="px-4 py-2 rounded-full flex items-center gap-2"
+                  style={{
+                    background: "linear-gradient(90deg, #A2CE3A 0%, #156374 100%)",
+                  }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M8 1L10.163 5.38L15 6.12L11.5 9.53L12.326 14.34L8 12.08L3.674 14.34L4.5 9.53L1 6.12L5.837 5.38L8 1Z" fill="white" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  <span className="text-white font-mona-sans font-semibold text-xs">
+                    Most Popular
+                  </span>
+                </div>
+              )}
             </div>
 
             <p className="text-white/60 font-sora text-sm mb-6">
-              For professionals tired of applying blindly.
+              {pricingPlanData?.description || "For professionals tired of applying blindly."}
             </p>
 
             {/* Price Display */}
@@ -282,6 +286,21 @@ export default function PaymentSelection({
                 {planDetails.price}
               </div>
             </div>
+
+            {/* Plan Features */}
+            {pricingPlanData?.tags && pricingPlanData.tags.length > 0 && (
+              <div className="space-y-2 mb-6">
+                <p className="text-white/80 font-sora text-xs mb-3">What's included:</p>
+                {pricingPlanData.tags.map((tag: string, index: number) => (
+                  <div key={index} className="flex items-start gap-2">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" className="flex-shrink-0 mt-0.5">
+                      <path d="M13.3346 4L6.0013 11.3333L2.66797 8" stroke="#A2CE3A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                    <span className="text-white/70 font-sora text-sm">{tag}</span>
+                  </div>
+                ))}
+              </div>
+            )}
 
             {/* Installment Breakdown */}
             {selectedPayment === "installments" && "installment1" in planDetails && (

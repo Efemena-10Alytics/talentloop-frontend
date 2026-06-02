@@ -213,17 +213,55 @@ export function Navbar({ v1Launch }: { v1Launch?: boolean }) {
                         }
                       }
                     }}
-                    className="w-10 h-10 rounded-full bg-white/20 overflow-hidden hover:ring-2 hover:ring-[#A2CE3A] transition-all cursor-pointer"
+                    className="flex items-center gap-3 px-4 h-[52px] rounded-[31.11px] cursor-pointer transition-all hover:opacity-90"
+                    style={{
+                      background: "linear-gradient(94.02deg, #222126 0%, #111116 100%)",
+                      border: "0.78px solid #FFFFFF1A",
+                      width: "170px",
+                    }}
                   >
-                    <img
-                      src={
-                        userData?.user?.photo ||
-                        session.user?.image ||
-                        "/coaches/coach1.jpg"
-                      }
-                      alt="User avatar"
-                      className="w-full h-full object-cover"
-                    />
+                    {/* User Initials Icon */}
+                    <div className="h-[30px] w-[30px] rounded-full bg-[#3FB185] flex items-center justify-center flex-shrink-0">
+                      <span className="text-white font-mona-sans text-xs font-semibold">
+                        {(() => {
+                          // Use profile data if available, otherwise fall back to user name
+                          const firstName = userData?.profile?.first_name;
+                          const lastName = userData?.profile?.last_name;
+                          
+                          if (firstName && lastName) {
+                            return (firstName[0]?.toUpperCase() || "") + (lastName[0]?.toUpperCase() || "");
+                          }
+                          
+                          // Fallback to name from user object
+                          const name = userData?.user?.name || session.user?.name || "User";
+                          const nameParts = name.split(" ");
+                          const firstInitial = nameParts[0]?.[0]?.toUpperCase() || "U";
+                          const lastInitial = nameParts[nameParts.length - 1]?.[0]?.toUpperCase() || "";
+                          return firstInitial + lastInitial;
+                        })()}
+                      </span>
+                    </div>
+
+                    {/* User Info */}
+                    <div className="flex flex-col justify-center flex-1 min-w-0">
+                      <p className="text-white font-mona-sans text-xs font-semibold truncate">
+                        {(() => {
+                          // Use profile first name if available
+                          const firstName = userData?.profile?.first_name;
+                          if (firstName) {
+                            return firstName;
+                          }
+                          
+                          // Fallback to name from user object
+                          const name = userData?.user?.name || session.user?.name || "User";
+                          const nameParts = name.split(" ");
+                          return nameParts[0] || "User";
+                        })()}
+                      </p>
+                      <p className="text-[#FFFFFF99] font-mona-sans text-[10px] font-normal">
+                        Premium Account
+                      </p>
+                    </div>
                   </div>
                 ) : (
                   <Link

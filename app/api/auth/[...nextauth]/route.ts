@@ -39,7 +39,10 @@ export const authOptions: NextAuthOptions = {
         }
 
         try {
-          const response = await fetch(`${getApiUrl()}/api/v1/auth/login`, {
+          const apiUrl = getApiUrl();
+          console.log("Attempting login to:", `${apiUrl}/api/v1/auth/login`);
+          
+          const response = await fetch(`${apiUrl}/api/v1/auth/login`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -53,21 +56,36 @@ export const authOptions: NextAuthOptions = {
 
           const data = await response.json();
 
-          console.log("Login Data", data)
+          console.log("Login Response Status:", response.status);
+          console.log("Login Response Data:", data);
 
           if (!response.ok) {
-            throw new Error(data.message || "Login failed");
+            // Handle validation errors
+            if (data.errors) {
+              const firstErrorField = Object.keys(data.errors)[0];
+              const firstErrorMessage = data.errors[firstErrorField][0];
+              throw new Error(firstErrorMessage || data.message || "Login failed");
+            }
+            throw new Error(data.message || "Invalid credentials");
+          }
+
+          // Check if we have the expected response structure
+          if (!data.user || !data.token) {
+            console.error("Unexpected response structure:", data);
+            throw new Error("Invalid response from server");
           }
 
           // v1 API response structure
           return {
             id: data.user.id.toString(),
             email: data.user.email,
+            name: data.user.name,
             role: data.user.role,
             status: data.user.status || "active",
             token: data.token,
           };
         } catch (error: any) {
+          console.error("Login error:", error);
           throw new Error(error.message || "Authentication failed");
         }
       },

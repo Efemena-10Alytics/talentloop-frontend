@@ -7,6 +7,7 @@ import { signIn } from "next-auth/react";
 import { getApiUrl, getHeaders } from "@/lib/api";
 import { useToast } from "@/components/ui/use-toast";
 import EmailVerification from "@/components/EmailVerification";
+import PersonalInfoModal from "./PersonalInfoModal";
 
 /* ─── SVGs ─── */
 
@@ -185,6 +186,7 @@ export default function V1SignupFormContent({
   const [loading, setLoading] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [isEmailVerification, setIsEmailVerification] = useState(false);
+  const [showPersonalInfoModal, setShowPersonalInfoModal] = useState(false);
   const { toast } = useToast();
 
   const passwordTouched = password.length > 0;
@@ -271,11 +273,24 @@ export default function V1SignupFormContent({
       const data = await response.json();
 
       if (!response.ok) {
-        toast({
-          variant: "error",
-          title: "Registration failed",
-          description: data.message || "An error occurred during registration",
-        });
+        // Handle validation errors with specific field messages
+        if (data.errors) {
+          // Get the first error message from the errors object
+          const firstErrorField = Object.keys(data.errors)[0];
+          const firstErrorMessage = data.errors[firstErrorField][0];
+          
+          toast({
+            variant: "error",
+            title: "Registration failed",
+            description: firstErrorMessage || data.message || "An error occurred during registration",
+          });
+        } else {
+          toast({
+            variant: "error",
+            title: "Registration failed",
+            description: data.message || "An error occurred during registration",
+          });
+        }
         setLoading(false);
         return;
       }
@@ -313,11 +328,23 @@ export default function V1SignupFormContent({
       const data = await response.json();
 
       if (!response.ok) {
-        toast({
-          variant: "error",
-          title: "Resend failed",
-          description: data.message || "Failed to resend verification code",
-        });
+        // Handle validation errors with specific field messages
+        if (data.errors) {
+          const firstErrorField = Object.keys(data.errors)[0];
+          const firstErrorMessage = data.errors[firstErrorField][0];
+          
+          toast({
+            variant: "error",
+            title: "Resend failed",
+            description: firstErrorMessage || data.message || "Failed to resend verification code",
+          });
+        } else {
+          toast({
+            variant: "error",
+            title: "Resend failed",
+            description: data.message || "Failed to resend verification code",
+          });
+        }
         return;
       }
 
@@ -351,11 +378,23 @@ export default function V1SignupFormContent({
       const data = await response.json();
 
       if (!response.ok) {
-        toast({
-          variant: "error",
-          title: "Verification failed",
-          description: data.message || "Invalid or expired code",
-        });
+        // Handle validation errors with specific field messages
+        if (data.errors) {
+          const firstErrorField = Object.keys(data.errors)[0];
+          const firstErrorMessage = data.errors[firstErrorField][0];
+          
+          toast({
+            variant: "error",
+            title: "Verification failed",
+            description: firstErrorMessage || data.message || "Invalid or expired code",
+          });
+        } else {
+          toast({
+            variant: "error",
+            title: "Verification failed",
+            description: data.message || "Invalid or expired code",
+          });
+        }
         setVerifying(false);
         return;
       }
@@ -378,26 +417,9 @@ export default function V1SignupFormContent({
         });
       }
 
-      // Check if user has stripe_customer_id to determine redirect
-      const hasStripeCustomerId = data.user?.stripe_customer_id;
-
-      // If modal mode, call onSuccess callback instead of redirecting
-      if (isModal && onSuccess) {
-        setTimeout(() => {
-          onSuccess();
-        }, 1000);
-      } else {
-        // Redirect based on stripe_customer_id presence
-        setTimeout(() => {
-          if (hasStripeCustomerId) {
-            // User has paid, redirect to v1 dashboard
-            window.location.href = "/v1/dashboard";
-          } else {
-            // User hasn't paid, redirect to homepage
-            window.location.href = "/";
-          }
-        }, 1000);
-      }
+      // Show PersonalInfoModal after successful verification
+      setVerifying(false);
+      setShowPersonalInfoModal(true);
     } catch (err: any) {
       toast({
         variant: "error",
@@ -605,6 +627,20 @@ export default function V1SignupFormContent({
           </div>
         </>
       )}
+
+      {/* Personal Info Modal */}
+      <PersonalInfoModal
+        isOpen={showPersonalInfoModal}
+        onComplete={() => {
+          // After personal info is saved, redirect based on context
+          if (isModal && onSuccess) {
+            onSuccess();
+          } else {
+            // Redirect to homepage for new users
+            window.location.href = "/";
+          }
+        }}
+      />
     </div>
   );
 }

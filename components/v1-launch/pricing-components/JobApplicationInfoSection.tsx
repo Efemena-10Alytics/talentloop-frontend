@@ -3,10 +3,13 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import * as Select from "@radix-ui/react-select";
+import { useToast } from "@/components/ui/use-toast";
+import { getApiUrl, getAuthHeaders } from "@/lib/api";
 
 interface JobApplicationInfoSectionProps {
   onBack: () => void;
   onProceed: (jobAppData: JobApplicationFormData) => void;
+  initialData?: any;
 }
 
 export interface JobApplicationFormData {
@@ -49,12 +52,15 @@ const interviewOptions = [
 export default function JobApplicationInfoSection({
   onBack,
   onProceed,
+  initialData,
 }: JobApplicationInfoSectionProps) {
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<JobApplicationFormData>({
-    jobTitlesAppliedFor: "",
-    companiesInterestedIn: "",
-    hadInterviewsRecently: "",
-    interviewFeedback: "",
+    jobTitlesAppliedFor: initialData?.previous_job_titles ? initialData.previous_job_titles.join(", ") : "",
+    companiesInterestedIn: initialData?.preferred_companies ? initialData.preferred_companies.join(", ") : "",
+    hadInterviewsRecently: initialData?.had_recent_interviews ? "Yes" : "No",
+    interviewFeedback: initialData?.interview_feedback || "",
   });
 
   const steps = [
@@ -63,8 +69,62 @@ export default function JobApplicationInfoSection({
     { number: "3", label: "Complete profile", completed: false, current: true },
   ];
 
-  const handleProceed = () => {
-    onProceed(formData);
+  const handleProceed = async () => {
+    setLoading(true);
+
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch(`${getApiUrl()}/api/v1/profile/job-application-info`, {
+        method: "PATCH",
+        headers,
+        body: JSON.stringify({
+          had_recent_interviews: formData.hadInterviewsRecently === "Yes",
+          interview_feedback: formData.interviewFeedback,
+          previous_job_titles: formData.jobTitlesAppliedFor ? formData.jobTitlesAppliedFor.split(",").map(t => t.trim()) : [],
+          preferred_companies: formData.companiesInterestedIn ? formData.companiesInterestedIn.split(",").map(c => c.trim()) : [],
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        // Handle validation errors with specific field messages
+        if (data.errors) {
+          const firstErrorField = Object.keys(data.errors)[0];
+          const firstErrorMessage = data.errors[firstErrorField][0];
+          
+          toast({
+            variant: "error",
+            title: "Failed to save job application info",
+            description: firstErrorMessage || data.message || "An error occurred",
+          });
+        } else {
+          toast({
+            variant: "error",
+            title: "Failed to save job application info",
+            description: data.message || "An error occurred",
+          });
+        }
+        setLoading(false);
+        return;
+      }
+
+      toast({
+        variant: "success",
+        title: "Job application info saved!",
+        description: "Your job application information has been updated successfully",
+      });
+
+      onProceed(formData);
+    } catch (error: any) {
+      toast({
+        variant: "error",
+        title: "Error",
+        description: error.message || "An error occurred while saving job application info",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -133,9 +193,17 @@ export default function JobApplicationInfoSection({
                 <h2 className="text-2xl lg:text-3xl font-clash-display font-semibold" style={{ color: "#E8EFF1" }}>
                   Job Application Info
                 </h2>
-                <span className="text-sm font-plus-jakarta" style={{ color: "#A2CE3A" }}>
-                  5/7
-                </span>
+                <div
+                  className="inline-flex items-center justify-center h-[28px] px-4 rounded-[32px]"
+                  style={{
+                    background: "#00C0630D",
+                    border: "1.5px solid #00C06326",
+                  }}
+                >
+                  <span className="text-[#00C063] font-mona-sans text-sm font-semibold">
+                    4/6
+                  </span>
+                </div>
               </div>
 
               {/* Content Container */}
@@ -261,14 +329,15 @@ export default function JobApplicationInfoSection({
                 </button>
                 <button
                   onClick={handleProceed}
-                  className="w-fit px-8 h-[52px] rounded-[100px] font-sora text-base font-semibold transition-opacity hover:opacity-90"
+                  disabled={loading}
+                  className="w-fit px-8 h-[52px] rounded-[100px] font-sora text-base font-semibold transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{
                     background: "#A2CE3A",
                     border: "1px solid #448290",
                     color: "#000000",
                   }}
                 >
-                  Proceed
+                  {loading ? "Saving..." : "Proceed"}
                 </button>
               </div>
             </div>

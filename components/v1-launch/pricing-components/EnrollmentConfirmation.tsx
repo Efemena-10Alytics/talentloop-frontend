@@ -4,7 +4,6 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import TermsConditionsModal from "./TermsConditionsModal";
-import OnboardingCompleteModal from "./OnboardingCompleteModal";
 
 interface EnrollmentConfirmationProps {
   personalData: {
@@ -20,7 +19,7 @@ interface EnrollmentConfirmationProps {
     firstPayment?: string;
     secondPayment?: string;
     nextPaymentDate?: string;
-    preferredCohort: string;
+    pricingPlanData?: any;
   };
   onEditData: () => void;
   onProceed: () => void;
@@ -76,7 +75,6 @@ export default function EnrollmentConfirmation({
   const [confirmInfo, setConfirmInfo] = useState(false);
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   const steps = [
     { number: "1", label: "Checkout", completed: true },
@@ -96,8 +94,6 @@ export default function EnrollmentConfirmation({
     setShowTermsModal(false);
     // Call the API or perform enrollment logic
     await onProceed();
-    // Show success modal after API call
-    setShowSuccessModal(true);
   };
 
   const handleTermsDecline = () => {
@@ -248,29 +244,66 @@ export default function EnrollmentConfirmation({
                     background: "linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.1) 100%)",
                   }}
                 >
-                  <div className="flex items-center justify-between">
-                    <span className="font-plus-jakarta text-sm" style={{ color: "#CCCCCC" }}>
-                      Preferred cohort
-                    </span>
-                    <div
-                      className="px-3 py-1.5 rounded-[24px]"
-                      style={{
-                        background: "#C7F5D8",
-                      }}
-                    >
-                      <span className="font-plus-jakarta text-sm font-medium" style={{ color: "#092A31" }}>
-                        {paymentPlan.preferredCohort}
-                      </span>
-                    </div>
-                  </div>
+                  {/* Plan Name */}
                   <div className="flex items-center justify-between">
                     <span className="font-plus-jakarta text-sm" style={{ color: "#CCCCCC" }}>
                       Plan selected
                     </span>
                     <span className="font-plus-jakarta text-sm font-medium" style={{ color: "#CCCCCC" }}>
-                      {paymentPlan.planName}
+                      {paymentPlan.pricingPlanData?.title || paymentPlan.planName}
                     </span>
                   </div>
+
+                  {/* Plan Amount */}
+                  {paymentPlan.pricingPlanData?.amount && (
+                    <div className="flex items-center justify-between">
+                      <span className="font-plus-jakarta text-sm" style={{ color: "#CCCCCC" }}>
+                        Amount
+                      </span>
+                      <span className="font-plus-jakarta text-sm font-medium" style={{ color: "#CCCCCC" }}>
+                        £{paymentPlan.pricingPlanData.amount}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Plan Description */}
+                  {paymentPlan.pricingPlanData?.description && (
+                    <div className="flex items-start justify-between">
+                      <span className="font-plus-jakarta text-sm" style={{ color: "#CCCCCC" }}>
+                        Description
+                      </span>
+                      <span className="font-plus-jakarta text-sm font-medium text-right" style={{ color: "#CCCCCC", maxWidth: "60%" }}>
+                        {paymentPlan.pricingPlanData.description}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Plan Tags/Features */}
+                  {paymentPlan.pricingPlanData?.tags && paymentPlan.pricingPlanData.tags.length > 0 && (
+                    <div className="flex flex-col gap-2">
+                      <span className="font-plus-jakarta text-sm" style={{ color: "#CCCCCC" }}>
+                        Features included
+                      </span>
+                      <div className="flex flex-wrap gap-2">
+                        {paymentPlan.pricingPlanData.tags.map((tag: string, index: number) => (
+                          <div
+                            key={index}
+                            className="px-3 py-1.5 rounded-[24px]"
+                            style={{
+                              background: "#A2CE3A1A",
+                              border: "1px solid #A2CE3A33",
+                            }}
+                          >
+                            <span className="font-plus-jakarta text-xs font-medium" style={{ color: "#A2CE3A" }}>
+                              {tag}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Installment Details (if applicable) */}
                   {paymentPlan.paymentType === "installments" && (
                     <>
                       <div className="flex items-center justify-between">
@@ -360,13 +393,6 @@ export default function EnrollmentConfirmation({
           isOpen={showTermsModal}
           onClose={handleTermsDecline}
           onAgree={handleTermsAgree}
-        />
-
-        {/* Onboarding Complete Modal */}
-        <OnboardingCompleteModal
-          isOpen={showSuccessModal}
-          onClose={() => setShowSuccessModal(false)}
-          onCompleteOnboarding={onCompleteOnboarding}
         />
       </div>
     </div>

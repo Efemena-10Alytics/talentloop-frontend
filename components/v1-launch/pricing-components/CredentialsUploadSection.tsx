@@ -3,16 +3,21 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import * as Select from "@radix-ui/react-select";
+import { useToast } from "@/components/ui/use-toast";
+import { getApiUrl, getAuthHeaders } from "@/lib/api";
 
 interface CredentialsUploadSectionProps {
   onBack: () => void;
   onProceed: (credentialsData: CredentialsFormData) => void;
+  initialData?: any;
 }
 
 export interface CredentialsFormData {
   cvFile: File | null;
   linkedinProfileLink: string;
-  needsVisaSponsorship: string;
+  linkedinEmail: string;
+  linkedinPassword: string;
+  needsVisaSponsorship: boolean | null;
 }
 
 const CheckedSVG = () => (
@@ -48,13 +53,18 @@ const visaSponsorshipOptions = [
 export default function CredentialsUploadSection({
   onBack,
   onProceed,
+  initialData,
 }: CredentialsUploadSectionProps) {
+  const { toast } = useToast();
   const [formData, setFormData] = useState<CredentialsFormData>({
     cvFile: null,
-    linkedinProfileLink: "",
-    needsVisaSponsorship: "",
+    linkedinProfileLink: initialData?.linkedin_url || "",
+    linkedinEmail: "",
+    linkedinPassword: "",
+    needsVisaSponsorship: initialData?.needs_visa_sponsorship !== undefined ? initialData.needs_visa_sponsorship : null,
   });
   const [isDragging, setIsDragging] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const steps = [
     { number: "1", label: "Checkout", completed: true },
@@ -85,8 +95,104 @@ export default function CredentialsUploadSection({
     }
   };
 
-  const handleProceed = () => {
-    onProceed(formData);
+  const handleProceed = async () => {
+    // Validation
+    if (!formData.cvFile) {
+      toast({
+        variant: "error",
+        title: "CV Required",
+        description: "Please upload your CV to continue",
+      });
+      return;
+    }
+
+    if (!formData.linkedinProfileLink) {
+      toast({
+        variant: "error",
+        title: "LinkedIn Profile Required",
+        description: "Please provide your LinkedIn profile URL",
+      });
+      return;
+    }
+
+    if (formData.needsVisaSponsorship === null) {
+      toast({
+        variant: "error",
+        title: "Visa Sponsorship Required",
+        description: "Please indicate if you need visa sponsorship",
+      });
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      // Create FormData for multipart/form-data
+      const formDataToSend = new FormData();
+      formDataToSend.append("cv", formData.cvFile);
+      formDataToSend.append("category", "cv");
+      formDataToSend.append("linkedin_url", formData.linkedinProfileLink);
+      
+      if (formData.linkedinEmail) {
+        formDataToSend.append("linkedin_email", formData.linkedinEmail);
+      }
+      
+      if (formData.linkedinPassword) {
+        formDataToSend.append("linkedin_password", formData.linkedinPassword);
+      }
+      
+      formDataToSend.append("needs_visa_sponsorship", formData.needsVisaSponsorship ? "1" : "0");
+
+      // Get auth headers (without Content-Type for FormData)
+      const headers = await getAuthHeaders() as Record<string, string>;
+      // Remove Content-Type to let browser set it with boundary
+      delete headers["Content-Type"];
+
+      const response = await fetch(`${getApiUrl()}/api/v1/profile/credentials`, {
+        method: "POST",
+        headers,
+        body: formDataToSend,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        if (data.errors) {
+          const firstErrorField = Object.keys(data.errors)[0];
+          const firstErrorMessage = data.errors[firstErrorField][0];
+          toast({
+            variant: "error",
+            title: "Validation Error",
+            description: firstErrorMessage || data.message || "Failed to save credentials",
+          });
+        } else {
+          toast({
+            variant: "error",
+            title: "Error",
+            description: data.message || "Failed to save credentials",
+          });
+        }
+        setLoading(false);
+        return;
+      }
+
+      toast({
+        variant: "success",
+        title: "Credentials Saved!",
+        description: "Your credentials have been saved successfully",
+      });
+
+      // Call onProceed to move to next step or complete
+      onProceed(formData);
+    } catch (error: any) {
+      console.error("Error saving credentials:", error);
+      toast({
+        variant: "error",
+        title: "Error",
+        description: "Failed to save credentials. Please try again.",
+      });
+      setLoading(false);
+    }
   };
 
   return (
@@ -155,9 +261,17 @@ export default function CredentialsUploadSection({
                 <h2 className="text-2xl lg:text-3xl font-clash-display font-semibold" style={{ color: "#E8EFF1" }}>
                   Credentials Upload
                 </h2>
-                <span className="text-sm font-plus-jakarta" style={{ color: "#A2CE3A" }}>
-                  6/7
-                </span>
+                <div
+                  className="inline-flex items-center justify-center h-[28px] px-4 rounded-[32px]"
+                  style={{
+                    background: "#00C0630D",
+                    border: "1.5px solid #00C06326",
+                  }}
+                >
+                  <span className="text-[#00C063] font-mona-sans text-sm font-semibold">
+                    5/6
+                  </span>
+                </div>
               </div>
 
               {/* Content Container */}
@@ -221,17 +335,36 @@ export default function CredentialsUploadSection({
                   )}
                 </div>
 
-                {/* Two Column Layout */}
+                {/* LinkedIn Profile Link - Full Width */}
+                <div className="space-y-3">
+                  <label className="block text-sm font-plus-jakarta font-medium" style={{ color: "#E8EFF1" }}>
+                    Paste your LinkedIn Profile Link <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="url"
+                    value={formData.linkedinProfileLink}
+                    onChange={(e) => setFormData({ ...formData, linkedinProfileLink: e.target.value })}
+                    placeholder="https://www.linkedin.com/in/yourprofile"
+                    className="w-full rounded-[40px] px-4 h-[56px] font-sora text-sm text-white outline-none transition-all"
+                    style={{
+                      background: "transparent",
+                      border: "1px solid #FFFFFF1A",
+                    }}
+                  />
+                </div>
+
+                {/* Two Column Layout - LinkedIn Credentials */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {/* Paste your LinkedIn Profile Link */}
+                  {/* LinkedIn Email */}
                   <div className="space-y-3">
                     <label className="block text-sm font-plus-jakarta font-medium" style={{ color: "#E8EFF1" }}>
-                      Paste your LinkedIn Profile Link
+                      LinkedIn Email (Optional)
                     </label>
                     <input
-                      type="url"
-                      value={formData.linkedinProfileLink}
-                      onChange={(e) => setFormData({ ...formData, linkedinProfileLink: e.target.value })}
+                      type="email"
+                      value={formData.linkedinEmail}
+                      onChange={(e) => setFormData({ ...formData, linkedinEmail: e.target.value })}
+                      placeholder="your.email@example.com"
                       className="w-full rounded-[40px] px-4 h-[56px] font-sora text-sm text-white outline-none transition-all"
                       style={{
                         background: "transparent",
@@ -240,51 +373,72 @@ export default function CredentialsUploadSection({
                     />
                   </div>
 
-                  {/* Do You Need Visa Sponsorship? */}
+                  {/* LinkedIn Password */}
                   <div className="space-y-3">
                     <label className="block text-sm font-plus-jakarta font-medium" style={{ color: "#E8EFF1" }}>
-                      Do You Need Visa Sponsorship?
+                      LinkedIn Password (Optional)
                     </label>
-                    <Select.Root value={formData.needsVisaSponsorship} onValueChange={(value) => setFormData({ ...formData, needsVisaSponsorship: value })}>
-                      <Select.Trigger
-                        className="w-full rounded-[40px] px-4 h-[56px] font-sora text-sm text-white outline-none transition-all flex items-center justify-between"
+                    <input
+                      type="password"
+                      value={formData.linkedinPassword}
+                      onChange={(e) => setFormData({ ...formData, linkedinPassword: e.target.value })}
+                      placeholder="••••••••"
+                      className="w-full rounded-[40px] px-4 h-[56px] font-sora text-sm text-white outline-none transition-all"
+                      style={{
+                        background: "transparent",
+                        border: "1px solid #FFFFFF1A",
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Visa Sponsorship - Full Width */}
+                <div className="space-y-3">
+                  <label className="block text-sm font-plus-jakarta font-medium" style={{ color: "#E8EFF1" }}>
+                    Do You Need Visa Sponsorship? <span className="text-red-500">*</span>
+                  </label>
+                  <Select.Root 
+                    value={formData.needsVisaSponsorship === null ? "" : formData.needsVisaSponsorship.toString()} 
+                    onValueChange={(value) => setFormData({ ...formData, needsVisaSponsorship: value === "true" })}
+                  >
+                    <Select.Trigger
+                      className="w-full rounded-[40px] px-4 h-[56px] font-sora text-sm text-white outline-none transition-all flex items-center justify-between"
+                      style={{
+                        background: "transparent",
+                        border: "1px solid #FFFFFF1A",
+                      }}
+                    >
+                      <Select.Value placeholder="Select" />
+                      <Select.Icon>
+                        <svg width="12" height="8" viewBox="0 0 12 8" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M1 1.5L6 6.5L11 1.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </Select.Icon>
+                    </Select.Trigger>
+                    <Select.Portal>
+                      <Select.Content
+                        className="overflow-hidden rounded-[12px] shadow-lg z-[9999]"
                         style={{
-                          background: "transparent",
+                          background: "#0F1416",
                           border: "1px solid #FFFFFF1A",
                         }}
+                        position="popper"
+                        sideOffset={5}
                       >
-                        <Select.Value placeholder="Select" />
-                        <Select.Icon>
-                          <svg width="12" height="8" viewBox="0 0 12 8" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M1 1.5L6 6.5L11 1.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
-                        </Select.Icon>
-                      </Select.Trigger>
-                      <Select.Portal>
-                        <Select.Content
-                          className="overflow-hidden rounded-[12px] shadow-lg z-[9999]"
-                          style={{
-                            background: "#0F1416",
-                            border: "1px solid #FFFFFF1A",
-                          }}
-                          position="popper"
-                          sideOffset={5}
-                        >
-                          <Select.Viewport className="p-1">
-                            {visaSponsorshipOptions.map((option) => (
-                              <Select.Item
-                                key={option}
-                                value={option}
-                                className="relative flex items-center px-4 py-2 text-sm text-white rounded-[8px] outline-none cursor-pointer hover:bg-white/10 data-[highlighted]:bg-white/10 data-[state=checked]:bg-white/20"
-                              >
-                                <Select.ItemText>{option}</Select.ItemText>
-                              </Select.Item>
-                            ))}
-                          </Select.Viewport>
-                        </Select.Content>
-                      </Select.Portal>
-                    </Select.Root>
-                  </div>
+                        <Select.Viewport className="p-1">
+                          {visaSponsorshipOptions.map((option) => (
+                            <Select.Item
+                              key={option}
+                              value={option === "Yes" ? "true" : "false"}
+                              className="relative flex items-center px-4 py-2 text-sm text-white rounded-[8px] outline-none cursor-pointer hover:bg-white/10 data-[highlighted]:bg-white/10 data-[state=checked]:bg-white/20"
+                            >
+                              <Select.ItemText>{option}</Select.ItemText>
+                            </Select.Item>
+                          ))}
+                        </Select.Viewport>
+                      </Select.Content>
+                    </Select.Portal>
+                  </Select.Root>
                 </div>
               </div>
 
@@ -303,14 +457,15 @@ export default function CredentialsUploadSection({
                 </button>
                 <button
                   onClick={handleProceed}
-                  className="w-fit px-8 h-[52px] rounded-[100px] font-sora text-base font-semibold transition-opacity hover:opacity-90"
+                  disabled={loading}
+                  className="w-fit px-8 h-[52px] rounded-[100px] font-sora text-base font-semibold transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{
                     background: "#A2CE3A",
                     border: "1px solid #448290",
                     color: "#000000",
                   }}
                 >
-                  Proceed
+                  {loading ? "Saving..." : "Proceed"}
                 </button>
               </div>
             </div>

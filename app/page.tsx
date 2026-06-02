@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Navbar } from "@/components/navbar";
 import V1CareerSection from "@/components/v1-launch/v1-career-section";
 import V1CTASection from "@/components/v1-launch/v1-cta-section";
@@ -11,30 +11,15 @@ import V1TestimonialsSection from "@/components/v1-launch/v1-testimonials-sectio
 import V1WhoIsForSection from "@/components/v1-launch/v1-who-is-for-section";
 import V1WhyDifferentSection from "@/components/v1-launch/v1-why-different-section";
 import V1FooterSection from "@/components/v1-launch/v1-footer-section";
-import PricingFlowWrapper from "@/components/v1-launch/pricing-components/PricingFlowWrapper";
-import BookingFlow from "@/components/v1-launch/pricing-components/BookingFlow";
-import { useActivePricingPlans } from "@/lib/hooks/usePricing";
 import V1VideoTestimonialSection from "@/components/v1-launch/v1-video-testimonials-section";
+import V1Faqs from "@/components/v1-launch/v1-faqs";
 
 export default function Home() {
-  const [showBookingModal, setShowBookingModal] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
-  const { data: pricingPlans } = useActivePricingPlans();
+  const router = useRouter();
 
   const handleStartNow = (planId: string) => {
-    setSelectedPlan(planId);
-    setShowBookingModal(true);
-  };
-
-  // Get the selected pricing plan details
-  const selectedPlanData = pricingPlans?.find(
-    (plan) =>
-      String(plan.id) === selectedPlan ||
-      plan.title.toLowerCase() === selectedPlan?.toLowerCase(),
-  );
-
-  const handleCloseModal = () => {
-    setShowBookingModal(false);
+    // Redirect to clarity session page with planId
+    router.push(`/v1/clarity-session?pID=${planId}`);
   };
 
   return (
@@ -48,26 +33,16 @@ export default function Home() {
         <div id="experts">
           <V1ExpertsSection />
         </div>
-        {showBookingModal && selectedPlan ? (
-          <BookingFlow
-            planId={selectedPlanData?.id || selectedPlan}
-            planType={selectedPlanData?.title || selectedPlan}
-            planPrice={
-              selectedPlanData?.amount ? `£${selectedPlanData.amount}` : "£250"
-            }
-            planAmount={selectedPlanData?.amount}
-            planInstallments={selectedPlanData?.installments}
-            onBackToPricing={handleCloseModal}
-          />
-        ) : (
-          <div id="pricing">
-            <V1PricingSection onStartNow={handleStartNow} />
-          </div>
-        )}
+        <div id="pricing">
+          <V1PricingSection onStartNow={handleStartNow} />
+        </div>
         <V1VideoTestimonialSection />
         <V1TestimonialsSection />
         <V1WhoIsForSection />
         <V1WhyDifferentSection />
+        <div id="faqs">
+          <V1Faqs />
+        </div>
         <V1CTASection />
         <V1FooterSection />
       </div>

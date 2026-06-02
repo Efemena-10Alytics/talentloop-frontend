@@ -16,7 +16,7 @@ export default function V1CTASection() {
         >
           {/* Title */}
           <h2 className="text-4xl lg:text-6xl font-mona-sans font-bold text-white mb-6 leading-tight">
-            Your Job Search Should Work as Hard as You Do.
+            Your Job Search Should <br />Work as Hard as You Do.
           </h2>
 
           {/* Subtext */}

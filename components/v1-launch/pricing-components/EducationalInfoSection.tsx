@@ -3,10 +3,13 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import * as Select from "@radix-ui/react-select";
+import { useToast } from "@/components/ui/use-toast";
+import { getApiUrl, getAuthHeaders } from "@/lib/api";
 
 interface EducationalInfoSectionProps {
   onBack: () => void;
   onProceed: (educationData: EducationFormData) => void;
+  initialData?: any;
 }
 
 export interface EducationFormData {
@@ -59,11 +62,14 @@ const graduationYears = Array.from({ length: currentYear - 1959 }, (_, i) => Str
 export default function EducationalInfoSection({
   onBack,
   onProceed,
+  initialData,
 }: EducationalInfoSectionProps) {
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<EducationFormData>({
-    highestDegree: "",
-    institutionName: "",
-    graduationYear: "",
+    highestDegree: initialData?.highest_degree || "",
+    institutionName: initialData?.institution_name || "",
+    graduationYear: initialData?.graduation_year || "",
   });
 
   const steps = [
@@ -72,8 +78,61 @@ export default function EducationalInfoSection({
     { number: "3", label: "Complete profile", completed: false, current: true },
   ];
 
-  const handleProceed = () => {
-    onProceed(formData);
+  const handleProceed = async () => {
+    setLoading(true);
+
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch(`${getApiUrl()}/api/v1/profile/education-info`, {
+        method: "PATCH",
+        headers,
+        body: JSON.stringify({
+          highest_degree: formData.highestDegree,
+          institution_name: formData.institutionName,
+          graduation_year: formData.graduationYear,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        // Handle validation errors with specific field messages
+        if (data.errors) {
+          const firstErrorField = Object.keys(data.errors)[0];
+          const firstErrorMessage = data.errors[firstErrorField][0];
+          
+          toast({
+            variant: "error",
+            title: "Failed to save education info",
+            description: firstErrorMessage || data.message || "An error occurred",
+          });
+        } else {
+          toast({
+            variant: "error",
+            title: "Failed to save education info",
+            description: data.message || "An error occurred",
+          });
+        }
+        setLoading(false);
+        return;
+      }
+
+      toast({
+        variant: "success",
+        title: "Education info saved!",
+        description: "Your educational information has been updated successfully",
+      });
+
+      onProceed(formData);
+    } catch (error: any) {
+      toast({
+        variant: "error",
+        title: "Error",
+        description: error.message || "An error occurred while saving education info",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -142,9 +201,17 @@ export default function EducationalInfoSection({
                 <h2 className="text-2xl lg:text-3xl font-clash-display font-semibold" style={{ color: "#E8EFF1" }}>
                   Educational Info
                 </h2>
-                <span className="text-sm font-plus-jakarta" style={{ color: "#A2CE3A" }}>
-                  4/7
-                </span>
+                <div
+                  className="inline-flex items-center justify-center h-[28px] px-4 rounded-[32px]"
+                  style={{
+                    background: "#00C0630D",
+                    border: "1.5px solid #00C06326",
+                  }}
+                >
+                  <span className="text-[#00C063] font-mona-sans text-sm font-semibold">
+                    3/6
+                  </span>
+                </div>
               </div>
 
               {/* Content Container */}
@@ -299,14 +366,15 @@ export default function EducationalInfoSection({
                 </button>
                 <button
                   onClick={handleProceed}
-                  className="w-fit px-8 h-[52px] rounded-[100px] font-sora text-base font-semibold transition-opacity hover:opacity-90"
+                  disabled={loading}
+                  className="w-fit px-8 h-[52px] rounded-[100px] font-sora text-base font-semibold transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{
                     background: "#A2CE3A",
                     border: "1px solid #448290",
                     color: "#000000",
                   }}
                 >
-                  Proceed
+                  {loading ? "Saving..." : "Proceed"}
                 </button>
               </div>
             </div>

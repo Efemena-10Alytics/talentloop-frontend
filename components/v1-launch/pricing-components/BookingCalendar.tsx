@@ -8,17 +8,37 @@ interface BookingCalendarProps {
   onTimeSelect?: (time: string) => void;
 }
 
-const hours = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, '0'));
-const minutes = Array.from({ length: 60 }, (_, i) => i.toString().padStart(2, '0'));
+// Generate 20-minute interval time slots from 10:00 AM to 9:40 PM
+const generateTimeSlots = () => {
+  const slots: string[] = [];
+  const startHour = 10; // 10:00 AM
+  const endHour = 21; // 9:00 PM
+  const endMinute = 40; // 9:40 PM
+  
+  for (let hour = startHour; hour <= endHour; hour++) {
+    for (let minute = 0; minute < 60; minute += 20) {
+      // Stop at 9:40 PM
+      if (hour === endHour && minute > endMinute) break;
+      
+      const formattedHour = hour.toString().padStart(2, '0');
+      const formattedMinute = minute.toString().padStart(2, '0');
+      slots.push(`${formattedHour}:${formattedMinute}`);
+    }
+  }
+  
+  return slots;
+};
+
+const timeSlots = generateTimeSlots();
 
 export default function BookingCalendar({
   onDateSelect,
   onTimeSelect,
 }: BookingCalendarProps) {
-  const [currentDate, setCurrentDate] = useState(new Date(2026, 4, 1)); // May 2026
+  const today = new Date();
+  const [currentDate, setCurrentDate] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
   const [selectedDate, setSelectedDate] = useState<number | null>(null);
-  const [selectedHour, setSelectedHour] = useState<string>("10");
-  const [selectedMinute, setSelectedMinute] = useState<string>("00");
+  const [selectedTime, setSelectedTime] = useState<string>("10:00");
 
   const getDaysInMonth = (date: Date) => {
     const year = date.getFullYear();
@@ -48,9 +68,13 @@ export default function BookingCalendar({
   const dayNames = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
   const handlePrevMonth = () => {
-    setCurrentDate(
-      new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1)
-    );
+    const newDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1);
+    // Don't allow going to months before current month
+    const today = new Date();
+    const currentMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    if (newDate >= currentMonth) {
+      setCurrentDate(newDate);
+    }
   };
 
   const handleNextMonth = () => {
@@ -68,24 +92,17 @@ export default function BookingCalendar({
     }
   };
 
-  const handleHourChange = (hour: string) => {
-    setSelectedHour(hour);
+  const handleTimeClick = (time: string) => {
+    setSelectedTime(time);
     if (onTimeSelect) {
-      onTimeSelect(`${hour}:${selectedMinute}`);
-    }
-  };
-
-  const handleMinuteChange = (minute: string) => {
-    setSelectedMinute(minute);
-    if (onTimeSelect) {
-      onTimeSelect(`${selectedHour}:${minute}`);
+      onTimeSelect(time);
     }
   };
 
   // Automatically set default time on mount
   useEffect(() => {
     if (onTimeSelect) {
-      onTimeSelect(`${selectedHour}:${selectedMinute}`);
+      onTimeSelect(selectedTime);
     }
   }, []);
 
@@ -109,6 +126,7 @@ export default function BookingCalendar({
               onClick={handlePrevMonth}
               className="w-8 h-8 rounded-full flex items-center justify-center"
               style={{ border: "1.5px solid #A8A8A8" }}
+              disabled={currentDate.getMonth() === new Date().getMonth() && currentDate.getFullYear() === new Date().getFullYear()}
             >
               <ChevronLeft className="w-4 h-4 text-[#A8A8A8]" />
             </button>
@@ -146,20 +164,35 @@ export default function BookingCalendar({
             {Array.from({ length: daysInMonth }).map((_, index) => {
               const day = index + 1;
               const isSelected = selectedDate === day;
+              
+              // Check if this date is in the past
+              const dateToCheck = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+              const today = new Date();
+              today.setHours(0, 0, 0, 0); // Reset time to compare dates only
+              const isPastDate = dateToCheck < today;
 
               return (
                 <button
                   key={day}
-                  onClick={() => handleDateClick(day)}
-                  className="aspect-square rounded-full flex items-center justify-center text-[#A8A8A8] font-mona-sans text-sm transition-all"
+                  onClick={() => !isPastDate && handleDateClick(day)}
+                  disabled={isPastDate}
+                  className="aspect-square rounded-full flex items-center justify-center font-mona-sans text-sm transition-all"
                   style={
-                    isSelected
+                    isPastDate
+                      ? {
+                          color: "#3A3A3A",
+                          cursor: "not-allowed",
+                          opacity: 0.4,
+                        }
+                      : isSelected
                       ? {
                           background: "#A2CE3A1A",
                           border: "1.5px solid #A2CE3A33",
                           color: "#A2CE3A",
                         }
-                      : {}
+                      : {
+                          color: "#A8A8A8",
+                        }
                   }
                 >
                   {day}
@@ -170,69 +203,37 @@ export default function BookingCalendar({
         </div>
 
         {/* Right Side - Time Selection (30%) */}
-        <div className="lg:w-[30%] flex flex-col gap-4">
-          <div className="text-[#E4E4E4] font-mona-sans font-semibold text-sm mb-2">
-            Select Time
-          </div>
-          
-          {/* Hour Selection */}
-          <div>
-            <label className="text-[#A8A8A8] font-mona-sans text-xs mb-2 block">
-              Hour
-            </label>
-            <select
-              value={selectedHour}
-              onChange={(e) => handleHourChange(e.target.value)}
-              className="w-full h-12 rounded-[12px] px-4 font-mona-sans text-sm font-medium transition-all cursor-pointer"
-              style={{
-                background: "#74748014",
-                border: "1.5px solid #FFFFFF1A",
-                color: "#A2CE3A",
-                outline: "none",
-              }}
-            >
-              {hours.map((hour) => (
-                <option key={hour} value={hour} style={{ background: "#1a1a1a" }}>
-                  {hour}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Minute Selection */}
-          <div>
-            <label className="text-[#A8A8A8] font-mona-sans text-xs mb-2 block">
-              Minute
-            </label>
-            <select
-              value={selectedMinute}
-              onChange={(e) => handleMinuteChange(e.target.value)}
-              className="w-full h-12 rounded-[12px] px-4 font-mona-sans text-sm font-medium transition-all cursor-pointer"
-              style={{
-                background: "#74748014",
-                border: "1.5px solid #FFFFFF1A",
-                color: "#A2CE3A",
-                outline: "none",
-              }}
-            >
-              {minutes.map((minute) => (
-                <option key={minute} value={minute} style={{ background: "#1a1a1a" }}>
-                  {minute}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Selected Time Display */}
-          <div
-            className="h-12 rounded-[12px] flex items-center justify-center font-mona-sans text-base font-semibold"
-            style={{
-              background: "#A2CE3A1A",
-              border: "1.5px solid #A2CE3A33",
-              color: "#A2CE3A",
-            }}
+        <div className="lg:w-[30%] flex flex-col">
+          {/* Scrollable Time Slots */}
+          <div 
+            className="flex flex-col gap-2 overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent pr-2"
+            style={{ maxHeight: "320px" }}
           >
-            {selectedHour}:{selectedMinute}
+            {timeSlots.map((time) => {
+              const isSelected = selectedTime === time;
+              return (
+                <button
+                  key={time}
+                  onClick={() => handleTimeClick(time)}
+                  className="h-12 rounded-[12px] flex items-center justify-center font-mona-sans text-sm font-medium transition-all"
+                  style={
+                    isSelected
+                      ? {
+                          background: "#A2CE3A1A",
+                          border: "1.5px solid #A2CE3A33",
+                          color: "#A2CE3A",
+                        }
+                      : {
+                          background: "#74748014",
+                          border: "1.5px solid #FFFFFF1A",
+                          color: "#A8A8A8",
+                        }
+                  }
+                >
+                  {time}
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>

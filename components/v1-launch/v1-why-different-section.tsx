@@ -16,7 +16,7 @@ export default function V1WhyDifferentSection() {
         >
           <h2 className="text-4xl lg:text-5xl font-mona-sans font-semibold mb-4">
             <span className="text-white font-mona-sans">Why </span>
-            <span className="text-[#A2CE3A] font-mona-sans">TalentLoop.ai</span>
+            <span className="text-[#A2CE3A] font-mona-sans">TalentLoop</span>
             <span className="text-white font-mona-sans"> Is Different</span>
           </h2>
         </motion.div>

@@ -4,10 +4,13 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import * as Select from "@radix-ui/react-select";
 import FinalOnboardingCompleteModal from "./FinalOnboardingCompleteModal";
+import { useToast } from "@/components/ui/use-toast";
+import { getApiUrl, getAuthHeaders } from "@/lib/api";
 
 interface DisclaimerSectionProps {
   onBack: () => void;
   onProceed: (disclaimerData: DisclaimerFormData) => void;
+  initialData?: any;
 }
 
 export interface DisclaimerFormData {
@@ -77,16 +80,19 @@ const weaknessOptions = [
 export default function DisclaimerSection({
   onBack,
   onProceed,
+  initialData,
 }: DisclaimerSectionProps) {
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<DisclaimerFormData>({
-    acknowledgeDisclaimer: false,
-    openToRelocation: "",
-    companiesIndustriesToAvoid: "",
-    listOfReferences: "",
-    strengthsToHighlight: "",
-    weaknessesToAddress: "",
-    acceptPrivacyPolicy: false,
-    acceptTermsAndCondition: false,
+    acknowledgeDisclaimer: initialData?.acknowledged_visa_disclaimer || false,
+    openToRelocation: initialData?.open_to_relocation ? "Yes" : "No",
+    companiesIndustriesToAvoid: initialData?.companies_to_avoid || "",
+    listOfReferences: initialData?.references || "",
+    strengthsToHighlight: initialData?.strengths || "",
+    weaknessesToAddress: initialData?.weaknesses || "",
+    acceptPrivacyPolicy: initialData?.accepted_privacy_policy || false,
+    acceptTermsAndCondition: initialData?.accepted_terms || false,
   });
   const [showSuccessModal, setShowSuccessModal] = useState(false);
 
@@ -99,11 +105,76 @@ export default function DisclaimerSection({
   const canProceed = formData.acknowledgeDisclaimer && formData.acceptPrivacyPolicy && formData.acceptTermsAndCondition;
 
   const handleProceed = async () => {
-    if (canProceed) {
-      // Call the onProceed callback (API submission)
+    if (!canProceed) {
+      toast({
+        variant: "error",
+        title: "Required fields missing",
+        description: "Please accept all required disclaimers and policies",
+      });
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch(`${getApiUrl()}/api/v1/profile/disclaimer`, {
+        method: "PATCH",
+        headers,
+        body: JSON.stringify({
+          open_to_relocation: formData.openToRelocation === "Yes",
+          companies_to_avoid: formData.companiesIndustriesToAvoid,
+          references: formData.listOfReferences,
+          strengths: formData.strengthsToHighlight,
+          weaknesses: formData.weaknessesToAddress,
+          accepted_privacy_policy: formData.acceptPrivacyPolicy,
+          accepted_terms: formData.acceptTermsAndCondition,
+          acknowledged_visa_disclaimer: formData.acknowledgeDisclaimer,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        // Handle validation errors with specific field messages
+        if (data.errors) {
+          const firstErrorField = Object.keys(data.errors)[0];
+          const firstErrorMessage = data.errors[firstErrorField][0];
+          
+          toast({
+            variant: "error",
+            title: "Failed to save disclaimer info",
+            description: firstErrorMessage || data.message || "An error occurred",
+          });
+        } else {
+          toast({
+            variant: "error",
+            title: "Failed to save disclaimer info",
+            description: data.message || "An error occurred",
+          });
+        }
+        setLoading(false);
+        return;
+      }
+
+      toast({
+        variant: "success",
+        title: "Profile completed!",
+        description: "Your enrollment profile has been completed successfully",
+      });
+
+      // Call the onProceed callback
       await onProceed(formData);
       // Show success modal
       setShowSuccessModal(true);
+    } catch (error: any) {
+      toast({
+        variant: "error",
+        title: "Error",
+        description: error.message || "An error occurred while saving disclaimer info",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -394,9 +465,9 @@ export default function DisclaimerSection({
                 </button>
                 <button
                   onClick={handleProceed}
-                  disabled={!canProceed}
+                  disabled={!canProceed || loading}
                   className={`w-fit px-8 h-[52px] rounded-[100px] font-sora text-base font-semibold transition-opacity ${
-                    canProceed ? "hover:opacity-90" : "opacity-50 cursor-not-allowed"
+                    canProceed && !loading ? "hover:opacity-90" : "opacity-50 cursor-not-allowed"
                   }`}
                   style={{
                     background: "#A2CE3A",
@@ -404,7 +475,7 @@ export default function DisclaimerSection({
                     color: "#000000",
                   }}
                 >
-                  Proceed
+                  {loading ? "Saving..." : "Proceed"}
                 </button>
               </div>
             </div>

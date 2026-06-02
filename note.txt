@@ -1,9 +1,17 @@
-      <div className="lg:pt-10">
-        <div className="absolute bottom-0 left-0 right-0 flex justify-center w-full pointer-events-none">
-          <img
-            src="/blush.png"
-            alt=""
-            className="w-full max-w-[1400px] object-contain"
-          />
-        </div>
-      </div>
+I just paid, I got redirected back here: http://localhost:3000/v1/complete-your-payment?pId=3&step=3, which means it works.
+
+Only issue so far is that I still saw the Payment successful modal before being redirected instead of after.
+
+On the EnrollmentCOnfirmation.tsx, did some research, found ut that this is the issue:
+
+const handleTermsAgree = async () => {
+    setShowTermsModal(false);
+    // Call the API or perform enrollment logic
+    await onProceed();
+    // Show success modal after API call
+    setShowSuccessModal(true);
+  };
+
+It is changing to true immediately.
+
+Remove the modal entirely from there, it should only show wen step=3 is in the url and I have successfuly be redirected back to the onboarding page with step 3 on.

@@ -3,10 +3,13 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import * as Select from "@radix-ui/react-select";
+import { useToast } from "@/components/ui/use-toast";
+import { getApiUrl, getAuthHeaders } from "@/lib/api";
 
 interface CareerInfoSectionProps {
   onBack: () => void;
   onProceed: (careerData: CareerFormData) => void;
+  initialData?: any;
 }
 
 export interface CareerFormData {
@@ -81,14 +84,17 @@ const experienceLevels = [
 export default function CareerInfoSection({
   onBack,
   onProceed,
+  initialData,
 }: CareerInfoSectionProps) {
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<CareerFormData>({
-    careerPath: "",
-    preferredIndustries: "",
-    preferredJobTitles: "",
-    currentJobTitle: "",
-    currentCompanyName: "",
-    yearsOfExperience: "",
+    careerPath: initialData?.career_path || "",
+    preferredIndustries: initialData?.preferred_industries ? initialData.preferred_industries.join(", ") : "",
+    preferredJobTitles: initialData?.preferred_job_titles ? initialData.preferred_job_titles.join(", ") : "",
+    currentJobTitle: initialData?.current_job_title || "",
+    currentCompanyName: initialData?.current_company || "",
+    yearsOfExperience: initialData?.years_of_experience || "",
   });
 
   const steps = [
@@ -97,8 +103,64 @@ export default function CareerInfoSection({
     { number: "3", label: "Complete profile", completed: false, current: true },
   ];
 
-  const handleProceed = () => {
-    onProceed(formData);
+  const handleProceed = async () => {
+    setLoading(true);
+
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch(`${getApiUrl()}/api/v1/profile/career-info`, {
+        method: "PATCH",
+        headers,
+        body: JSON.stringify({
+          career_path: formData.careerPath,
+          current_job_title: formData.currentJobTitle,
+          current_company: formData.currentCompanyName,
+          years_of_experience: formData.yearsOfExperience,
+          preferred_industries: formData.preferredIndustries ? formData.preferredIndustries.split(",").map(i => i.trim()) : [],
+          preferred_job_titles: formData.preferredJobTitles ? formData.preferredJobTitles.split(",").map(t => t.trim()) : [],
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        // Handle validation errors with specific field messages
+        if (data.errors) {
+          const firstErrorField = Object.keys(data.errors)[0];
+          const firstErrorMessage = data.errors[firstErrorField][0];
+          
+          toast({
+            variant: "error",
+            title: "Failed to save career info",
+            description: firstErrorMessage || data.message || "An error occurred",
+          });
+        } else {
+          toast({
+            variant: "error",
+            title: "Failed to save career info",
+            description: data.message || "An error occurred",
+          });
+        }
+        setLoading(false);
+        return;
+      }
+
+      toast({
+        variant: "success",
+        title: "Career info saved!",
+        description: "Your career information has been updated successfully",
+      });
+
+      onProceed(formData);
+    } catch (error: any) {
+      toast({
+        variant: "error",
+        title: "Error",
+        description: error.message || "An error occurred while saving career info",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -167,9 +229,17 @@ export default function CareerInfoSection({
                 <h2 className="text-2xl lg:text-3xl font-clash-display font-semibold" style={{ color: "#E8EFF1" }}>
                   Career Info
                 </h2>
-                <span className="text-sm font-plus-jakarta" style={{ color: "#A2CE3A" }}>
-                  3/7
-                </span>
+                <div
+                  className="inline-flex items-center justify-center h-[28px] px-4 rounded-[32px]"
+                  style={{
+                    background: "#00C0630D",
+                    border: "1.5px solid #00C06326",
+                  }}
+                >
+                  <span className="text-[#00C063] font-mona-sans text-sm font-semibold">
+                    2/6
+                  </span>
+                </div>
               </div>
 
               {/* Content Container */}
@@ -408,14 +478,15 @@ export default function CareerInfoSection({
                 </button>
                 <button
                   onClick={handleProceed}
-                  className="w-fit px-8 h-[52px] rounded-[100px] font-sora text-base font-semibold transition-opacity hover:opacity-90"
+                  disabled={loading}
+                  className="w-fit px-8 h-[52px] rounded-[100px] font-sora text-base font-semibold transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{
                     background: "#A2CE3A",
                     border: "1px solid #448290",
                     color: "#000000",
                   }}
                 >
-                  Proceed
+                  {loading ? "Saving..." : "Proceed"}
                 </button>
               </div>
             </div>

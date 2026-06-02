@@ -25,11 +25,11 @@ export default function V1VideoTestimonialSection() {
         >
           <h2 className="text-4xl lg:text-5xl text-white font-mona-sans font-semibold leading-tight mb-4">
             <span className="text-white font-mona-sans"> Listen To What </span>
-            <span className="text-[#A2CE3A] font-mona-sans mr-1">
+            <span className="text-[#A2CE3A] font-mona-sans mr-x">
               Our Clients
             </span>
             Who <br />
-            <span className="text-[#A2CE3A] font-mona-sans">Got Hired</span>
+            <span className="text-[#A2CE3A] font-mona-sans mx-1">Got Hired</span>
             Have To Say
           </h2>
         </motion.div>{" "}

@@ -335,13 +335,22 @@ export default function V1ExpertsSection() {
                 : (expert as (typeof mockExperts)[0]).clients_counts;
 
               return (
-                <Link
+                <motion.div
                   key={expert.id}
-                  href={`/coaches/${expert.id}`}
+                  onClick={() => {
+                    setSelectedExpert({
+                      id: expert.id,
+                      name: expert.name,
+                      rating: expertRating,
+                      specialty: expertSpecialty,
+                      sessions: expertSessions,
+                      image: expertImage,
+                      languages: expertLanguages,
+                    });
+                    setShowModal(true);
+                  }}
                   onMouseEnter={() => setHoveredCard(expert.id)}
                   onMouseLeave={() => setHoveredCard(null)}
-                >
-                  <motion.div
                     initial={{ opacity: 0, y: 30 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.6, delay: index * 0.1 }}
@@ -425,7 +434,13 @@ export default function V1ExpertsSection() {
                       </div>
 
                       <div className="w-[15%]">
-                        <Link href="#" target="_blank">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            // LinkedIn link functionality can be added here if needed
+                          }}
+                          className="hover:opacity-80 transition-opacity"
+                        >
                           <svg
                             width="24"
                             height="24"
@@ -438,11 +453,10 @@ export default function V1ExpertsSection() {
                               fill="white"
                             />
                           </svg>
-                        </Link>
+                        </button>
                       </div>
                     </div>
                   </motion.div>
-                </Link>
               );
             })}
           </div>
