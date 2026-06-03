@@ -88,7 +88,7 @@ const ClaritySessionContent = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Get planId from URL query parameter
-  const planId = searchParams.get('pID');
+  const planId = searchParams.get('p-id');
 
   const handleContinue = () => {
     if (selectedDate && selectedTime) {

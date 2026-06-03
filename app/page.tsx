@@ -19,7 +19,7 @@ export default function Home() {
 
   const handleStartNow = (planId: string) => {
     // Redirect to clarity session page with planId
-    router.push(`/v1/clarity-session?pID=${planId}`);
+    router.push(`/v1/clarity-session?p-id=${planId}`);
   };
 
   return (

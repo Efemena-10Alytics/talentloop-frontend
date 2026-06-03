@@ -40,7 +40,7 @@ const CompleteYourPaymentContent = () => {
 
   // Extract URL parameters
   const token = searchParams.get('token');
-  const pId = searchParams.get('pId'); // Pricing plan ID (lowercase)
+  const pId = searchParams.get('p-id'); // Pricing plan ID
   const stepParam = searchParams.get('step'); // Step to navigate to after payment
   const cancelParam = searchParams.get('cancel'); // Payment cancelled
   const planType = searchParams.get('planType') || 'full'; // 'full' or 'installments'
@@ -223,8 +223,8 @@ const CompleteYourPaymentContent = () => {
         ? (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000')
         : (process.env.NEXT_PUBLIC_WEBAPP_URL || 'https://talentloop-frontend.vercel.app');
       
-      const successUrl = `${baseUrl}/v1/complete-your-payment?pId=${pId}&step=3`;
-      const cancelUrl = `${baseUrl}/v1/complete-your-payment?pId=${pId}&cancel=true`;
+      const successUrl = `${baseUrl}/v1/complete-your-payment?p-id=${pId}&step=3`;
+      const cancelUrl = `${baseUrl}/v1/complete-your-payment?p-id=${pId}&cancel=true`;
 
       // Determine payment_option based on selected payment type
       // payment_option: 1 for full payment, 2 for installments
