@@ -7,7 +7,6 @@ import { signIn } from "next-auth/react";
 import { getApiUrl, getHeaders } from "@/lib/api";
 import { useToast } from "@/components/ui/use-toast";
 import EmailVerification from "@/components/EmailVerification";
-import PersonalInfoModal from "./PersonalInfoModal";
 
 /* ─── SVGs ─── */
 
@@ -175,7 +174,7 @@ interface V1SignupFormContentProps {
 
 export default function V1SignupFormContent({ 
   isModal = false,
-  onSuccess 
+  onSuccess
 }: V1SignupFormContentProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -186,7 +185,6 @@ export default function V1SignupFormContent({
   const [loading, setLoading] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [isEmailVerification, setIsEmailVerification] = useState(false);
-  const [showPersonalInfoModal, setShowPersonalInfoModal] = useState(false);
   const { toast } = useToast();
 
   const passwordTouched = password.length > 0;
@@ -417,9 +415,11 @@ export default function V1SignupFormContent({
         });
       }
 
-      // Show PersonalInfoModal after successful verification
+      // Signal signup complete
       setVerifying(false);
-      setShowPersonalInfoModal(true);
+      if (onSuccess) {
+        onSuccess();
+      }
     } catch (err: any) {
       toast({
         variant: "error",
@@ -627,20 +627,6 @@ export default function V1SignupFormContent({
           </div>
         </>
       )}
-
-      {/* Personal Info Modal */}
-      <PersonalInfoModal
-        isOpen={showPersonalInfoModal}
-        onComplete={() => {
-          // After personal info is saved, redirect based on context
-          if (isModal && onSuccess) {
-            onSuccess();
-          } else {
-            // Redirect to homepage for new users
-            window.location.href = "/";
-          }
-        }}
-      />
     </div>
   );
 }

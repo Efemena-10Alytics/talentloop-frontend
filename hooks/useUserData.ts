@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { getApiUrl, getAuthHeaders } from "@/lib/api";
 
@@ -47,69 +47,80 @@ export function useUserData() {
   const [userData, setUserData] = useState<UserDataResponse | null>(null);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    const fetchUserData = async () => {
-      if (!session) {
-        setUserData(null);
-        return;
+  const fetchUserData = useCallback(async () => {
+    if (!session) {
+      setUserData(null);
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const headers = await getAuthHeaders();
+      
+      // Fetch user data
+      const userResponse = await fetch(`${getApiUrl()}/api/v1/auth/me`, {
+        method: "GET",
+        headers,
+      });
+
+      if (!userResponse.ok) {
+        throw new Error("Failed to fetch user data");
       }
 
-      setLoading(true);
-
+      const userResult = await userResponse.json();
+      
+      // Fetch profile data
+      let profileData = null;
       try {
-        const headers = await getAuthHeaders();
-        
-        // Fetch user data
-        const userResponse = await fetch(`${getApiUrl()}/api/v1/auth/me`, {
+        const profileResponse = await fetch(`${getApiUrl()}/api/v1/profile`, {
           method: "GET",
           headers,
         });
-
-        if (!userResponse.ok) {
-          throw new Error("Failed to fetch user data");
-        }
-
-        const userResult = await userResponse.json();
         
-        // Fetch profile data
-        let profileData = null;
-        try {
-          const profileResponse = await fetch(`${getApiUrl()}/api/v1/profile`, {
-            method: "GET",
-            headers,
-          });
-          
-          if (profileResponse.ok) {
-            const profileResult = await profileResponse.json();
-            profileData = profileResult.data;
-          }
-        } catch (profileError) {
-          console.log("Profile data not available yet");
+        if (profileResponse.ok) {
+          const profileResult = await profileResponse.json();
+          profileData = profileResult.data;
         }
-        
-        // Combine user and profile data
-        setUserData({
-          ...userResult.data,
-          profile: profileData,
-        });
-
-        // Clear onboarding progress from localStorage if already submitted
-        if (userResult.data?.onboarding_status === "submitted") {
-          const storageKey = userResult.data?.user?.role === "coach" 
-            ? "coach_onboarding_progress" 
-            : "jobseeker_onboarding_progress";
-          localStorage.removeItem(storageKey);
-        }
-      } catch (error) {
-        console.error("Error fetching user data:", error);
-        setUserData(null);
-      } finally {
-        setLoading(false);
+      } catch (profileError) {
+        console.log("Profile data not available yet");
       }
-    };
+      
+      // Combine user and profile data
+      setUserData({
+        ...userResult.data,
+        profile: profileData,
+      });
 
-    fetchUserData();
+      // Clear onboarding progress from localStorage if already submitted
+      if (userResult.data?.onboarding_status === "submitted") {
+        const storageKey = userResult.data?.user?.role === "coach" 
+          ? "coach_onboarding_progress" 
+          : "jobseeker_onboarding_progress";
+        localStorage.removeItem(storageKey);
+      }
+    } catch (error) {
+      console.error("Error fetching user data:", error);
+      setUserData(null);
+    } finally {
+      setLoading(false);
+    }
   }, [session]);
 
-  return { userData, loading };
+  useEffect(() => {
+    fetchUserData();
+  }, [fetchUserData]);
+
+  // Listen for profile-updated events to refetch data
+  useEffect(() => {
+    const handleProfileUpdated = () => {
+      fetchUserData();
+    };
+    window.addEventListener('profile-updated', handleProfileUpdated);
+    return () => {
+      window.removeEventListener('profile-updated', handleProfileUpdated);
+    };
+  }, [fetchUserData]);
+
+  return { userData, loading, refetch: fetchUserData };
 }

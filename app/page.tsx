@@ -33,11 +33,11 @@ export default function Home() {
         <div id="experts">
           <V1ExpertsSection />
         </div>
+        <V1VideoTestimonialSection />
+        <V1TestimonialsSection />
         <div id="pricing">
           <V1PricingSection onStartNow={handleStartNow} />
         </div>
-        <V1VideoTestimonialSection />
-        <V1TestimonialsSection />
         <V1WhoIsForSection />
         <V1WhyDifferentSection />
         <div id="faqs">

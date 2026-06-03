@@ -6,7 +6,6 @@ import { RightSideComponent } from "./v1-right-side-component";
 
 
 export default function V1SignupForm() {
-
   return (
     <div className="h-screen bg-[#101014] flex items-center justify-center relative overflow-hidden">
       {/* Logo */}

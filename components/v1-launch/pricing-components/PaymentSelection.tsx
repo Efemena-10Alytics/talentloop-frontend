@@ -46,6 +46,7 @@ export default function PaymentSelection({
   const { data: session, status } = useSession();
   const [selectedPayment, setSelectedPayment] = useState<"full" | "installments">("full");
   const [showSignupModal, setShowSignupModal] = useState(false);
+  const [pendingPaymentAfterSignup, setPendingPaymentAfterSignup] = useState(false);
 
   // Use API data if provided, otherwise fallback to hardcoded plans
   const planDetails = planAmount
@@ -92,23 +93,28 @@ export default function PaymentSelection({
   };
 
   const handleSignupSuccess = () => {
-    // Close modal
+    // Close signup modal and mark that we need to proceed with payment after session updates
     setShowSignupModal(false);
-    
-    // Note: Session will be automatically updated by NextAuth after successful signup
-    // Automatically proceed to payment after successful signup
-    const paymentOption: PaymentOption = {
-      type: selectedPayment,
-      amount: planDetails.fullAmount,
-      ...(selectedPayment === "installments" && "installment1" in planDetails && "installment2" in planDetails && {
-        installmentDetails: {
-          first: String(planDetails.installment1),
-          second: String(planDetails.installment2),
-        },
-      }),
-    };
-    onPaymentSelect(paymentOption);
+    setPendingPaymentAfterSignup(true);
   };
+
+  // After signup, once session is authenticated, auto-proceed with the payment option
+  useEffect(() => {
+    if (pendingPaymentAfterSignup && status === "authenticated") {
+      setPendingPaymentAfterSignup(false);
+      const paymentOption: PaymentOption = {
+        type: selectedPayment,
+        amount: planDetails.fullAmount,
+        ...(selectedPayment === "installments" && "installment1" in planDetails && "installment2" in planDetails && {
+          installmentDetails: {
+            first: String(planDetails.installment1),
+            second: String(planDetails.installment2),
+          },
+        }),
+      };
+      onPaymentSelect(paymentOption);
+    }
+  }, [pendingPaymentAfterSignup, status]);
 
   return (
     <div className="min-h-screen bg-[#01090B] py-20">

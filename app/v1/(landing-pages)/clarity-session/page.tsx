@@ -129,6 +129,7 @@ const ClaritySessionContent = () => {
         referral_source: formData.howDidYouFind,
         notes: formData.message,
         start_time: startTime.toISOString(),
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       };
 
       const response = await fetch('https://talentloop-backend-iu3e.onrender.com/api/v1/calendly/bookings', {

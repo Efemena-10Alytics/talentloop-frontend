@@ -113,6 +113,9 @@ export default function PersonalInfoModal({ isOpen, onComplete }: PersonalInfoMo
         description: "Your information has been saved successfully",
       });
 
+      // Dispatch event so Navbar and other components using useUserData refresh immediately
+      window.dispatchEvent(new Event('profile-updated'));
+
       onComplete();
     } catch (error: any) {
       toast({

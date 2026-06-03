@@ -55,7 +55,10 @@ export default function SignupModal({ isOpen, onClose, onSuccess }: SignupModalP
 
             {/* Signup Form */}
             <div className="overflow-y-auto max-h-[90vh] scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
-              <V1SignupFormContent isModal={true} onSuccess={onSuccess} />
+              <V1SignupFormContent 
+                isModal={true} 
+                onSuccess={onSuccess}
+              />
             </div>
           </motion.div>
         </div>

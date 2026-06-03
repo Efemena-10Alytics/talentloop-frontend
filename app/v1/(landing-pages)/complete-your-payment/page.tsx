@@ -8,6 +8,7 @@ import V1FooterSection from "@/components/v1-launch/v1-footer-section";
 import PaymentSelection, { PaymentOption } from "@/components/v1-launch/pricing-components/PaymentSelection";
 import EnrollmentConfirmation from "@/components/v1-launch/pricing-components/EnrollmentConfirmation";
 import EditPersonalDataModal, { PersonalData } from "@/components/v1-launch/pricing-components/EditPersonalDataModal";
+import PersonalInfoModal from "@/components/auth/PersonalInfoModal";
 import CareerInfoSection, { CareerFormData } from "@/components/v1-launch/pricing-components/CareerInfoSection";
 import EducationalInfoSection, { EducationFormData } from "@/components/v1-launch/pricing-components/EducationalInfoSection";
 import JobApplicationInfoSection, { JobApplicationFormData } from "@/components/v1-launch/pricing-components/JobApplicationInfoSection";
@@ -24,9 +25,11 @@ const CompleteYourPaymentContent = () => {
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3 | 4 | 5 | 6>(1);
   const [paymentOption, setPaymentOption] = useState<PaymentOption | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showPersonalInfoModal, setShowPersonalInfoModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [pricingPlan, setPricingPlan] = useState<any>(null);
   const [profileData, setProfileData] = useState<any>(null); // Store full profile data
+  const [hasProfileData, setHasProfileData] = useState(true); // Track if user has profile data
   const [personalData, setPersonalData] = useState<PersonalData>({
     firstName: "",
     lastName: "",
@@ -62,6 +65,10 @@ const CompleteYourPaymentContent = () => {
         const profileDataResponse = await profileResponse.json();
         const profile = profileDataResponse.data;
         
+        // Check if user has complete profile data
+        const hasCompleteProfile = profile.first_name && profile.last_name && profile.country;
+        setHasProfileData(hasCompleteProfile);
+        
         // Store full profile data
         setProfileData(profile);
         
@@ -75,6 +82,8 @@ const CompleteYourPaymentContent = () => {
         });
       } else {
         console.error("Failed to fetch profile:", profileResponse.status);
+        // If profile fetch fails, assume new user needs to fill personal info
+        setHasProfileData(false);
       }
     } catch (error: any) {
       console.error("Error fetching profile data:", error);
@@ -156,11 +165,35 @@ const CompleteYourPaymentContent = () => {
     }
   }, [cancelParam]);
 
+  // Auto-show PersonalInfoModal when authenticated user has no profile data
+  useEffect(() => {
+    if (!loading && session && !hasProfileData && currentStep === 1) {
+      setShowPersonalInfoModal(true);
+    }
+  }, [loading, session, hasProfileData, currentStep]);
+
   const handlePaymentSelect = async (selectedPayment: PaymentOption) => {
     setPaymentOption(selectedPayment);
     // Refetch profile data before moving to step 2 to ensure we have the latest data
     await fetchProfileData();
-    setCurrentStep(2);
+    
+    // Check if user has profile data, if not show PersonalInfoModal
+    if (!hasProfileData) {
+      setShowPersonalInfoModal(true);
+    } else {
+      setCurrentStep(2);
+    }
+  };
+
+  const handlePersonalInfoComplete = async () => {
+    setShowPersonalInfoModal(false);
+    // Refetch profile data after personal info is saved
+    await fetchProfileData();
+    setHasProfileData(true);
+    // If user had already selected a payment option, proceed to step 2
+    if (paymentOption) {
+      setCurrentStep(2);
+    }
   };
 
   const handleEditData = () => {
@@ -288,10 +321,10 @@ const CompleteYourPaymentContent = () => {
   };
 
 
-  // Show payment selection on step 1
-  if (currentStep === 1) {
+  // Render step content
+  const renderStepContent = () => {
     // Show loading state while fetching data
-    if (loading) {
+    if (currentStep === 1 && loading) {
       return (
         <div className="bg-[#01090B] min-h-screen py-14 lg:py-20 flex items-center justify-center">
           <div className="text-white font-mona-sans text-lg">Loading...</div>
@@ -299,126 +332,135 @@ const CompleteYourPaymentContent = () => {
       );
     }
 
-    return (
-      <div className="bg-[#01090B] min-h-screen py-14 lg:py-20">
-        <div className="p-3">
-          <Navbar v1Launch />
-          <PaymentSelection
-            planId={pricingPlan?.id || planId}
-            planType={pricingPlan?.title || planId}
-            planPrice={pricingPlan ? `£${pricingPlan.amount}` : planPrice}
-            planAmount={pricingPlan?.amount || planAmount || undefined}
-            planInstallments={pricingPlan?.installments || planInstallments}
-            pricingPlanData={pricingPlan}
-            onPaymentSelect={handlePaymentSelect}
-          />
-          <V1FooterSection />
+    if (currentStep === 1) {
+      return (
+        <div className="bg-[#01090B] min-h-screen py-14 lg:py-20">
+          <div className="p-3">
+            <Navbar v1Launch />
+            <PaymentSelection
+              planId={pricingPlan?.id || planId}
+              planType={pricingPlan?.title || planId}
+              planPrice={pricingPlan ? `£${pricingPlan.amount}` : planPrice}
+              planAmount={pricingPlan?.amount || planAmount || undefined}
+              planInstallments={pricingPlan?.installments || planInstallments}
+              pricingPlanData={pricingPlan}
+              onPaymentSelect={handlePaymentSelect}
+            />
+            <V1FooterSection />
+          </div>
         </div>
-      </div>
-    );
-  }
+      );
+    }
 
-  // Show enrollment confirmation on step 2
-  if (currentStep === 2 && paymentOption) {
-    return (
-      <div className="bg-[#01090B] min-h-screen py-14 lg:py-20">
-        <div className="p-3">
-          <Navbar v1Launch />
-          <EnrollmentConfirmation
-            personalData={personalData}
-            paymentPlan={{
-              planName: pricingPlan?.title || (paymentOption.type === "installments" ? "2 Installments" : "Full Payment"),
-              paymentType: paymentOption.type,
-              firstPayment: paymentOption.installmentDetails?.first,
-              secondPayment: paymentOption.installmentDetails?.second,
-              nextPaymentDate: "Jun 21, 2026",
-              pricingPlanData: pricingPlan,
-            }}
-            onEditData={handleEditData}
-            onProceed={handleEnrollmentProceed}
-            onCompleteOnboarding={handleCompleteOnboarding}
-          />
-          <EditPersonalDataModal
-            isOpen={showEditModal}
-            onClose={() => setShowEditModal(false)}
-            onSave={handleSavePersonalData}
-            initialData={personalData}
-          />
-          <V1FooterSection />
+    if (currentStep === 2 && paymentOption) {
+      return (
+        <div className="bg-[#01090B] min-h-screen py-14 lg:py-20">
+          <div className="p-3">
+            <Navbar v1Launch />
+            <EnrollmentConfirmation
+              personalData={personalData}
+              paymentPlan={{
+                planName: pricingPlan?.title || (paymentOption.type === "installments" ? "2 Installments" : "Full Payment"),
+                paymentType: paymentOption.type,
+                firstPayment: paymentOption.installmentDetails?.first,
+                secondPayment: paymentOption.installmentDetails?.second,
+                nextPaymentDate: "Jun 21, 2026",
+                pricingPlanData: pricingPlan,
+              }}
+              onEditData={handleEditData}
+              onProceed={handleEnrollmentProceed}
+              onCompleteOnboarding={handleCompleteOnboarding}
+            />
+            <EditPersonalDataModal
+              isOpen={showEditModal}
+              onClose={() => setShowEditModal(false)}
+              onSave={handleSavePersonalData}
+              initialData={personalData}
+            />
+            <V1FooterSection />
+          </div>
         </div>
-      </div>
-    );
-  }
+      );
+    }
 
-  // Show career info section on step 3
-  if (currentStep === 3) {
-    return (
-      <div className="bg-[#01090B] min-h-screen py-14 lg:py-20">
-        <div className="p-3">
-          <Navbar v1Launch />
-          <CareerInfoSection
-            onBack={handleCareerInfoBack}
-            onProceed={handleCareerInfoProceed}
-            initialData={profileData}
-          />
-          <V1FooterSection />
+    if (currentStep === 3) {
+      return (
+        <div className="bg-[#01090B] min-h-screen py-14 lg:py-20">
+          <div className="p-3">
+            <Navbar v1Launch />
+            <CareerInfoSection
+              onBack={handleCareerInfoBack}
+              onProceed={handleCareerInfoProceed}
+              initialData={profileData}
+            />
+            <V1FooterSection />
+          </div>
         </div>
-      </div>
-    );
-  }
+      );
+    }
 
-  // Show educational info section on step 4
-  if (currentStep === 4) {
-    return (
-      <div className="bg-[#01090B] min-h-screen py-14 lg:py-20">
-        <div className="p-3">
-          <Navbar v1Launch />
-          <EducationalInfoSection
-            onBack={handleEducationInfoBack}
-            onProceed={handleEducationInfoProceed}
-            initialData={profileData}
-          />
-          <V1FooterSection />
+    if (currentStep === 4) {
+      return (
+        <div className="bg-[#01090B] min-h-screen py-14 lg:py-20">
+          <div className="p-3">
+            <Navbar v1Launch />
+            <EducationalInfoSection
+              onBack={handleEducationInfoBack}
+              onProceed={handleEducationInfoProceed}
+              initialData={profileData}
+            />
+            <V1FooterSection />
+          </div>
         </div>
-      </div>
-    );
-  }
+      );
+    }
 
-  // Show job application info section on step 5
-  if (currentStep === 5) {
-    return (
-      <div className="bg-[#01090B] min-h-screen py-14 lg:py-20">
-        <div className="p-3">
-          <Navbar v1Launch />
-          <JobApplicationInfoSection
-            onBack={handleJobApplicationInfoBack}
-            onProceed={handleJobApplicationInfoProceed}
-            initialData={profileData}
-          />
-          <V1FooterSection />
+    if (currentStep === 5) {
+      return (
+        <div className="bg-[#01090B] min-h-screen py-14 lg:py-20">
+          <div className="p-3">
+            <Navbar v1Launch />
+            <JobApplicationInfoSection
+              onBack={handleJobApplicationInfoBack}
+              onProceed={handleJobApplicationInfoProceed}
+              initialData={profileData}
+            />
+            <V1FooterSection />
+          </div>
         </div>
-      </div>
-    );
-  }
+      );
+    }
 
-  // Show credentials upload section on step 6
-  if (currentStep === 6) {
-    return (
-      <div className="bg-[#01090B] min-h-screen py-14 lg:py-20">
-        <div className="p-3">
-          <Navbar v1Launch />
-          <CredentialsUploadSection
-            onBack={handleCredentialsUploadBack}
-            onProceed={handleCredentialsUploadProceed}
-            initialData={profileData}
-          />
-          <V1FooterSection />
+    if (currentStep === 6) {
+      return (
+        <div className="bg-[#01090B] min-h-screen py-14 lg:py-20">
+          <div className="p-3">
+            <Navbar v1Launch />
+            <CredentialsUploadSection
+              onBack={handleCredentialsUploadBack}
+              onProceed={handleCredentialsUploadProceed}
+              initialData={profileData}
+            />
+            <V1FooterSection />
+          </div>
         </div>
-      </div>
-    );
-  }
+      );
+    }
 
-  return null;
+    return null;
+  };
+
+  return (
+    <>
+      {renderStepContent()}
+
+      {/* PersonalInfoModal - rendered globally, shown when authenticated user has no profile data */}
+      <PersonalInfoModal
+        isOpen={showPersonalInfoModal}
+        onComplete={handlePersonalInfoComplete}
+      />
+    </>
+  );
 };
 
 const CompleteYourPaymentPage = () => {

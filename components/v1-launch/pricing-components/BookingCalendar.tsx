@@ -8,28 +8,13 @@ interface BookingCalendarProps {
   onTimeSelect?: (time: string) => void;
 }
 
-// Generate 20-minute interval time slots from 10:00 AM to 9:40 PM
-const generateTimeSlots = () => {
-  const slots: string[] = [];
-  const startHour = 10; // 10:00 AM
-  const endHour = 21; // 9:00 PM
-  const endMinute = 40; // 9:40 PM
-  
-  for (let hour = startHour; hour <= endHour; hour++) {
-    for (let minute = 0; minute < 60; minute += 20) {
-      // Stop at 9:40 PM
-      if (hour === endHour && minute > endMinute) break;
-      
-      const formattedHour = hour.toString().padStart(2, '0');
-      const formattedMinute = minute.toString().padStart(2, '0');
-      slots.push(`${formattedHour}:${formattedMinute}`);
-    }
-  }
-  
-  return slots;
-};
+interface AvailableSlot {
+  invitees_remaining: number;
+  scheduling_url: string;
+  start_time: string;
+  status: string;
+}
 
-const timeSlots = generateTimeSlots();
 
 export default function BookingCalendar({
   onDateSelect,
@@ -38,7 +23,10 @@ export default function BookingCalendar({
   const today = new Date();
   const [currentDate, setCurrentDate] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
   const [selectedDate, setSelectedDate] = useState<number | null>(null);
-  const [selectedTime, setSelectedTime] = useState<string>("10:00");
+  const [selectedTime, setSelectedTime] = useState<string | null>(null);
+  const [availableSlots, setAvailableSlots] = useState<AvailableSlot[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const getDaysInMonth = (date: Date) => {
     const year = date.getFullYear();
@@ -99,12 +87,62 @@ export default function BookingCalendar({
     }
   };
 
-  // Automatically set default time on mount
+  // Fetch available time slots from API
   useEffect(() => {
-    if (onTimeSelect) {
-      onTimeSelect(selectedTime);
-    }
+    const fetchAvailableSlots = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('https://talentloop-backend-iu3e.onrender.com/api/v1/calendly/availability');
+        const result = await response.json();
+        
+        if (result.status === 'success' && result.data) {
+          setAvailableSlots(result.data);
+        } else {
+          setError('Failed to load available time slots');
+        }
+      } catch (err) {
+        console.error('Error fetching availability:', err);
+        setError('Failed to load available time slots');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAvailableSlots();
   }, []);
+
+  // Get available dates from slots
+  const getAvailableDates = () => {
+    const dates = new Set<string>();
+    availableSlots.forEach(slot => {
+      const date = new Date(slot.start_time);
+      const dateKey = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+      dates.add(dateKey);
+    });
+    return dates;
+  };
+
+  // Get available times for selected date
+  const getAvailableTimesForDate = (day: number) => {
+    const selectedDateObj = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+    const dateKey = `${selectedDateObj.getFullYear()}-${selectedDateObj.getMonth()}-${selectedDateObj.getDate()}`;
+    
+    return availableSlots
+      .filter(slot => {
+        const slotDate = new Date(slot.start_time);
+        const slotDateKey = `${slotDate.getFullYear()}-${slotDate.getMonth()}-${slotDate.getDate()}`;
+        return slotDateKey === dateKey && slot.status === 'available';
+      })
+      .map(slot => {
+        const date = new Date(slot.start_time);
+        const hours = date.getHours().toString().padStart(2, '0');
+        const minutes = date.getMinutes().toString().padStart(2, '0');
+        return `${hours}:${minutes}`;
+      });
+  };
+
+  const availableDates = getAvailableDates();
+  const availableTimesForSelectedDate = selectedDate ? getAvailableTimesForDate(selectedDate) : [];
 
   return (
     <div
@@ -170,15 +208,20 @@ export default function BookingCalendar({
               const today = new Date();
               today.setHours(0, 0, 0, 0); // Reset time to compare dates only
               const isPastDate = dateToCheck < today;
+              
+              // Check if this date has available slots
+              const dateKey = `${currentDate.getFullYear()}-${currentDate.getMonth()}-${day}`;
+              const hasAvailableSlots = availableDates.has(dateKey);
+              const isDisabled = isPastDate || !hasAvailableSlots;
 
               return (
                 <button
                   key={day}
-                  onClick={() => !isPastDate && handleDateClick(day)}
-                  disabled={isPastDate}
+                  onClick={() => !isDisabled && handleDateClick(day)}
+                  disabled={isDisabled}
                   className="aspect-square rounded-full flex items-center justify-center font-mona-sans text-sm transition-all"
                   style={
-                    isPastDate
+                    isDisabled
                       ? {
                           color: "#3A3A3A",
                           cursor: "not-allowed",
@@ -209,31 +252,49 @@ export default function BookingCalendar({
             className="flex flex-col gap-2 overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent pr-2"
             style={{ maxHeight: "320px" }}
           >
-            {timeSlots.map((time) => {
-              const isSelected = selectedTime === time;
-              return (
-                <button
-                  key={time}
-                  onClick={() => handleTimeClick(time)}
-                  className="h-12 rounded-[12px] flex items-center justify-center font-mona-sans text-sm font-medium transition-all"
-                  style={
-                    isSelected
-                      ? {
-                          background: "#A2CE3A1A",
-                          border: "1.5px solid #A2CE3A33",
-                          color: "#A2CE3A",
-                        }
-                      : {
-                          background: "#74748014",
-                          border: "1.5px solid #FFFFFF1A",
-                          color: "#A8A8A8",
-                        }
-                  }
-                >
-                  {time}
-                </button>
-              );
-            })}
+            {loading ? (
+              <div className="text-center text-[#A8A8A8] font-mona-sans text-sm py-4">
+                Loading available times...
+              </div>
+            ) : error ? (
+              <div className="text-center text-red-400 font-mona-sans text-sm py-4">
+                {error}
+              </div>
+            ) : !selectedDate ? (
+              <div className="text-center text-[#A8A8A8] font-mona-sans text-sm py-4">
+                Select a date to view available times
+              </div>
+            ) : availableTimesForSelectedDate.length === 0 ? (
+              <div className="text-center text-[#A8A8A8] font-mona-sans text-sm py-4">
+                No available times for this date
+              </div>
+            ) : (
+              availableTimesForSelectedDate.map((time) => {
+                const isSelected = selectedTime === time;
+                return (
+                  <button
+                    key={time}
+                    onClick={() => handleTimeClick(time)}
+                    className="h-12 rounded-[12px] flex items-center justify-center font-mona-sans text-sm font-medium transition-all"
+                    style={
+                      isSelected
+                        ? {
+                            background: "#A2CE3A1A",
+                            border: "1.5px solid #A2CE3A33",
+                            color: "#A2CE3A",
+                          }
+                        : {
+                            background: "#74748014",
+                            border: "1.5px solid #FFFFFF1A",
+                            color: "#A8A8A8",
+                          }
+                    }
+                  >
+                    {time}
+                  </button>
+                );
+              })
+            )}
           </div>
         </div>
       </div>
