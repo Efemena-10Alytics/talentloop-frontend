@@ -48,35 +48,40 @@ export default function ApplicationCard({ application }: ApplicationCardProps) {
 
   return (
     <div
-      className="p-3 rounded-lg"
+      className="p-3 rounded-lg w-full"
       style={{
         background: "rgba(21, 99, 116, 0.1)",
         border: "0.5px solid rgba(255, 255, 255, 0.1)",
       }}
     >
-      <div className="flex items-start justify-between mb-2">
-        <div className="flex-1">
-          <h3 className="text-white font-mona-sans font-semibold text-sm mb-1">
+      <div className="w-full flex items-start justify-between mb-2">
+        <div className="w-full flex flex-col gap-1">
+         
+         <div className="w-full flex gap-3">
+                    <div className="w-[60%]">
+
+          <h3 className="text-white font-mona-sans font-semibold text-[12px] 2xl:text-sm">
             {application.company}
           </h3>
+                    </div>
+          <div className="w-[40%]">
+             <span
+            className="w-fit text-[8px] font-jakarta-sans font-medium px-3 py-1 rounded-[100px]"
+            style={{
+              color: statusStyles.color,
+            background: statusStyles.bg,
+            border: statusStyles.border,
+          }}
+          >
+            {application.status == "Call Scheduled" ? "Call S." : application.status}
+          </span>
+          </div>
+         </div>
           <p className="text-[#95ACCB] text-xs font-mona-sans">
             {application.position} · {application.location}
           </p>
         </div>
-        <div
-          className="px-3 py-1 rounded-full"
-          style={{
-            background: statusStyles.bg,
-            border: statusStyles.border,
-          }}
-        >
-          <span
-            className="text-xs font-jakarta-sans font-medium"
-            style={{ color: statusStyles.color }}
-          >
-            {application.status}
-          </span>
-        </div>
+       
       </div>
       <p className="text-[#657997] text-xs font-mona-sans">{application.date}</p>
     </div>

@@ -195,7 +195,7 @@ export default function ApplicationPipeline() {
       </div>
 
       {/* Pipeline Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-4 2xl:grid-cols-5 gap-5">
         {stages.map((stage) => {
           const applications = getApplicationsByStage(stage.name);
           return (

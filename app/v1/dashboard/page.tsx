@@ -23,7 +23,7 @@ export default function V1DashboardPage() {
       />
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-4 mb-8">
         <StatCard 
           title="Applications Sent" 
           value="32" 
@@ -32,11 +32,6 @@ export default function V1DashboardPage() {
         <StatCard 
           title="Interviews Secured" 
           value="3" 
-        />
-        <StatCard 
-          title="ATS Score" 
-          value="85" 
-          trend={{ value: "+15", isPositive: true }}
         />
         <StatCard 
           title="Days Active" 

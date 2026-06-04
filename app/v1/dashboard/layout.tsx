@@ -232,7 +232,7 @@ export default function V1DashboardLayout({
           )}
 
           {/* Collapse Button */}
-          <div className="px-4 pb-6">
+          <div className="absolute top-20 -right-4 px-4 pb-6">
             <button
               onClick={() => setIsCollapsed(!isCollapsed)}
               className={`transition-transform duration-300 ${
