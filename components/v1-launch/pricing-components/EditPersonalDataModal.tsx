@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import PhoneInput from "react-phone-number-input";
 import "react-phone-number-input/style.css";
 import { countries } from "@/app/_hooks/countries";
 import * as Select from "@radix-ui/react-select";
+import { useToast } from "@/components/ui/use-toast";
+import { getApiUrl, getAuthHeaders } from "@/lib/api";
 
 interface EditPersonalDataModalProps {
   isOpen: boolean;
@@ -16,10 +18,12 @@ interface EditPersonalDataModalProps {
 
 export interface PersonalData {
   firstName: string;
+  middleName?: string;
   lastName: string;
   email: string;
   phone: string;
   location: string;
+  city?: string;
 }
 
 export default function EditPersonalDataModal({
@@ -28,12 +32,86 @@ export default function EditPersonalDataModal({
   onSave,
   initialData,
 }: EditPersonalDataModalProps) {
+  const { toast } = useToast();
   const [formData, setFormData] = useState<PersonalData>(initialData);
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Sync form data when initialData changes (e.g. modal re-opened with fresh data)
+  useEffect(() => {
+    setFormData(initialData);
+  }, [initialData]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData);
-    onClose();
+
+    if (!formData.firstName || !formData.lastName) {
+      toast({
+        variant: "error",
+        title: "Missing fields",
+        description: "First name and last name are required",
+      });
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch(`${getApiUrl()}/api/v1/profile/personal-info`, {
+        method: "PATCH",
+        headers,
+        body: JSON.stringify({
+          first_name: formData.firstName,
+          middle_name: formData.middleName || "",
+          last_name: formData.lastName,
+          country: formData.location,
+          phone: formData.phone,
+          city: formData.city || "",
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        if (data.errors) {
+          const firstErrorField = Object.keys(data.errors)[0];
+          const firstErrorMessage = data.errors[firstErrorField][0];
+          toast({
+            variant: "error",
+            title: "Failed to update personal info",
+            description: firstErrorMessage || data.message || "An error occurred",
+          });
+        } else {
+          toast({
+            variant: "error",
+            title: "Failed to update personal info",
+            description: data.message || "An error occurred",
+          });
+        }
+        setLoading(false);
+        return;
+      }
+
+      toast({
+        variant: "success",
+        title: "Personal info updated!",
+        description: "Your information has been updated successfully",
+      });
+
+      // Dispatch event so Navbar and other components refresh immediately
+      window.dispatchEvent(new Event('profile-updated'));
+
+      onSave(formData);
+      onClose();
+    } catch (error: any) {
+      toast({
+        variant: "error",
+        title: "Error",
+        description: error.message || "An error occurred while updating personal info",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleChange = (field: keyof PersonalData, value: string) => {
@@ -148,6 +226,24 @@ export default function EditPersonalDataModal({
                 />
               </div>
 
+              {/* City */}
+              <div>
+                <label className="block text-white font-mona-sans text-sm font-medium mb-2">
+                  City
+                </label>
+                <input
+                  type="text"
+                  value={formData.city || ""}
+                  onChange={(e) => handleChange("city", e.target.value)}
+                  className="w-full rounded-[40px] px-4 h-[56px] font-sora text-sm text-white outline-none transition-all"
+                  style={{
+                    background: "transparent",
+                    border: "1px solid #FFFFFF1A",
+                  }}
+                  placeholder="Enter your city"
+                />
+              </div>
+
               {/* Phone */}
               <div>
                 <label className="block text-white font-mona-sans text-sm font-medium mb-2">
@@ -236,14 +332,15 @@ export default function EditPersonalDataModal({
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 h-12 px-6 rounded-[12px] font-mona-sans text-sm font-semibold text-black hover:opacity-90 transition-opacity"
+                  disabled={loading}
+                  className="flex-1 h-12 px-6 rounded-[12px] font-mona-sans text-sm font-semibold text-black hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{
                     background: "#A2CE3A",
                     border: "1px solid #FFFFFF1A",
                     boxShadow: "0px -6px 4px 0px #FFFFFF4D inset",
                   }}
                 >
-                  Save Changes
+                  {loading ? "Saving..." : "Save Changes"}
                 </button>
               </div>
             </form>

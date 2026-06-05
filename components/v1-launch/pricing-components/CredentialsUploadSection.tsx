@@ -455,18 +455,31 @@ export default function CredentialsUploadSection({
                 >
                   Back
                 </button>
-                <button
-                  onClick={handleProceed}
-                  disabled={loading}
-                  className="w-fit px-8 h-[52px] rounded-[100px] font-sora text-base font-semibold transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
-                  style={{
-                    background: "#A2CE3A",
-                    border: "1px solid #448290",
-                    color: "#000000",
-                  }}
-                >
-                  {loading ? "Saving..." : "Proceed"}
-                </button>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => onProceed({ cvFile: null, linkedinProfileLink: "", linkedinEmail: "", linkedinPassword: "", needsVisaSponsorship: null })}
+                    className="px-8 h-[52px] rounded-[100px] font-sora text-base font-semibold transition-opacity hover:opacity-80"
+                    style={{
+                      background: "transparent",
+                      border: "1px solid #FFFFFF33",
+                      color: "#FFFFFF",
+                    }}
+                  >
+                    Skip
+                  </button>
+                  <button
+                    onClick={handleProceed}
+                    disabled={loading}
+                    className="w-fit px-8 h-[52px] rounded-[100px] font-sora text-base font-semibold transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{
+                      background: "#A2CE3A",
+                      border: "1px solid #448290",
+                      color: "#000000",
+                    }}
+                  >
+                    {loading ? "Saving..." : "Proceed"}
+                  </button>
+                </div>
               </div>
             </div>
           </div>

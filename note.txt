@@ -1,0 +1,14 @@
+http://localhost:3000/v1/manager/dashboard
+
+This is the background color used n the maager dashbaord for the recent application table, client workload table and the task table:
+
+bg #1563741A
+
+border:
+border: 0.5px solid #FFFFFF1A
+
+
+
+
+
+

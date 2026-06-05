@@ -75,10 +75,12 @@ const CompleteYourPaymentContent = () => {
         // Populate personal data from profile
         setPersonalData({
           firstName: profile.first_name || "",
+          middleName: profile.middle_name || "",
           lastName: profile.last_name || "",
           email: session?.user?.email || "",
           phone: profile.phone || "",
           location: profile.country || "",
+          city: profile.city || "",
         });
       } else {
         console.error("Failed to fetch profile:", profileResponse.status);
