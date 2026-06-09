@@ -3,6 +3,7 @@
 interface DashboardNavbarProps {
   pageTitle: string;
   pageIcon: React.ReactNode;
+  actionSlot?: React.ReactNode;
 }
 
 const PremiumPlanSVG = () => (
@@ -26,7 +27,7 @@ const DropdownArrow = () => (
   </svg>
 );
 
-export default function DashboardNavbar({ pageTitle, pageIcon }: DashboardNavbarProps) {
+export default function DashboardNavbar({ pageTitle, pageIcon, actionSlot }: DashboardNavbarProps) {
   return (
     <nav
       className="bg-[#0e1617] border border-[#FFFFFF1A] rounded-[24px] px-6 py-4 mb-6"
@@ -44,10 +45,12 @@ export default function DashboardNavbar({ pageTitle, pageIcon }: DashboardNavbar
 
         {/* Right Side - Actions */}
         <div className="flex items-center gap-3 lg:gap-4">
-          {/* Premium Plan Badge */}
-          <div className="hidden sm:block">
-            <PremiumPlanSVG />
-          </div>
+          {/* Custom action slot */}
+          {actionSlot && (
+            <div className="hidden sm:block">
+              {actionSlot}
+            </div>
+          )}
 
           {/* Notification */}
           <button className="flex-shrink-0 hover:opacity-80 transition-opacity">

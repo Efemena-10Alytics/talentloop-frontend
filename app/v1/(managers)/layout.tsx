@@ -91,7 +91,7 @@ const mainNavLinks: NavLink[] = [
   { name: "My Clients", href: "/v1/manager/clients", icon: <MyClientsIcon /> },
   { name: "Applications", href: "/v1/manager/applications", icon: <ApplicationsIcon /> },
   { name: "Documents", href: "/v1/manager/documents", icon: <DocumentsIcon /> },
-  { name: "Meeting Scheduler", href: "/v1/manager/meeting-scheduler", icon: <MeetingSchedulerIcon /> },
+  // { name: "Meeting Scheduler", href: "/v1/manager/meeting-scheduler", icon: <MeetingSchedulerIcon /> },
 ];
 
 export default function ManagerLayout({
@@ -162,7 +162,7 @@ export default function ManagerLayout({
               )}
               <div className="space-y-1">
                 {mainNavLinks.map((link) => {
-                  const isActive = pathname === link.href;
+                  const isActive = pathname === link.href || (link.href !== "/v1/manager/dashboard" && pathname.startsWith(link.href));
                   return (
                     <Link
                       key={link.href}

@@ -32,7 +32,7 @@ const labelStyle: React.CSSProperties = {
 
 const placeholderColor = "#657997";
 
-export default function ScheduleMeeting() {
+export default function ScheduleMeeting({ clientId }: {clientId?: string}) {
   const [client, setClient] = useState("");
   const [meetingType, setMeetingType] = useState("");
   const [date, setDate] = useState("");

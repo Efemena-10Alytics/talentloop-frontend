@@ -1,10 +1,13 @@
 "use client";
 
+import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import DashboardNavbar from "@/components/v1-dashboard/DashboardNavbar";
 import StatCard from "@/components/v1-dashboard/StatCard";
 import ClientWorkload from "@/components/v1-manager/ClientWorkload";
 import TasksPanel from "@/components/v1-manager/TasksPanel";
 import RecentApplicationsTable from "@/components/v1-manager/RecentApplicationsTable";
+import AllTasksView from "@/components/v1-manager/AllTasksView";
 
 const ManagerDashboardIcon = () => (
   <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -13,52 +16,86 @@ const ManagerDashboardIcon = () => (
   </svg>
 );
 
+const PlusIcon = () => (
+  <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+    <path d="M6 1V11M1 6H11" stroke="#0B0D0F" strokeWidth="1.5" strokeLinecap="round"/>
+  </svg>
+);
+
 export default function ManagerDashboardPage() {
+  const searchParams = useSearchParams();
+  const showAllTasks = searchParams.get("tasks") === "all";
+  const [openNewTask, setOpenNewTask] = useState(false);
+
+  const newTaskButton = (
+    <button
+      onClick={() => setOpenNewTask(true)}
+      className="flex items-center gap-2"
+      style={{
+        background: "#A2CE3A",
+        border: "none",
+        borderRadius: "100px",
+        padding: "10px 18px",
+        color: "#0B0D0F",
+        fontFamily: "var(--font-mona-sans, sans-serif)",
+        fontWeight: 600,
+        fontSize: "13px",
+        cursor: "pointer",
+      }}
+    >
+      <PlusIcon /> New Task
+    </button>
+  );
+
   return (
     <div className="min-h-screen p-4 lg:p-6">
       {/* Navbar */}
       <DashboardNavbar
         pageTitle="Dashboard"
         pageIcon={<ManagerDashboardIcon />}
+        actionSlot={showAllTasks ? newTaskButton : undefined}
       />
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <StatCard
-          title="ACTIVE CLIENTS"
-          value="5"
-          trend={{ value: "+1", isPositive: true }}
-        />
-        <StatCard
-          title="APPLICATIONS"
-          value="3"
-        />
-        <StatCard
-          title="INTERVIEWS SECURED"
-          value="24"
-          trend={{ value: "+12", isPositive: true }}
-        />
-        <StatCard
-          title="TASKS DUE TODAY"
-          value="1"
-        />
+        {showAllTasks ? (
+          <>
+            <StatCard title="TOTAL TASKS"      value="5"  trend={{ value: "+1",  isPositive: true }} />
+            <StatCard title="COMPLETED TASKS"  value="3" />
+            <StatCard title="DUE TASKS"        value="24" trend={{ value: "+12", isPositive: true }} />
+            <StatCard title="COMPLETION RATE"  value="1" />
+          </>
+        ) : (
+          <>
+            <StatCard title="ACTIVE CLIENTS"      value="5"  trend={{ value: "+1",  isPositive: true }} />
+            <StatCard title="APPLICATIONS"        value="3" />
+            <StatCard title="INTERVIEWS SECURED"  value="24" trend={{ value: "+12", isPositive: true }} />
+            <StatCard title="TASKS DUE TODAY"     value="1" />
+          </>
+        )}
       </div>
 
-      {/* Client Workload & Tasks Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        {/* Left: Client Workload (2/3) */}
-        <div className="lg:col-span-2">
-          <ClientWorkload />
-        </div>
+      {showAllTasks ? (
+        <AllTasksView
+          externalNewTask={openNewTask}
+          onExternalNewTaskClose={() => setOpenNewTask(false)}
+        />
+      ) : (
+        <>
+          {/* Client Workload & Tasks Section */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            <div className="lg:col-span-2">
+              <ClientWorkload />
+            </div>
+            <div className="lg:col-span-1">
+              <TasksPanel />
+            </div>
+          </div>
 
-        {/* Right: Tasks Panel (1/3) */}
-        <div className="lg:col-span-1">
-          <TasksPanel />
-        </div>
-      </div>
-
-      {/* Recent Applications Table */}
-      <RecentApplicationsTable />
+          {/* Recent Applications Table */}
+          <RecentApplicationsTable />
+        </>
+      )}
     </div>
   );
 }

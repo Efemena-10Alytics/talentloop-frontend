@@ -61,7 +61,7 @@ const CalendarIcon = () => (
   </svg>
 );
 
-export default function UpcomingMeetings() {
+export default function UpcomingMeetings({ clientId }: {clientId?: string}) {
   return (
     <div
       className="rounded-2xl overflow-hidden"
