@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import DashboardNavbar from "@/components/v1-dashboard/DashboardNavbar";
 import StatCard from "@/components/v1-dashboard/StatCard";
@@ -22,7 +22,7 @@ const PlusIcon = () => (
   </svg>
 );
 
-export default function ManagerDashboardPage() {
+function DashboardContent() {
   const searchParams = useSearchParams();
   const showAllTasks = searchParams.get("tasks") === "all";
   const [openNewTask, setOpenNewTask] = useState(false);
@@ -49,14 +49,12 @@ export default function ManagerDashboardPage() {
 
   return (
     <div className="min-h-screen p-4 lg:p-6">
-      {/* Navbar */}
       <DashboardNavbar
         pageTitle="Dashboard"
         pageIcon={<ManagerDashboardIcon />}
         actionSlot={showAllTasks ? newTaskButton : undefined}
       />
 
-      {/* Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {showAllTasks ? (
           <>
@@ -82,7 +80,6 @@ export default function ManagerDashboardPage() {
         />
       ) : (
         <>
-          {/* Client Workload & Tasks Section */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
             <div className="lg:col-span-2">
               <ClientWorkload />
@@ -91,11 +88,17 @@ export default function ManagerDashboardPage() {
               <TasksPanel />
             </div>
           </div>
-
-          {/* Recent Applications Table */}
           <RecentApplicationsTable />
         </>
       )}
     </div>
+  );
+}
+
+export default function ManagerDashboardPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#01090B]" />}>
+      <DashboardContent />
+    </Suspense>
   );
 }
