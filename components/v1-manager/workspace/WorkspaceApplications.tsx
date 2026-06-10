@@ -207,7 +207,9 @@ export default function WorkspaceApplications() {
   };
 
   return (
-    <div className="p-5">
+    <div 
+    style={{ background: "#1563741A"}}
+    className="p-5">
       {/* Toolbar */}
       <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
         <div className="flex items-center gap-2">
