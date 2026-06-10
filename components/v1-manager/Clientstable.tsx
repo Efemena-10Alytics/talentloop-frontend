@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -334,6 +335,8 @@ function ClientDrawer({
   onClose: () => void;
 }) {
   const pkgStyle = pkgConfig[client.pkg];
+  const pathname = usePathname();
+  const isSuperAdmin = pathname.startsWith("/v1/super-admin");
 
   const DetailRow = ({ label, value }: { label: string; value: string }) => (
     <div
@@ -501,20 +504,22 @@ function ClientDrawer({
         </div>
 
         {/* CTA */}
-        <Link
-        href={`/v1/manager/clients/${":ID"}`}
-          className="w-full mt-6 font-mona-sans font-semibold text-sm transition-opacity hover:opacity-90"
-          style={{
-            background: "#A2CE3A",
-            color: "#0B0D0F",
-            borderRadius: "12px",
-            padding: "15px",
-            border: "none",
-            cursor: "pointer",
-          }}
-        >
-          Open Workspace
-        </Link>
+        {!isSuperAdmin && (
+          <Link
+            href={`/v1/manager/clients/${":ID"}`}
+            className="w-full mt-6 font-mona-sans font-semibold text-sm transition-opacity hover:opacity-90"
+            style={{
+              background: "#A2CE3A",
+              color: "#0B0D0F",
+              borderRadius: "12px",
+              padding: "15px",
+              border: "none",
+              cursor: "pointer",
+            }}
+          >
+            Open Workspace
+          </Link>
+        )}
       </div>
     </>
   );
