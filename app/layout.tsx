@@ -17,6 +17,31 @@ const monaSans = localFont({
       path: '../public/fonts/Mona_Sans/MonaSans-Italic-VariableFont_wdth,wght.ttf',
       style: 'italic',
     },
+    {
+      path: '../public/fonts/Mona_Sans/static/MonaSans_Expanded-Black.ttf',
+      weight: '900',
+      style: 'normal',
+    },
+    {
+      path: '../public/fonts/Mona_Sans/static/MonaSans_Expanded-Bold.ttf',
+      weight: '700',
+      style: 'normal',
+    },
+    {
+      path: '../public/fonts/Mona_Sans/static/MonaSans_Expanded-SemiBold.ttf',
+      weight: '600',
+      style: 'normal',
+    },
+    {
+      path: '../public/fonts/Mona_Sans/static/MonaSans_Expanded-Medium.ttf',
+      weight: '500',
+      style: 'normal',
+    },
+    {
+      path: '../public/fonts/Mona_Sans/static/MonaSans_Expanded-Regular.ttf',
+      weight: '400',
+      style: 'normal',
+    },
   ],
   variable: '--font-mona-sans',
   display: 'swap',
