@@ -2,11 +2,11 @@ import type { Metadata } from "next";
 import localFont from 'next/font/local'
 import { Plus_Jakarta_Sans } from 'next/font/google'
 import { Geist, Geist_Mono } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { SessionProvider } from "@/components/providers/SessionProvider";
 import { QueryProvider } from "@/components/providers/QueryProvider";
-import { GoogleAuthProvider } from "@/components/providers/GoogleOAuthProvider";
 
 const monaSans = localFont({
   src: [
@@ -86,14 +86,13 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} ${monaSans.variable} ${sora.variable} ${jakartaSans.variable} antialiased`}
         suppressHydrationWarning
       >
-        <GoogleAuthProvider>
-          <SessionProvider>
-            <QueryProvider>
-              {children}
-              <Toaster />
-            </QueryProvider>
-          </SessionProvider>
-        </GoogleAuthProvider>
+        <Script src="https://accounts.google.com/gsi/client" strategy="beforeInteractive" />
+        <SessionProvider>
+          <QueryProvider>
+            {children}
+            <Toaster />
+          </QueryProvider>
+        </SessionProvider>
       </body>
     </html>
   );

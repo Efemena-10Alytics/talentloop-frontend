@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { useGoogleLogin } from "@react-oauth/google";
+import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { getApiUrl, getHeaders } from "@/lib/api";
 import { useToast } from "@/components/ui/use-toast";
@@ -217,12 +217,23 @@ export default function V1SignupFormContent({
     }
   };
 
-  const googleLogin = useGoogleLogin({
-    onSuccess: (tokenResponse) => handleSocialSuccess("google", tokenResponse.access_token),
-    onError: () => {
-      toast({ variant: "error", title: "Error", description: "Google sign up failed" });
-    },
-  });
+  const googleLogin = () => {
+    const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+    if (!clientId) {
+      toast({ variant: "error", title: "Not configured", description: "Google sign up is not set up yet" });
+      return;
+    }
+    const client = (window as any).google?.accounts?.oauth2?.initTokenClient({
+      client_id: clientId,
+      scope: "openid email profile",
+      callback: (tokenResponse: any) => {
+        if (tokenResponse?.access_token) {
+          handleSocialSuccess("google", tokenResponse.access_token);
+        }
+      },
+    });
+    client?.requestAccessToken();
+  };
 
   const handleLinkedInSignUp = async () => {
     const clientId = process.env.NEXT_PUBLIC_LINKEDIN_CLIENT_ID ?? "";
