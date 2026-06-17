@@ -6,6 +6,7 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { SessionProvider } from "@/components/providers/SessionProvider";
 import { QueryProvider } from "@/components/providers/QueryProvider";
+import { GoogleAuthProvider } from "@/components/providers/GoogleOAuthProvider";
 
 const monaSans = localFont({
   src: [
@@ -85,12 +86,14 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} ${monaSans.variable} ${sora.variable} ${jakartaSans.variable} antialiased`}
         suppressHydrationWarning
       >
-        <SessionProvider>
-          <QueryProvider>
-            {children}
-            <Toaster />
-          </QueryProvider>
-        </SessionProvider>
+        <GoogleAuthProvider>
+          <SessionProvider>
+            <QueryProvider>
+              {children}
+              <Toaster />
+            </QueryProvider>
+          </SessionProvider>
+        </GoogleAuthProvider>
       </body>
     </html>
   );

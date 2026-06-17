@@ -2,12 +2,14 @@
 
 import { useState } from "react";
 import { signIn } from "next-auth/react";
+import { useGoogleLogin } from "@react-oauth/google";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useToast } from "@/components/ui/use-toast";
 import { getApiUrl, getHeaders, getAuthHeaders } from "@/lib/api";
 import EmailVerification from "@/components/EmailVerification";
 import { RightSideComponent } from "./v1-right-side-component";
+import { socialLogin, openLinkedInOAuth } from "@/lib/social-auth";
 
 /* ─── SVGs ─── */
 
@@ -119,6 +121,7 @@ export default function V1SigninForm({
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [socialLoading, setSocialLoading] = useState<"google" | "linkedin" | null>(null);
   const [verifying, setVerifying] = useState(false);
 
   const handleCredentialSignIn = async () => {
@@ -188,17 +191,43 @@ export default function V1SigninForm({
     }
   };
 
-  const handleOAuthSignIn = async (provider: "google" | "linkedin") => {
+  const handleSocialSuccess = async (provider: "google" | "linkedin", access_token: string) => {
+    setSocialLoading(provider);
     try {
-      await signIn(provider, {
-        callbackUrl: "/dashboard",
+      const result = await socialLogin(provider, access_token);
+      localStorage.setItem("auth_token", result.data.token);
+      toast({
+        variant: "success",
+        title: result.message || "Welcome back!",
+        description: `Signed in as ${result.data.user.name || result.data.user.email}`,
       });
-    } catch (error) {
+      router.push("/dashboard");
+    } catch (err: any) {
       toast({
         variant: "error",
-        title: "Error",
-        description: "Failed to sign in with " + provider,
+        title: "Social sign in failed",
+        description: err.message || `Failed to sign in with ${provider}`,
       });
+    } finally {
+      setSocialLoading(null);
+    }
+  };
+
+  const googleLogin = useGoogleLogin({
+    onSuccess: (tokenResponse) => handleSocialSuccess("google", tokenResponse.access_token),
+    onError: () => {
+      toast({ variant: "error", title: "Error", description: "Google sign in failed" });
+    },
+  });
+
+  const handleLinkedInSignIn = async () => {
+    const clientId = process.env.NEXT_PUBLIC_LINKEDIN_CLIENT_ID ?? "";
+    const redirectUri = `${window.location.origin}/auth/linkedin/callback`;
+    try {
+      const code = await openLinkedInOAuth(clientId, redirectUri);
+      await handleSocialSuccess("linkedin", code);
+    } catch (err: any) {
+      toast({ variant: "error", title: "Error", description: err.message || "LinkedIn sign in failed" });
     }
   };
 
@@ -353,18 +382,20 @@ export default function V1SigninForm({
                   {/* Social Buttons */}
                   <div className="flex flex-col gap-2.5 mb-4">
                     <button
-                      onClick={() => handleOAuthSignIn("google")}
-                      className="flex items-center justify-center gap-2.5 px-4 py-2.5 bg-transparent border border-white/20 rounded-[12px] text-white font-mona-sans text-sm font-medium hover:border-white/40 transition-colors"
+                      onClick={() => googleLogin()}
+                      disabled={socialLoading === "google"}
+                      className="flex items-center justify-center gap-2.5 px-4 py-2.5 bg-transparent border border-white/20 rounded-[12px] text-white font-mona-sans text-sm font-medium hover:border-white/40 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                     >
                       <GoogleSVG />
-                      Sign In with Google
+                      {socialLoading === "google" ? "Connecting..." : "Sign In with Google"}
                     </button>
                     <button
-                      onClick={() => handleOAuthSignIn("linkedin")}
-                      className="flex items-center justify-center gap-2.5 px-4 py-2.5 bg-transparent border border-white/20 rounded-[12px] text-white font-mona-sans text-sm font-medium hover:border-white/40 transition-colors"
+                      onClick={handleLinkedInSignIn}
+                      disabled={socialLoading === "linkedin"}
+                      className="flex items-center justify-center gap-2.5 px-4 py-2.5 bg-transparent border border-white/20 rounded-[12px] text-white font-mona-sans text-sm font-medium hover:border-white/40 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                     >
                       <LinkedInSVG />
-                      Sign In with LinkedIn
+                      {socialLoading === "linkedin" ? "Connecting..." : "Sign In with LinkedIn"}
                     </button>
                   </div>
 
