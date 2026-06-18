@@ -34,8 +34,7 @@ export default function ManagerCapacity() {
         </h2>
         <Link
           href="/v1/super-admin/managers"
-          className="font-mona-sans text-xs hover:text-white transition-colors"
-          style={{ color: "#95ACCB" }}
+          className="font-mona-sans text-xs text-white hover:text-[#95ACCB] transition-colors"
         >
           View all →
         </Link>
@@ -52,7 +51,7 @@ export default function ManagerCapacity() {
             .join("");
 
           return (
-            <div key={i} className="flex items-start gap-3">
+            <div key={i} className="flex items-start gap-3 bg-[#1563741A] rounded-[10px] p-[10px] border border-[#FFFFFF1A]">
               {/* Avatar + badge */}
               <div className="relative flex-shrink-0">
                 <div

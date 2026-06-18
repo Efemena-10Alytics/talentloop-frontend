@@ -138,7 +138,7 @@ export default function SuperAdminLayout({
       <aside
         className={`fixed lg:sticky top-0 left-0 h-screen transition-all duration-300 z-40 flex-shrink-0 ${
           isMobileMenuOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-        } ${isCollapsed ? "w-20" : "w-64"} overflow-hidden`}
+        } ${isCollapsed ? "w-20" : "w-64"}`}
         style={{
           background: "linear-gradient(180deg, #0e1718 0%, #172520 50%, #27472c 100%)",
         }}
@@ -186,27 +186,6 @@ export default function SuperAdminLayout({
               </div>
             </div>
           </nav>
-
-          {/* Help Center */}
-          {!isCollapsed && (
-            <div className="p-4 mb-6">
-              <div
-                className="rounded-2xl p-4"
-                style={{
-                  background: "rgba(162, 206, 58, 0.05)",
-                  border: "0.5px solid rgba(162, 206, 58, 0.3)",
-                }}
-              >
-                <h3 className="text-white font-semibold text-sm mb-2">Help Center</h3>
-                <p className="text-[#F6FAEB] text-xs mb-4 leading-relaxed">
-                  Having trouble in?<br />Please contact us
-                </p>
-                <button className="w-full bg-[#A2CE3A] text-white text-xs font-semibold py-2.5 px-4 rounded-[20px] hover:bg-[#92BE2A] transition-colors">
-                  Contact us Now
-                </button>
-              </div>
-            </div>
-          )}
 
           {/* Collapse Button */}
           <div className="absolute top-20 -right-3">

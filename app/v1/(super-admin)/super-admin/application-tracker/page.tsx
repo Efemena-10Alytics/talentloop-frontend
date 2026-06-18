@@ -104,12 +104,12 @@ export default function ApplicationTrackerPage() {
       {/* Table card */}
       <div className="rounded-2xl p-5" style={{ background: "#1563741A", border: "0.5px solid #FFFFFF1A" }}>
         {/* Section title + toolbar */}
-        <div className="flex items-center justify-between gap-3 mb-5 flex-wrap">
-          <h2 className="text-white font-mona-sans font-semibold text-lg flex-shrink-0">
+        <div className="flex items-center justify-between gap-3 mb-5">
+          <h2 className="text-white font-mona-sans font-semibold text-base 2xl:text-lg flex-shrink-0">
             Interviews Secured
           </h2>
 
-          <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-3">
             {/* Search */}
             <div
               className="flex items-center gap-2 px-3 py-2 rounded-xl min-w-[160px]"
@@ -121,7 +121,7 @@ export default function ApplicationTrackerPage() {
                 placeholder="Search..."
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-                className="bg-transparent outline-none font-mona-sans text-sm w-full"
+                className="bg-transparent outline-none font-mona-sans text-[10px] 2xl:text-sm w-full"
                 style={{ color: "#E8EFF1" }}
               />
             </div>
@@ -134,7 +134,7 @@ export default function ApplicationTrackerPage() {
               <select
                 value={managerFilter}
                 onChange={(e) => { setManagerFilter(e.target.value); setPage(1); }}
-                className="bg-transparent outline-none font-mona-sans text-sm cursor-pointer"
+                className="bg-transparent outline-none font-mona-sans text-[10px] 2xl:text-sm cursor-pointer w-[120px] 2xl:w-full"
                 style={{ color: "#95ACCB" }}
               >
                 <option value="Filter By Manager">Filter By Manager</option>
@@ -144,7 +144,6 @@ export default function ApplicationTrackerPage() {
                 <option value="Mofesolamisi">Mofesolamisi Elusak</option>
                 <option value="Kareemah">Kareemah O. Alli-Ka</option>
               </select>
-              <ChevronDown />
             </div>
 
             {/* Premium Clients */}
@@ -155,7 +154,7 @@ export default function ApplicationTrackerPage() {
               <select
                 value={clientFilter}
                 onChange={(e) => setClientFilter(e.target.value)}
-                className="bg-transparent outline-none font-mona-sans text-sm cursor-pointer"
+                className="bg-transparent outline-none font-mona-sans text-[10px] 2xl:text-sm cursor-pointer w-[120px] 2xl:w-full"
                 style={{ color: "#95ACCB" }}
               >
                 <option>Premium Clients</option>
@@ -164,7 +163,6 @@ export default function ApplicationTrackerPage() {
                 <option>Platinum Clients</option>
                 <option>All Clients</option>
               </select>
-              <ChevronDown />
             </div>
 
             {/* Period */}
@@ -175,19 +173,18 @@ export default function ApplicationTrackerPage() {
               <select
                 value={periodFilter}
                 onChange={(e) => setPeriodFilter(e.target.value)}
-                className="bg-transparent outline-none font-mona-sans text-sm cursor-pointer"
+                className="bg-transparent outline-none font-mona-sans text-[10px] 2xl:text-sm cursor-pointer w-[120px] 2xl:w-full"
                 style={{ color: "#95ACCB" }}
               >
                 <option>Today</option>
                 <option>This Week</option>
                 <option>This Month</option>
               </select>
-              <ChevronDown />
             </div>
 
             {/* Export */}
             <button
-              className="flex items-center gap-2 font-mona-sans font-semibold text-sm px-4 py-2 rounded-xl transition-opacity hover:opacity-90"
+              className="flex items-center gap-2 font-mona-sans font-semibold text-[12px] 2xl:text-sm px-4 py-2 rounded-xl transition-opacity hover:opacity-90"
               style={{ background: "#A2CE3A", color: "#0B0D0F" }}
             >
               Export <ExportIcon />

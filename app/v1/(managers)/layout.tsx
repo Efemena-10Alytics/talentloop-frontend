@@ -127,7 +127,7 @@ export default function ManagerLayout({
       <aside
         className={`fixed lg:sticky top-0 left-0 h-screen transition-all duration-300 z-40 ${
           isMobileMenuOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-        } ${isCollapsed ? "w-64 lg:w-20" : "w-64"} overflow-hidden`}
+        } ${isCollapsed ? "w-64 lg:w-20" : "w-64"}`}
         style={{
           background: "linear-gradient(180deg, #0e1718 0%, #172520 50%, #27472c 100%)",
         }}
@@ -183,41 +183,8 @@ export default function ManagerLayout({
             </div>
           </nav>
 
-          {/* Help Center */}
-          {!isCollapsed && (
-            <div className="p-4 mb-6">
-              <div
-                className="rounded-2xl p-4 relative overflow-hidden"
-                style={{
-                  background: "rgba(162, 206, 58, 0.05)",
-                  border: "0.5px solid transparent",
-                  backgroundImage:
-                    "linear-gradient(rgba(162, 206, 58, 0.05), rgba(162, 206, 58, 0.05)), radial-gradient(100% 100% at 0% 0%, rgba(21, 99, 116, 0.144) 0%, rgba(162, 206, 58, 0.48) 100%)",
-                  backgroundOrigin: "border-box",
-                  backgroundClip: "padding-box, border-box",
-                }}
-              >
-                <h3 className="text-white font-mona-sans font-semibold text-sm mb-2">
-                  Help Center
-                </h3>
-                <p className="text-[#F6FAEB] font-mona-sans text-xs mb-4 leading-relaxed">
-                  Having trouble in?<br />
-                  Please contact us
-                </p>
-                <button
-                  className="w-full bg-[#A2CE3A] text-white font-mona-sans text-xs font-semibold py-2.5 px-4 rounded-[20px] hover:bg-[#92BE2A] transition-colors"
-                  style={{
-                    boxShadow: "0px 0px 16px 0px rgba(29, 57, 196, 0.2)",
-                  }}
-                >
-                  Contact us Now
-                </button>
-              </div>
-            </div>
-          )}
-
           {/* Collapse Button */}
-          <div className="absolute top-20 -right-4 px-4 pb-6">
+          <div className="absolute top-20 -right-4 z-50 px-4 pb-6">
             <button
               onClick={() => setIsCollapsed(!isCollapsed)}
               className={`transition-transform duration-300 ${

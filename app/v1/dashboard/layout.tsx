@@ -110,7 +110,7 @@ export default function V1DashboardLayout({
       <aside
         className={`fixed lg:sticky top-0 left-0 h-screen transition-all duration-300 z-40 ${
           isMobileMenuOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-        } ${isCollapsed ? "w-64 lg:w-20" : "w-64"} overflow-hidden`}
+        } ${isCollapsed ? "w-64 lg:w-20" : "w-64"}`}
         style={{
           background: "linear-gradient(180deg, #0e1718 0%, #172520 50%, #27472c 100%)",
         }}

@@ -365,7 +365,7 @@ export default function V1SigninForm({
 
       <div className="w-full h-full mx-auto px-4 flex items-center justify-center lg:justify-between gap-8">
         {/* Left Side - Sign In Form */}
-           <div className="w-full lg:w-[40%]">
+           <div className="w-full flex justify-center lg:w-[40%]">
         <div className="w-full lg:max-w-[520px] h-full flex items-center py-4">
           <div
             className="rounded-[20px] p-6 lg:p-7 w-full max-h-full flex flex-col lg:scale-[90%] 2xl:scale-[100%]"

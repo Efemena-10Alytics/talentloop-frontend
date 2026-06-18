@@ -1,13 +1,64 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
+import ReactPlayer from "react-player";
 import ClaritySessionModal from "./ClaritySessionModal";
 
 export default function V1HeroSection() {
   const [currentImage, setCurrentImage] = useState(0);
   const [showBookingModal, setShowBookingModal] = useState(false);
+
+  // Video player state
+  const playerRef = useRef<HTMLVideoElement & { api?: any }>(null);
+  const [volume, setVolume] = useState(0.4);
+  // Default to unmuted; we fall back to muted only if the browser blocks autoplay
+  const [muted, setMuted] = useState(false);
+
+  // Force 1080p once the player is ready (best-effort; YouTube may auto-adjust)
+  const handlePlayerReady = () => {
+    const el = playerRef.current;
+    const api = el?.api;
+    if (api?.setPlaybackQuality) {
+      api.setPlaybackQuality("hd1080");
+      api.setPlaybackQualityRange?.("hd1080", "hd1080");
+    }
+
+    const fallbackToMuted = () => {
+      // Mute the element synchronously so the retry isn't blocked again
+      if (el) el.muted = true;
+      setMuted(true);
+      el?.play?.().catch(() => {});
+    };
+
+    // Try to autoplay with sound.
+    const playPromise = el?.play?.();
+    // Case 1: browser rejects the play() promise -> mute and retry.
+    if (playPromise?.catch) {
+      playPromise.catch(fallbackToMuted);
+    }
+    // Case 2: browser silently blocks autoplay without throwing -> if still
+    // paused shortly after, mute and retry so it never sits paused.
+    setTimeout(() => {
+      if (el?.paused) fallbackToMuted();
+    }, 1000);
+  };
+
+  const handleVolumeChange = (value: number) => {
+    setVolume(value);
+    // Adjusting the slider unmutes (or mutes when dragged to zero)
+    setMuted(value === 0);
+  };
+
+  const toggleMute = () => {
+    setMuted((prev) => {
+      const next = !prev;
+      // Unmuting with zero volume restores an audible level
+      if (!next && volume === 0) setVolume(0.4);
+      return next;
+    });
+  };
 
   // Auto-switch between images every 4 seconds
   useEffect(() => {
@@ -108,46 +159,69 @@ export default function V1HeroSection() {
           }}
         >
           {/* Video Section */}
-          <div className="relative w-full rounded-[20px] overflow-hidden aspect-video mb-6">
-            <video
-              autoPlay
+          <div className="group relative w-full rounded-[20px] overflow-hidden aspect-video mb-6 bg-black">
+            <ReactPlayer
+              ref={playerRef}
+              src="https://www.youtube.com/watch?v=8Q3-A2CZx-c"
+              playing
               loop
-              muted
+              volume={volume}
+              muted={muted}
               playsInline
-              className="absolute inset-0 w-full h-full object-cover brightness-90"
-            >
-              <source
-                src="/homepage/grok-video-8de77170-1bca-4f74-982c-40dafb6e0473.mp4"
-                type="video/mp4"
+              controls={false}
+              width="100%"
+              height="100%"
+              onReady={handlePlayerReady}
+              config={{
+                youtube: {
+                  rel: 0,
+                  fs: 0,
+                  disablekb: 1,
+                  iv_load_policy: 3,
+                },
+              }}
+              style={{ position: "absolute", inset: 0 }}
+            />
+
+            {/* Click blocker - prevents pause/seek interactions on the iframe */}
+            <div className="absolute inset-0 z-10" />
+
+            {/* Custom Volume Control */}
+            <div className="absolute bottom-4 right-4 z-20 flex items-center gap-2 rounded-full bg-black/50 backdrop-blur-md px-3 py-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+              <button
+                type="button"
+                onClick={toggleMute}
+                aria-label={muted ? "Unmute" : "Mute"}
+                className="text-white hover:text-[#A2CE3A] transition-colors"
+              >
+                {muted || volume === 0 ? (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                    <path d="M11 5L6 9H2v6h4l5 4V5z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d="M22 9l-6 6M16 9l6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                ) : volume < 0.5 ? (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                    <path d="M11 5L6 9H2v6h4l5 4V5z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d="M15.5 8.5a5 5 0 010 7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                ) : (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                    <path d="M11 5L6 9H2v6h4l5 4V5z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d="M15.5 8.5a5 5 0 010 7M18.5 6a9 9 0 010 12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                )}
+              </button>
+              <input
+                type="range"
+                min={0}
+                max={1}
+                step={0.01}
+                value={volume}
+                onChange={(e) => handleVolumeChange(parseFloat(e.target.value))}
+                aria-label="Volume"
+                className="v1-volume-slider w-24 h-1 cursor-pointer"
+                style={{ accentColor: "#A2CE3A" }}
               />
-              Your browser does not support the video tag.
-            </video>
-
-            {/* Video Overlay Elements */}
-            <div className="absolute inset-0 z-10">
-              {/* Small Video Thumbnail - Bottom Left */}
-              <div className="absolute bottom-4 left-4 w-32 h-24 rounded-xl overflow-hidden border-2 border-white/20">
-                <video
-                  autoPlay
-                  loop
-                  muted
-                  playsInline
-                  className="w-full h-full object-cover"
-                >
-                  <source
-                    src="/homepage/grok-video-706a8285-b08a-41cb-88c7-f5fe6371771c.mp4"
-                    type="video/mp4"
-                  />
-                </video>
-              </div>
-
-              <div className="absolute bottom-4 flex justify-center w-full">
-                <img
-                  src="/Frame 1321318298.png"
-                  alt=""
-                  className="object-contain h-20"
-                />
-              </div>
             </div>
           </div>
 
