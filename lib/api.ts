@@ -50,6 +50,29 @@ export const getAuthHeaders = async (): Promise<HeadersInit> => {
 };
 
 /**
+ * Read the backend auth token synchronously from localStorage (client only).
+ * Use this inside React Query queryFns to avoid triggering NextAuth session
+ * broadcasts that can cause refetch loops.
+ */
+export const getStoredAuthToken = (): string | null => {
+  if (typeof window !== "undefined") {
+    return localStorage.getItem("auth_token");
+  }
+  return null;
+};
+
+/**
+ * Build authenticated headers from a known token (synchronous, no session fetch).
+ */
+export const buildAuthHeaders = (token?: string | null): HeadersInit => {
+  return {
+    "Content-Type": "application/json",
+    "Accept": "application/json",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+};
+
+/**
  * Get authentication token from NextAuth session
  */
 export const getAuthToken = async (): Promise<string | null> => {

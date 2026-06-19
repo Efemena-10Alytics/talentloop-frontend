@@ -14,8 +14,10 @@ import EducationalInfoSection, { EducationFormData } from "@/components/v1-launc
 import JobApplicationInfoSection, { JobApplicationFormData } from "@/components/v1-launch/pricing-components/JobApplicationInfoSection";
 import CredentialsUploadSection, { CredentialsFormData } from "@/components/v1-launch/pricing-components/CredentialsUploadSection";
 import DisclaimerSection, { DisclaimerFormData } from "@/components/v1-launch/pricing-components/DisclaimerSection";
-import { getApiUrl, getAuthHeaders } from "@/lib/api";
+import { getApiUrl, getAuthHeaders, getHeaders } from "@/lib/api";
 import { useToast } from "@/components/ui/use-toast";
+import { useQuery } from "@tanstack/react-query";
+import { useProfile } from "@/hooks/useUserData";
 
 const CompleteYourPaymentContent = () => {
   const searchParams = useSearchParams();
@@ -26,10 +28,7 @@ const CompleteYourPaymentContent = () => {
   const [paymentOption, setPaymentOption] = useState<PaymentOption | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showPersonalInfoModal, setShowPersonalInfoModal] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [pricingPlan, setPricingPlan] = useState<any>(null);
-  const [profileData, setProfileData] = useState<any>(null); // Store full profile data
-  const [hasProfileData, setHasProfileData] = useState(true); // Track if user has profile data
+  const [submitting, setSubmitting] = useState(false);
   const [personalData, setPersonalData] = useState<PersonalData>({
     firstName: "",
     lastName: "",
@@ -52,89 +51,49 @@ const CompleteYourPaymentContent = () => {
   const installmentsParam = searchParams.get('installments');
   const planInstallments = installmentsParam ? JSON.parse(installmentsParam) : null;
 
-  // Fetch profile data
-  const fetchProfileData = async () => {
-    try {
-      const headers = await getAuthHeaders();
-      const profileResponse = await fetch(`${getApiUrl()}/api/v1/profile`, {
-        method: "GET",
-        headers,
-      });
+  // Profile data via TanStack Query (shared/cached, no session-driven refetch loop)
+  const {
+    data: profile,
+    isLoading: profileLoading,
+    refetch: refetchProfile,
+  } = useProfile();
 
-      if (profileResponse.ok) {
-        const profileDataResponse = await profileResponse.json();
-        const profile = profileDataResponse.data;
-        
-        // Check if user has complete profile data
-        const hasCompleteProfile = profile.first_name && profile.last_name && profile.country;
-        setHasProfileData(hasCompleteProfile);
-        
-        // Store full profile data
-        setProfileData(profile);
-        
-        // Populate personal data from profile
-        setPersonalData({
-          firstName: profile.first_name || "",
-          middleName: profile.middle_name || "",
-          lastName: profile.last_name || "",
-          email: session?.user?.email || "",
-          phone: profile.phone || "",
-          location: profile.country || "",
-          city: profile.city || "",
-        });
-      } else {
-        console.error("Failed to fetch profile:", profileResponse.status);
-        // If profile fetch fails, assume new user needs to fill personal info
-        setHasProfileData(false);
-      }
-    } catch (error: any) {
-      console.error("Error fetching profile data:", error);
-      toast({
-        variant: "error",
-        title: "Error",
-        description: "Failed to load profile data",
+  // Pricing plan via TanStack Query (unauthenticated endpoint)
+  const { data: pricingPlan, isLoading: pricingLoading } = useQuery({
+    queryKey: ["pricing", pId],
+    queryFn: async () => {
+      const res = await fetch(`${getApiUrl()}/api/v1/pricing/${pId}`, {
+        method: "GET",
+        headers: getHeaders(),
+      });
+      if (!res.ok) throw new Error("Failed to fetch pricing plan");
+      const json = await res.json();
+      return json.data;
+    },
+    enabled: !!pId,
+  });
+
+  const initialLoading = profileLoading || (!!pId && pricingLoading);
+  const hasProfileData = !!(
+    profile?.first_name &&
+    profile?.last_name &&
+    profile?.country
+  );
+
+  // Keep editable personal data in sync with the fetched profile
+  useEffect(() => {
+    if (profile) {
+      setPersonalData({
+        firstName: profile.first_name || "",
+        middleName: profile.middle_name || "",
+        lastName: profile.last_name || "",
+        email: session?.user?.email || "",
+        phone: profile.phone || "",
+        location: profile.country || "",
+        city: profile.city || "",
       });
     }
-  };
-
-  // Fetch profile data and pricing plan on mount
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        
-        // Fetch profile data
-        await fetchProfileData();
-
-        // Fetch pricing plan if pId is provided
-        if (pId) {
-          const pricingResponse = await fetch(`${getApiUrl()}/api/v1/pricing/${pId}`, {
-            method: "GET",
-            headers: {
-              "Accept": "application/json",
-              "Content-Type": "application/json",
-            },
-          });
-
-          if (pricingResponse.ok) {
-            const pricingData = await pricingResponse.json();
-            setPricingPlan(pricingData.data);
-          }
-        }
-      } catch (error: any) {
-        console.error("Error fetching data:", error);
-        toast({
-          variant: "error",
-          title: "Error",
-          description: "Failed to load data",
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [pId, session]);
+  }, [profile, session]);
 
   // Handle step navigation from URL (after payment success)
   useEffect(() => {
@@ -169,18 +128,22 @@ const CompleteYourPaymentContent = () => {
 
   // Auto-show PersonalInfoModal when authenticated user has no profile data
   useEffect(() => {
-    if (!loading && session && !hasProfileData && currentStep === 1) {
+    if (!initialLoading && session && !hasProfileData && currentStep === 1) {
       setShowPersonalInfoModal(true);
     }
-  }, [loading, session, hasProfileData, currentStep]);
+  }, [initialLoading, session, hasProfileData, currentStep]);
 
   const handlePaymentSelect = async (selectedPayment: PaymentOption) => {
     setPaymentOption(selectedPayment);
     // Refetch profile data before moving to step 2 to ensure we have the latest data
-    await fetchProfileData();
-    
-    // Check if user has profile data, if not show PersonalInfoModal
-    if (!hasProfileData) {
+    const { data: latestProfile } = await refetchProfile();
+    const complete = !!(
+      latestProfile?.first_name &&
+      latestProfile?.last_name &&
+      latestProfile?.country
+    );
+
+    if (!complete) {
       setShowPersonalInfoModal(true);
     } else {
       setCurrentStep(2);
@@ -190,8 +153,7 @@ const CompleteYourPaymentContent = () => {
   const handlePersonalInfoComplete = async () => {
     setShowPersonalInfoModal(false);
     // Refetch profile data after personal info is saved
-    await fetchProfileData();
-    setHasProfileData(true);
+    await refetchProfile();
     // If user had already selected a payment option, proceed to step 2
     if (paymentOption) {
       setCurrentStep(2);
@@ -217,7 +179,7 @@ const CompleteYourPaymentContent = () => {
     }
 
     try {
-      setLoading(true);
+      setSubmitting(true);
 
       // Build success and cancel URLs based on environment
       const isDevelopment = process.env.NEXT_PUBLIC_ENVIRONMENT === 'DEVELOPMENT';
@@ -256,7 +218,7 @@ const CompleteYourPaymentContent = () => {
           title: "Payment Error",
           description: data.message || "Failed to create payment plan",
         });
-        setLoading(false);
+        setSubmitting(false);
         return;
       }
 
@@ -269,7 +231,7 @@ const CompleteYourPaymentContent = () => {
           title: "Error",
           description: "No checkout URL received",
         });
-        setLoading(false);
+        setSubmitting(false);
       }
     } catch (error: any) {
       console.error("Payment plan creation error:", error);
@@ -278,7 +240,7 @@ const CompleteYourPaymentContent = () => {
         title: "Error",
         description: "Failed to initiate payment",
       });
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
@@ -326,7 +288,7 @@ const CompleteYourPaymentContent = () => {
   // Render step content
   const renderStepContent = () => {
     // Show loading state while fetching data
-    if (currentStep === 1 && loading) {
+    if (currentStep === 1 && initialLoading) {
       return (
         <div className="bg-[#01090B] min-h-screen py-14 lg:py-20 flex items-center justify-center">
           <div className="text-white font-mona-sans text-lg">Loading...</div>
@@ -393,7 +355,7 @@ const CompleteYourPaymentContent = () => {
             <CareerInfoSection
               onBack={handleCareerInfoBack}
               onProceed={handleCareerInfoProceed}
-              initialData={profileData}
+              initialData={profile}
             />
             <V1FooterSection />
           </div>
@@ -409,7 +371,7 @@ const CompleteYourPaymentContent = () => {
             <EducationalInfoSection
               onBack={handleEducationInfoBack}
               onProceed={handleEducationInfoProceed}
-              initialData={profileData}
+              initialData={profile}
             />
             <V1FooterSection />
           </div>
@@ -425,7 +387,7 @@ const CompleteYourPaymentContent = () => {
             <JobApplicationInfoSection
               onBack={handleJobApplicationInfoBack}
               onProceed={handleJobApplicationInfoProceed}
-              initialData={profileData}
+              initialData={profile}
             />
             <V1FooterSection />
           </div>
@@ -441,7 +403,7 @@ const CompleteYourPaymentContent = () => {
             <CredentialsUploadSection
               onBack={handleCredentialsUploadBack}
               onProceed={handleCredentialsUploadProceed}
-              initialData={profileData}
+              initialData={profile}
             />
             <V1FooterSection />
           </div>

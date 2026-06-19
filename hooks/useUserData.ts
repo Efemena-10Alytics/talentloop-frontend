@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import { useSession } from "next-auth/react";
-import { getApiUrl, getAuthHeaders } from "@/lib/api";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { getApiUrl, buildAuthHeaders, getStoredAuthToken } from "@/lib/api";
 
 interface UserData {
   id: number;
@@ -19,6 +20,7 @@ interface ProfileData {
   country?: string;
   phone?: string;
   referral_source?: string;
+  [key: string]: any;
 }
 
 interface ProfileSummary {
@@ -42,85 +44,103 @@ interface UserDataResponse {
   profile?: ProfileData;
 }
 
-export function useUserData() {
+/**
+ * Resolve the backend auth token, preferring the NextAuth session token and
+ * falling back to localStorage. Returns a stable primitive so it can be used
+ * safely as part of a React Query key.
+ */
+function useAuthToken(): string | null {
   const { data: session } = useSession();
-  const [userData, setUserData] = useState<UserDataResponse | null>(null);
-  const [loading, setLoading] = useState(false);
+  return session?.backendToken ?? getStoredAuthToken();
+}
 
-  const fetchUserData = useCallback(async () => {
-    if (!session) {
-      setUserData(null);
-      return;
-    }
+async function fetchAuthMe(token: string): Promise<Omit<UserDataResponse, "profile">> {
+  const res = await fetch(`${getApiUrl()}/api/v1/auth/me`, {
+    method: "GET",
+    headers: buildAuthHeaders(token),
+  });
+  if (!res.ok) throw new Error("Failed to fetch user data");
+  const json = await res.json();
+  return json.data;
+}
 
-    setLoading(true);
+async function fetchProfile(token: string): Promise<ProfileData | null> {
+  const res = await fetch(`${getApiUrl()}/api/v1/profile`, {
+    method: "GET",
+    headers: buildAuthHeaders(token),
+  });
+  if (!res.ok) return null;
+  const json = await res.json();
+  return json.data ?? null;
+}
 
-    try {
-      const headers = await getAuthHeaders();
-      
-      // Fetch user data
-      const userResponse = await fetch(`${getApiUrl()}/api/v1/auth/me`, {
-        method: "GET",
-        headers,
-      });
+/**
+ * Current authenticated user (GET /api/v1/auth/me) via React Query.
+ */
+export function useAuthMe() {
+  const token = useAuthToken();
+  return useQuery({
+    queryKey: ["auth-me", token],
+    queryFn: () => fetchAuthMe(token as string),
+    enabled: !!token,
+  });
+}
 
-      if (!userResponse.ok) {
-        throw new Error("Failed to fetch user data");
-      }
+/**
+ * Authenticated user's profile (GET /api/v1/profile) via React Query.
+ */
+export function useProfile() {
+  const token = useAuthToken();
+  return useQuery<ProfileData | null>({
+    queryKey: ["profile", token],
+    queryFn: () => fetchProfile(token as string),
+    enabled: !!token,
+  });
+}
 
-      const userResult = await userResponse.json();
-      
-      // Fetch profile data
-      let profileData = null;
-      try {
-        const profileResponse = await fetch(`${getApiUrl()}/api/v1/profile`, {
-          method: "GET",
-          headers,
-        });
-        
-        if (profileResponse.ok) {
-          const profileResult = await profileResponse.json();
-          profileData = profileResult.data;
-        }
-      } catch (profileError) {
-        console.log("Profile data not available yet");
-      }
-      
-      // Combine user and profile data
-      setUserData({
-        ...userResult.data,
-        profile: profileData,
-      });
+/**
+ * Combined user + profile data. Backed by the shared `auth-me` and `profile`
+ * queries so every consumer (e.g. multiple Navbars) dedupes to a single request.
+ */
+export function useUserData() {
+  const queryClient = useQueryClient();
+  const authMe = useAuthMe();
+  const profile = useProfile();
 
-      // Clear onboarding progress from localStorage if already submitted
-      if (userResult.data?.onboarding_status === "submitted") {
-        const storageKey = userResult.data?.user?.role === "coach" 
-          ? "coach_onboarding_progress" 
-          : "jobseeker_onboarding_progress";
-        localStorage.removeItem(storageKey);
-      }
-    } catch (error) {
-      console.error("Error fetching user data:", error);
-      setUserData(null);
-    } finally {
-      setLoading(false);
-    }
-  }, [session]);
-
+  // Clear onboarding progress from localStorage if already submitted
   useEffect(() => {
-    fetchUserData();
-  }, [fetchUserData]);
+    const data = authMe.data;
+    if (data?.onboarding_status === "submitted") {
+      const storageKey =
+        data?.user?.role === "coach"
+          ? "coach_onboarding_progress"
+          : "jobseeker_onboarding_progress";
+      localStorage.removeItem(storageKey);
+    }
+  }, [authMe.data]);
 
-  // Listen for profile-updated events to refetch data
+  // Refetch on profile-updated events fired elsewhere in the app
   useEffect(() => {
     const handleProfileUpdated = () => {
-      fetchUserData();
+      queryClient.invalidateQueries({ queryKey: ["auth-me"] });
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
     };
-    window.addEventListener('profile-updated', handleProfileUpdated);
-    return () => {
-      window.removeEventListener('profile-updated', handleProfileUpdated);
-    };
-  }, [fetchUserData]);
+    window.addEventListener("profile-updated", handleProfileUpdated);
+    return () => window.removeEventListener("profile-updated", handleProfileUpdated);
+  }, [queryClient]);
 
-  return { userData, loading, refetch: fetchUserData };
+  const userData: UserDataResponse | null = authMe.data
+    ? { ...authMe.data, profile: profile.data ?? undefined }
+    : null;
+
+  const refetch = useCallback(() => {
+    authMe.refetch();
+    profile.refetch();
+  }, [authMe, profile]);
+
+  return {
+    userData,
+    loading: authMe.isLoading || profile.isLoading,
+    refetch,
+  };
 }
