@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useSession } from "next-auth/react";
 import SignupModal from "@/components/auth/SignupModal";
+import SigninModal from "@/components/auth/SigninModal";
 
 interface PaymentSelectionProps {
   planId: string | number;
@@ -46,6 +47,7 @@ export default function PaymentSelection({
   const { data: session, status } = useSession();
   const [selectedPayment, setSelectedPayment] = useState<"full" | "installments">("full");
   const [showSignupModal, setShowSignupModal] = useState(false);
+  const [showSigninModal, setShowSigninModal] = useState(false);
   const [pendingPaymentAfterSignup, setPendingPaymentAfterSignup] = useState(false);
 
   // Use API data if provided, otherwise fallback to hardcoded plans
@@ -93,9 +95,20 @@ export default function PaymentSelection({
   };
 
   const handleSignupSuccess = () => {
-    // Close signup modal and mark that we need to proceed with payment after session updates
+    // Close auth modals and mark that we need to proceed with payment after session updates
     setShowSignupModal(false);
+    setShowSigninModal(false);
     setPendingPaymentAfterSignup(true);
+  };
+
+  const handleSwitchToSignin = () => {
+    setShowSignupModal(false);
+    setShowSigninModal(true);
+  };
+
+  const handleSwitchToSignup = () => {
+    setShowSigninModal(false);
+    setShowSignupModal(true);
   };
 
   // After signup, once session is authenticated, auto-proceed with the payment option
@@ -348,6 +361,15 @@ export default function PaymentSelection({
         isOpen={showSignupModal}
         onClose={() => setShowSignupModal(false)}
         onSuccess={handleSignupSuccess}
+        onSwitchToSignin={handleSwitchToSignin}
+      />
+
+      {/* Signin Modal for Existing Users */}
+      <SigninModal
+        isOpen={showSigninModal}
+        onClose={() => setShowSigninModal(false)}
+        onSuccess={handleSignupSuccess}
+        onSwitchToSignup={handleSwitchToSignup}
       />
     </div>
   );

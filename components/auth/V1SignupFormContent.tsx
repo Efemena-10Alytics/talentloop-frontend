@@ -172,11 +172,13 @@ const passwordChecks: PasswordCheck[] = [
 interface V1SignupFormContentProps {
   isModal?: boolean;
   onSuccess?: () => void;
+  onSwitchToSignin?: () => void;
 }
 
 export default function V1SignupFormContent({ 
   isModal = false,
-  onSuccess
+  onSuccess,
+  onSwitchToSignin
 }: V1SignupFormContentProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -623,12 +625,22 @@ export default function V1SignupFormContent({
             {/* Sign In Link */}
             <p className="text-white/50 font-mona-sans text-xs mb-3">
               Already have an account?{" "}
-              <Link
-                href="/signin?v1=true"
-                className="text-[#A2CE3A] font-semibold hover:underline"
-              >
-                Sign in to your account
-              </Link>
+              {isModal && onSwitchToSignin ? (
+                <button
+                  type="button"
+                  onClick={onSwitchToSignin}
+                  className="text-[#A2CE3A] font-semibold hover:underline"
+                >
+                  Sign in to your account
+                </button>
+              ) : (
+                <Link
+                  href="/signin?v1=true"
+                  className="text-[#A2CE3A] font-semibold hover:underline"
+                >
+                  Sign in to your account
+                </Link>
+              )}
             </p>
 
             {/* Get Started Button */}

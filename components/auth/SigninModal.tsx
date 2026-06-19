@@ -1,16 +1,21 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import V1SignupFormContent from "./V1SignupFormContent";
+import V1SigninFormContent from "./V1SigninFormContent";
 
-interface SignupModalProps {
+interface SigninModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  onSwitchToSignin?: () => void;
+  onSwitchToSignup?: () => void;
 }
 
-export default function SignupModal({ isOpen, onClose, onSuccess, onSwitchToSignin }: SignupModalProps) {
+export default function SigninModal({
+  isOpen,
+  onClose,
+  onSuccess,
+  onSwitchToSignup,
+}: SigninModalProps) {
   return (
     <AnimatePresence>
       {isOpen && (
@@ -54,12 +59,12 @@ export default function SignupModal({ isOpen, onClose, onSuccess, onSwitchToSign
               </svg>
             </button>
 
-            {/* Signup Form */}
+            {/* Signin Form */}
             <div className="overflow-y-auto max-h-[90vh] scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
-              <V1SignupFormContent 
-                isModal={true} 
+              <V1SigninFormContent
+                isModal={true}
                 onSuccess={onSuccess}
-                onSwitchToSignin={onSwitchToSignin}
+                onSwitchToSignup={onSwitchToSignup}
               />
             </div>
           </motion.div>
