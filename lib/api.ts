@@ -1,6 +1,7 @@
 // API Configuration and Utilities
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://talentloop-api-production.up.railway.app";
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL || "https://api.talentloop.app";
 
 /**
  * Get the base API URL
@@ -13,7 +14,7 @@ export const getApiUrl = () => API_BASE_URL;
 export const getHeaders = (): HeadersInit => {
   return {
     "Content-Type": "application/json",
-    "Accept": "application/json",
+    Accept: "application/json",
   };
 };
 
@@ -27,18 +28,18 @@ export const getAuthHeaders = async (): Promise<HeadersInit> => {
     const { getSession } = await import("next-auth/react");
     const session = await getSession();
     const token = session?.backendToken;
-    
+
     return {
       "Content-Type": "application/json",
-      "Accept": "application/json",
+      Accept: "application/json",
       ...(token && { Authorization: `Bearer ${token}` }),
     };
   }
-  
+
   // For server-side, return basic headers
   return {
     "Content-Type": "application/json",
-    "Accept": "application/json",
+    Accept: "application/json",
   };
 };
 
@@ -68,7 +69,7 @@ export const isAuthenticated = async (): Promise<boolean> => {
 export const apiRequest = async <T = any>(
   endpoint: string,
   options: RequestInit = {},
-  requireAuth: boolean = false
+  requireAuth: boolean = false,
 ): Promise<T> => {
   const url = `${API_BASE_URL}${endpoint}`;
   const headers = requireAuth ? await getAuthHeaders() : getHeaders();
@@ -84,7 +85,9 @@ export const apiRequest = async <T = any>(
   const data = await response.json();
 
   if (!response.ok) {
-    throw new Error(data.message || `Request failed with status ${response.status}`);
+    throw new Error(
+      data.message || `Request failed with status ${response.status}`,
+    );
   }
 
   return data;
