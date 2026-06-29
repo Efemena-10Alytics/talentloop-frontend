@@ -1,8 +1,7 @@
 // API Configuration and Utilities
 
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL ||
-  "https://talentloop-backend-iu3e.onrender.com";
+  process.env.NEXT_PUBLIC_API_URL || "https://api.talentloop.app";
 
 /**
  * Get the base API URL
