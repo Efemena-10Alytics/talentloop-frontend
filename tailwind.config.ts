@@ -22,6 +22,7 @@ const config: Config = {
       fontFamily: {
         "mona-sans": ["var(--font-mona-sans)", "sans-serif"],
         sora: ["var(--font-sora)", "sans-serif"],
+        "jakarta-sans": ["var(--font-jakarta-sans)", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",

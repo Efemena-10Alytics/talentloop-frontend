@@ -2,6 +2,34 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Mona Sans Font */
+@font-face {
+  font-family: 'Mona Sans';
+  src: url('/fonts/Mona_Sans/MonaSans-VariableFont_wdth,wght.ttf') format('truetype');
+  font-weight: 200 900;
+  font-stretch: 75% 125%;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Mona Sans';
+  src: url('/fonts/Mona_Sans/MonaSans-Italic-VariableFont_wdth,wght.ttf') format('truetype');
+  font-weight: 200 900;
+  font-stretch: 75% 125%;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* Sora Font */
+@font-face {
+  font-family: 'Sora';
+  src: url('/fonts/Sora-VariableFont_wght.ttf') format('truetype');
+  font-weight: 100 800;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   --background: 0 0% 100%;
   --foreground: 240 10% 3.9%;
@@ -93,4 +121,121 @@ body {
 }
 .phone-input-custom .PhoneInputCountrySelectArrow {
   opacity: 0.5;
+}
+
+/* V1 Dashboard Phone Input Styles */
+.phone-input-wrapper .PhoneInput {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 56px;
+  border-radius: 40px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: transparent;
+  padding: 0 16px;
+}
+
+.phone-input-wrapper .PhoneInputInput {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #FFFFFF;
+  font-size: 0.875rem;
+  flex: 1;
+  padding-left: 8px;
+}
+
+.phone-input-wrapper .PhoneInputInput::placeholder {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.phone-input-wrapper .PhoneInputCountry {
+  margin-right: 8px;
+}
+
+.phone-input-wrapper .PhoneInputCountrySelect {
+  background: transparent;
+  border: none;
+  color: #FFFFFF;
+  cursor: pointer;
+}
+
+.phone-input-wrapper .PhoneInputCountryIcon {
+  width: 24px;
+  height: 18px;
+  border-radius: 2px;
+}
+
+.phone-input-wrapper .PhoneInputCountrySelectArrow {
+  opacity: 0.6;
+  border-color: #FFFFFF transparent transparent;
+}
+
+.phone-input-wrapper .PhoneInput:focus-within {
+  border-color: #A2CE3A;
+}
+
+/* Booking Form Phone Input Styles */
+.phone-input-custom .PhoneInput {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 56px;
+  border-radius: 40px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: transparent;
+  padding: 0 16px;
+}
+
+.phone-input-custom .PhoneInputInput {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #FFFFFF;
+  font-size: 0.875rem;
+  font-family: var(--font-sora);
+  flex: 1;
+  padding-left: 8px;
+}
+
+.phone-input-custom .PhoneInputInput::placeholder {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.phone-input-custom .PhoneInputCountry {
+  margin-right: 8px;
+}
+
+.phone-input-custom .PhoneInputCountrySelect {
+  background: transparent;
+  border: none;
+  color: #FFFFFF;
+  cursor: pointer;
+}
+
+.phone-input-custom .PhoneInputCountryIcon {
+  width: 24px;
+  height: 18px;
+  border-radius: 2px;
+}
+
+.phone-input-custom .PhoneInputCountrySelectArrow {
+  opacity: 0.6;
+  border-color: #FFFFFF transparent transparent;
+}
+
+.phone-input-custom .PhoneInput:focus-within {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Phone Input Country Dropdown Styles */
+.phone-input-custom .PhoneInputCountrySelect option {
+  background: #0F1416;
+  color: #FFFFFF;
+  padding: 8px;
+}
+
+.phone-input-custom .PhoneInputCountrySelect {
+  background: transparent;
+  color: #FFFFFF;
 }

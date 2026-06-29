@@ -1,30 +1,50 @@
-import AIChatInputSection from "@/components/ai-chat-input-section";
-import Footer from "@/components/footer";
-import HeroSection from "@/components/home/hero-section";
-import InterviewPrepSection from "@/components/home/interview-prep-section";
-import JobSearchCTASection from "@/components/home/job-search-section";
-import PerfectInterviewSection from "@/components/home/perfect-interview-section";
-import WhoTalentLoopIsFor from "@/components/home/testimonials-section";
-import WhyTalentLoopDifferent from "@/components/home/Why-talentloop-different";
+"use client";
+
+import { useRouter } from "next/navigation";
 import { Navbar } from "@/components/navbar";
-import ReportingTransparencySection from "@/components/transparency-section";
+import V1CareerSection from "@/components/v1-launch/v1-career-section";
+import V1CTASection from "@/components/v1-launch/v1-cta-section";
+import V1ExpertsSection from "@/components/v1-launch/v1-experts-section";
+import V1HeroSection from "@/components/v1-launch/v1-hero-section";
+import V1PricingSection from "@/components/v1-launch/v1-pricing-section";
+import V1TestimonialsSection from "@/components/v1-launch/v1-testimonials-section";
+import V1WhoIsForSection from "@/components/v1-launch/v1-who-is-for-section";
+import V1WhyDifferentSection from "@/components/v1-launch/v1-why-different-section";
+import V1FooterSection from "@/components/v1-launch/v1-footer-section";
+import V1VideoTestimonialSection from "@/components/v1-launch/v1-video-testimonials-section";
+import V1Faqs from "@/components/v1-launch/v1-faqs";
 
 export default function Home() {
+  const router = useRouter();
+
+  const handleStartNow = (planId: string) => {
+    // Redirect to clarity session page with planId
+    router.push(`/v1/clarity-session?p-id=${planId}`);
+  };
+
   return (
-    <div className="bg-[#0B0D0F]">
+    <div className="bg-[#01090B] min-h-screen">
       <div className="p-3">
-      <Navbar />
-      <HeroSection />
-      <PerfectInterviewSection />
-      <AIChatInputSection />
-      <InterviewPrepSection />
-      <WhoTalentLoopIsFor />
-      <WhyTalentLoopDifferent />
-      <div className="bg-black">
-      <ReportingTransparencySection />
-      <JobSearchCTASection />
-      <Footer />
-      </div>
+        <Navbar v1Launch />
+        <V1HeroSection />
+        <div id="how-it-works">
+          <V1CareerSection />
+        </div>
+        <div id="experts">
+          <V1ExpertsSection />
+        </div>
+        <V1VideoTestimonialSection />
+        <V1TestimonialsSection />
+        <div id="pricing">
+          <V1PricingSection onStartNow={handleStartNow} />
+        </div>
+        <V1WhoIsForSection />
+        <V1WhyDifferentSection />
+        <div id="faqs">
+          <V1Faqs />
+        </div>
+        <V1CTASection />
+        <V1FooterSection />
       </div>
     </div>
   );

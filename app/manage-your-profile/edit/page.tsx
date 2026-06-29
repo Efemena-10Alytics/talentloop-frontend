@@ -1,13 +1,22 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import PhoneInput from "react-phone-number-input";
 import "react-phone-number-input/style.css";
 import { Navbar1 } from "@/components/manage-your-profile/Navbar1";
 import { GlassCard } from "@/components/manage-your-profile/GlassCard";
 import { Select } from "@/components/ui/Select";
 import { MultiSelect } from "@/components/ui/MultiSelect";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { getApiUrl, getAuthHeaders } from "@/lib/api";
+import { useToast } from "@/components/ui/use-toast";
 
 /* ─── SVG Icons ─── */
 
@@ -32,6 +41,12 @@ const ChevronDownSmallSVG = () => (
   </svg>
 );
 
+const BackArrowSVG = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M19 12H5M5 12L12 19M5 12L12 5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+
 /* ─── Reusable Input ─── */
 function FormInput({ label, placeholder, value, onChange, type = "text" }: {
   label: string; placeholder: string; value: string; onChange: (v: string) => void; type?: string;
@@ -50,25 +65,71 @@ function FormInput({ label, placeholder, value, onChange, type = "text" }: {
   );
 }
 
-/* ─── Reusable Select ─── */
+/* ─── Reusable Select with Shadcn Dropdown ─── */
 function FormSelect({ label, placeholder, value, onChange, options }: {
-  label: string; placeholder: string; value: string; onChange: (v: string) => void; options: string[];
+  label: string; placeholder: string; value: string; onChange: (v: string) => void; options: { value: string; label: string }[];
 }) {
+  const displayValue = options.find(o => o.value === value)?.label || placeholder;
+  
   return (
     <div className="flex flex-col gap-1.5">
       <label className="text-white font-mona-sans text-sm font-semibold">{label}</label>
-      <div className="relative">
-        <select
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="w-full px-4 py-3 rounded-[10px] border border-white/10 bg-[#FFFFFF0D] text-white/50 font-mona-sans text-sm outline-none appearance-none cursor-pointer focus:border-[#A2CE3A] transition-colors"
-        >
-          <option value="" disabled>{placeholder}</option>
-          {options.map((o) => (
-            <option key={o} value={o}>{o}</option>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button className="w-full flex items-center justify-between px-4 py-3 rounded-[10px] border border-white/10 bg-[#FFFFFF0D] text-white/70 font-mona-sans text-sm outline-none cursor-pointer hover:border-[#A2CE3A] transition-colors">
+            <span className={value ? "text-white" : "text-white/50"}>{displayValue}</span>
+            <ChevronDownSmallSVG />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="w-full bg-[#1A1C1F] border-white/10">
+          {options.map((option) => (
+            <DropdownMenuItem
+              key={option.value}
+              onClick={() => onChange(option.value)}
+              className="text-white/70 hover:text-[#A2CE3A] hover:bg-[#FFFFFF1A] cursor-pointer"
+            >
+              {option.label}
+            </DropdownMenuItem>
           ))}
-        </select>
-        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"><ChevronDownSmallSVG /></div>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  );
+}
+
+/* ─── Chip-based MultiSelect (like complete-your-profile) ─── */
+function FormChipSelect({ label, value, onChange, options }: {
+  label: string; value: string[]; onChange: (v: string[]) => void; options: string[];
+}) {
+  const toggleChip = (item: string) => {
+    if (value.includes(item)) {
+      onChange(value.filter(v => v !== item));
+    } else {
+      onChange([...value, item]);
+    }
+  };
+  
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label className="text-white font-mona-sans text-sm font-semibold">{label}</label>
+      <div className="flex flex-wrap gap-2">
+        {options.map((option) => {
+          const selected = value.includes(option);
+          return (
+            <button
+              key={option}
+              type="button"
+              onClick={() => toggleChip(option)}
+              className={`px-4 py-2 rounded-full text-sm font-mona-sans cursor-pointer transition-colors ${
+                selected
+                  ? "bg-[#A2CE3A]/20 text-[#A2CE3A] border border-[#A2CE3A]"
+                  : "bg-white/10 text-white/60 border border-white/10"
+              }`}
+            >
+              {option}
+            </button>
+          );
+        })}
       </div>
     </div>
   );
@@ -77,8 +138,12 @@ function FormSelect({ label, placeholder, value, onChange, options }: {
 /* ─── Main Page ─── */
 export default function EditProfilePage() {
   const router = useRouter();
+  const { data: session } = useSession();
+  const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   // Basic Information
   const [fullName, setFullName] = useState("");
@@ -88,25 +153,206 @@ export default function EditProfilePage() {
   const [timezone, setTimezone] = useState("");
   const [languages, setLanguages] = useState<string[]>([]);
 
+  // Set email from session
+  useEffect(() => {
+    if (session?.user?.email) {
+      setEmail(session.user.email);
+    }
+  }, [session]);
+
   // Professional Background
   const [jobTitle, setJobTitle] = useState("");
   const [industry, setIndustry] = useState("");
-  const [fieldsCoached, setFieldsCoached] = useState("");
+  const [fieldsCoached, setFieldsCoached] = useState<string[]>([]);
   const [experience, setExperience] = useState("");
   const [bgTimezone, setBgTimezone] = useState("");
   const [bgLanguages, setBgLanguages] = useState<string[]>([]);
   const [companies, setCompanies] = useState("");
   const [linkedin, setLinkedin] = useState("");
 
-  // Bio
+  // Coaching Information
   const [bio, setBio] = useState("");
+  const [interviewTypes, setInterviewTypes] = useState<string[]>([]);
+  const [targetJobLevels, setTargetJobLevels] = useState<string[]>([]);
+
+  // Constants for interview types and target levels
+  const INTERVIEW_TYPES = ["Behavioral Interviews", "Technical Interviews", "System Design", "Product Interviews"];
+  const TARGET_LEVELS = ["Entry Levels", "Mid Levels", "Senior Levels", "Executive Levels"];
+
+  // Fetch profile data on mount
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const headers = await getAuthHeaders();
+        const response = await fetch(`${getApiUrl()}/api/coach/profile/setup/review`, {
+          method: "GET",
+          headers,
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch profile data");
+        }
+
+        const result = await response.json();
+        const data = result.data;
+
+        console.log("Profile data fetched:", data);
+
+        // Populate form fields from flat structure
+        // Basic Information
+        setFullName(data.name || "");
+        // Note: username is NOT email - need to fetch actual email from user session
+        setPhone(data.phone_number || "");
+        // Map country name to location value
+        const countryValue = locationOptions.find(opt => opt.label.toLowerCase() === data.country?.toLowerCase())?.value || "";
+        setLocation(countryValue);
+        setLinkedin(data.linkedin_url || "");
+        
+        // Set profile photo if exists
+        if (data.photo_url) {
+          setPhotoPreview(data.photo_url);
+        }
+        
+        // Professional Background
+        setJobTitle(data.job_title || "");
+        // Map industry from API to dropdown value
+        const industryValue = industryOptions.find(opt => opt.label.toLowerCase() === data.industry?.toLowerCase())?.value || "";
+        setIndustry(industryValue);
+        setFieldsCoached(data.fields_coached || []);
+        // Map experience from API to dropdown value
+        const experienceValue = experienceOptions.find(opt => opt.label === data.years_of_experience)?.value || "";
+        setExperience(experienceValue);
+        setCompanies(data.companies_worked_at || "");
+        // Capitalize languages from API ("english" -> "English")
+        const capitalizedLanguages = (data.languages_spoken || []).map((lang: string) => 
+          lang.charAt(0).toUpperCase() + lang.slice(1).toLowerCase()
+        );
+        setBgLanguages(capitalizedLanguages);
+        
+        // Coaching Information
+        setBio(data.bio || "");
+        // Transform interview_types from API format to display format
+        // "behavioral_interview" -> "Behavioral Interviews"
+        const formattedInterviewTypes = (data.interview_types || []).map((type: string) => {
+          const formatted = type.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase());
+          // Add 's' to match display format
+          return formatted.endsWith('Interview') ? formatted + 's' : formatted;
+        });
+        setInterviewTypes(formattedInterviewTypes);
+        
+        // Transform target_job_levels from API format to display format
+        // "entry_level" -> "Entry Levels"
+        const formattedTargetLevels = (data.target_job_levels || []).map((level: string) => {
+          const formatted = level.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase());
+          // Add 's' to match display format
+          return formatted.endsWith('Level') ? formatted + 's' : formatted;
+        });
+        setTargetJobLevels(formattedTargetLevels);
+      } catch (error: any) {
+        toast({
+          variant: "error",
+          title: "Error",
+          description: error.message || "Failed to load profile data",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, [toast]);
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      // Check file size (5MB = 5 * 1024 * 1024 bytes)
+      const maxSize = 5 * 1024 * 1024;
+      if (file.size > maxSize) {
+        toast({
+          variant: "error",
+          title: "File too large",
+          description: "Please upload an image smaller than 5MB.",
+        });
+        // Reset the input
+        e.target.value = "";
+        return;
+      }
+
       const reader = new FileReader();
       reader.onloadend = () => setPhotoPreview(reader.result as string);
       reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+
+    try {
+      const headers = await getAuthHeaders();
+
+      // Update coaching information
+      const coachingResponse = await fetch(
+        `${getApiUrl()}/api/coach/profile/setup/coaching`,
+        {
+          method: "PATCH",
+          headers: {
+            ...headers,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            bio,
+            // Transform back to API format: "Behavioral Interviews" -> "behavioral_interview"
+            interview_types: interviewTypes.map(t => 
+              t.toLowerCase().replace(/ /g, "_").replace(/s$/, "")
+            ),
+            // Transform back to API format: "Entry Levels" -> "entry_level"
+            target_job_levels: targetJobLevels.map(t => 
+              t.toLowerCase().replace(/ /g, "_").replace(/s$/, "")
+            ),
+          }),
+        }
+      );
+
+      if (!coachingResponse.ok) {
+        throw new Error("Failed to update coaching information");
+      }
+
+      // Update background information
+      const backgroundResponse = await fetch(
+        `${getApiUrl()}/api/coach/profile/setup/background`,
+        {
+          method: "PATCH",
+          headers: {
+            ...headers,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            job_title: jobTitle,
+            industry,
+            years_of_experience: experience,
+            companies_worked_at: companies,
+            fields_coached: fieldsCoached,
+          }),
+        }
+      );
+
+      if (!backgroundResponse.ok) {
+        throw new Error("Failed to update background information");
+      }
+
+      toast({
+        variant: "success",
+        title: "Success",
+        description: "Profile updated successfully",
+      });
+    } catch (error: any) {
+      toast({
+        variant: "error",
+        title: "Error",
+        description: error.message || "Failed to update profile",
+      });
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -175,7 +421,23 @@ export default function EditProfilePage() {
 
       {/* ─── Content ─── */}
       <div className="relative z-10 max-w-[900px] mx-auto px-6 py-8 lg:py-12">
+        {/* Back Button */}
+        <button
+          onClick={() => router.push("/manage-your-profile")}
+          className="flex items-center gap-2 text-white/70 hover:text-white font-mona-sans text-sm mb-6 transition-colors cursor-pointer"
+        >
+          <BackArrowSVG />
+          <span>Back to Profile</span>
+        </button>
+
         <h1 className="text-white font-mona-sans font-bold text-2xl lg:text-3xl mb-8">Edit Profile</h1>
+
+        {loading ? (
+          <div className="flex justify-center items-center py-20">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#A2CE3A]"></div>
+          </div>
+        ) : (
+          <>
 
         {/* ─── Profile Photo ─── */}
         <GlassCard className="p-6 lg:p-8 mb-6">
@@ -183,10 +445,18 @@ export default function EditProfilePage() {
           <div className="flex items-center gap-5">
             <div
               onClick={() => fileInputRef.current?.click()}
-              className="w-[60px] h-[60px] rounded-full bg-[#FFFFFF0D] border border-white/10 flex items-center justify-center cursor-pointer hover:bg-[#FFFFFF1A] transition-colors overflow-hidden"
+              className={`relative rounded-full bg-[#FFFFFF0D] border border-white/10 flex items-center justify-center cursor-pointer transition-all overflow-hidden group ${
+                photoPreview ? "w-[120px] h-[120px]" : "w-[60px] h-[60px] hover:bg-[#FFFFFF1A]"
+              }`}
             >
               {photoPreview ? (
-                <img src={photoPreview} alt="Profile" className="w-full h-full object-cover" />
+                <>
+                  <img src={photoPreview} alt="Profile" className="w-full h-full object-cover" />
+                  {/* Hover overlay */}
+                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <UploadSVG />
+                  </div>
+                </>
               ) : (
                 <UploadSVG />
               )}
@@ -196,7 +466,7 @@ export default function EditProfilePage() {
                 onClick={() => fileInputRef.current?.click()}
                 className="px-4 py-2 rounded-[8px] border border-white/20 text-white font-mona-sans text-sm font-semibold hover:bg-[#FFFFFF1A] transition-colors cursor-pointer"
               >
-                Upload Photo
+                {photoPreview ? "Change Photo" : "Upload Photo"}
               </button>
               <p className="text-white/40 font-mona-sans text-xs mt-1.5">JPG, PNG, or GIF. Max 5MB.</p>
             </div>
@@ -209,7 +479,16 @@ export default function EditProfilePage() {
           <h2 className="text-white font-mona-sans font-bold text-lg mb-5">Basic Information</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormInput label="Full Name" placeholder="John Doe" value={fullName} onChange={setFullName} />
-            <FormInput label="Email" placeholder="example@gmail.com" value={email} onChange={setEmail} type="email" />
+            <div className="flex flex-col gap-1.5">
+              <label className="text-white font-mona-sans text-sm font-semibold">Email</label>
+              <input
+                type="email"
+                placeholder="example@gmail.com"
+                value={email}
+                disabled
+                className="px-4 py-3 rounded-[10px] border border-white/10 bg-[#FFFFFF0D] text-white/50 font-mona-sans text-sm outline-none cursor-not-allowed"
+              />
+            </div>
 
             {/* Phone Number */}
             <div className="flex flex-col gap-1.5">
@@ -223,7 +502,7 @@ export default function EditProfilePage() {
               />
             </div>
 
-            <Select label="Location (Country)" placeholder="Select your location" value={location} onChange={setLocation} options={locationOptions} />
+            <FormSelect label="Location (Country)" placeholder="Select your location" value={location} onChange={setLocation} options={locationOptions} />
           </div>
         </GlassCard>
 
@@ -232,20 +511,22 @@ export default function EditProfilePage() {
           <h2 className="text-white font-mona-sans font-bold text-lg mb-5">Professional Background</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormInput label="Job Title" placeholder="e.g. Senior Product Manager" value={jobTitle} onChange={setJobTitle} />
-            <Select label="Industries You want to Prep Candidates For" placeholder="Select your Industry" value={industry} onChange={setIndustry} options={industryOptions} />
-            <Select label="Fields Coached" placeholder="Select your Industry" value={fieldsCoached} onChange={setFieldsCoached} options={industryOptions} />
-            <Select label="Years of Experience" placeholder="Select" value={experience} onChange={setExperience} options={experienceOptions} />
-            <Select label="Timezone" placeholder="Select your timezone" value={bgTimezone} onChange={setBgTimezone} options={timezoneOptions} />
-            <MultiSelect label="Languages Spoken" placeholder="Select languages" value={bgLanguages} onChange={setBgLanguages} options={languageOptions} />
+            <FormSelect label="Industries You want to Prep Candidates For" placeholder="Select your Industry" value={industry} onChange={setIndustry} options={industryOptions} />
+            <FormChipSelect label="Fields Coached" value={fieldsCoached} onChange={setFieldsCoached} options={["Software Engineering", "Product Management", "Data Science", "Design", "Marketing", "Sales", "Finance", "Consulting"]} />
+            <FormSelect label="Years of Experience" placeholder="Select" value={experience} onChange={setExperience} options={experienceOptions} />
+            <FormSelect label="Timezone" placeholder="Select your timezone" value={bgTimezone} onChange={setBgTimezone} options={timezoneOptions} />
+            <FormChipSelect label="Languages Spoken" value={bgLanguages} onChange={setBgLanguages} options={["English", "Spanish", "French", "German", "Hindi", "Portuguese", "Mandarin", "Arabic"]} />
             <FormInput label="Companies Worked At" placeholder="e.g. Google, Meta" value={companies} onChange={setCompanies} />
             <FormInput label="LinkedIn Profile" placeholder="https://linkedin.com/in/yourprofile" value={linkedin} onChange={setLinkedin} />
           </div>
         </GlassCard>
 
-        {/* ─── Bio ─── */}
-        <GlassCard className="p-6 lg:p-8 mb-10">
-          <h2 className="text-white font-mona-sans font-bold text-lg mb-4">Bio</h2>
-          <div className="flex flex-col gap-1.5">
+        {/* ─── Coaching Information ─── */}
+        <GlassCard className="p-6 lg:p-8 mb-6">
+          <h2 className="text-white font-mona-sans font-bold text-lg mb-5">Coaching Information</h2>
+          
+          {/* Bio */}
+          <div className="flex flex-col gap-1.5 mb-6">
             <label className="text-white font-mona-sans text-sm font-semibold">About you</label>
             <textarea
               placeholder="Tell candidates a bit about yourself and your coaching style"
@@ -255,6 +536,84 @@ export default function EditProfilePage() {
               className="px-4 py-3 rounded-[10px] border border-white/10 bg-[#FFFFFF0D] text-white font-mona-sans text-sm outline-none placeholder:text-white/30 focus:border-[#A2CE3A] transition-colors resize-none"
             />
             <p className="text-white/40 font-mona-sans text-xs">A compelling bio helps attract more clients.</p>
+          </div>
+
+          {/* Interview Types */}
+          <div className="mb-6">
+            <label className="block text-white font-mona-sans text-sm font-semibold mb-3">Interview Types</label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {INTERVIEW_TYPES.map((t) => {
+                const selected = interviewTypes.includes(t);
+                return (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => {
+                      if (selected) {
+                        setInterviewTypes(interviewTypes.filter(item => item !== t));
+                      } else {
+                        setInterviewTypes([...interviewTypes, t]);
+                      }
+                    }}
+                    className={`flex items-center gap-2.5 px-4 py-3 rounded-[8px] text-sm font-mona-sans cursor-pointer transition-colors border ${
+                      selected
+                        ? "bg-[#A2CE3A]/10 border-[#A2CE3A] text-white"
+                        : "bg-white/5 border-white/10 text-white/70"
+                    }`}
+                  >
+                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                      selected ? "border-[#A2CE3A] bg-[#A2CE3A]" : "border-white/30"
+                    }`}>
+                      {selected && (
+                        <svg width="12" height="10" viewBox="0 0 12 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M1 5L4.5 8.5L11 1.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      )}
+                    </div>
+                    {t}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Target Job Levels */}
+          <div className="mb-0">
+            <label className="block text-white font-mona-sans text-sm font-semibold mb-3">Target Job Levels</label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {TARGET_LEVELS.map((t) => {
+                const selected = targetJobLevels.includes(t);
+                return (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => {
+                      if (selected) {
+                        setTargetJobLevels(targetJobLevels.filter(item => item !== t));
+                      } else {
+                        setTargetJobLevels([...targetJobLevels, t]);
+                      }
+                    }}
+                    className={`flex items-center gap-2.5 px-4 py-3 rounded-[8px] text-sm font-mona-sans cursor-pointer transition-colors border ${
+                      selected
+                        ? "bg-[#A2CE3A]/10 border-[#A2CE3A] text-white"
+                        : "bg-white/5 border-white/10 text-white/70"
+                    }`}
+                  >
+                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                      selected ? "border-[#A2CE3A] bg-[#A2CE3A]" : "border-white/30"
+                    }`}>
+                      {selected && (
+                        <svg width="12" height="10" viewBox="0 0 12 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M1 5L4.5 8.5L11 1.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      )}
+                    </div>
+                    {t}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </GlassCard>
 
@@ -268,13 +627,16 @@ export default function EditProfilePage() {
             Cancel
           </button>
           <button
-            onClick={() => router.push("/manage-your-profile")}
-            className="flex items-center gap-2 px-10 py-3 bg-[#A2CE3A] rounded-[8px] text-[#121212] font-mona-sans text-sm font-bold hover:bg-[#92BE2A] transition-colors cursor-pointer"
+            onClick={handleSave}
+            disabled={saving}
+            className="flex items-center gap-2 px-10 py-3 bg-[#A2CE3A] rounded-[8px] text-[#121212] font-mona-sans text-sm font-bold hover:bg-[#92BE2A] transition-colors cursor-pointer disabled:opacity-50"
           >
             <SaveIconSVG />
-            Save Changes
+            {saving ? "Saving..." : "Save Changes"}
           </button>
         </div>
+        </>
+        )}
       </div>
 
       {/* ─── Phone Input Custom Styles ─── */}

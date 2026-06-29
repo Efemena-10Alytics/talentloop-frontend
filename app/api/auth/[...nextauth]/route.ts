@@ -39,7 +39,10 @@ export const authOptions: NextAuthOptions = {
         }
 
         try {
-          const response = await fetch(`${getApiUrl()}/api/auth/login`, {
+          const apiUrl = getApiUrl();
+          console.log("Attempting login to:", `${apiUrl}/api/v1/auth/login`);
+          
+          const response = await fetch(`${apiUrl}/api/v1/auth/login`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -53,19 +56,36 @@ export const authOptions: NextAuthOptions = {
 
           const data = await response.json();
 
+          console.log("Login Response Status:", response.status);
+          console.log("Login Response Data:", data);
+
           if (!response.ok) {
-            throw new Error(data.message || "Login failed");
+            // Handle validation errors
+            if (data.errors) {
+              const firstErrorField = Object.keys(data.errors)[0];
+              const firstErrorMessage = data.errors[firstErrorField][0];
+              throw new Error(firstErrorMessage || data.message || "Login failed");
+            }
+            throw new Error(data.message || "Invalid credentials");
           }
 
-          // Return user object with token
+          // Check if we have the expected response structure
+          if (!data.user || !data.token) {
+            console.error("Unexpected response structure:", data);
+            throw new Error("Invalid response from server");
+          }
+
+          // v1 API response structure
           return {
-            id: data.data.user.id.toString(),
-            email: data.data.user.email,
-            role: data.data.user.role,
-            status: data.data.user.status,
-            token: data.data.token,
+            id: data.user.id.toString(),
+            email: data.user.email,
+            name: data.user.name,
+            role: data.user.role,
+            status: data.user.status || "active",
+            token: data.token,
           };
         } catch (error: any) {
+          console.error("Login error:", error);
           throw new Error(error.message || "Authentication failed");
         }
       },
@@ -76,20 +96,19 @@ export const authOptions: NextAuthOptions = {
       // For OAuth providers (Google, LinkedIn)
       if (account?.provider === "google" || account?.provider === "linkedin") {
         try {
-          // Send OAuth data to your backend
-          const response = await fetch(`${getApiUrl()}/api/auth/oauth`, {
+          // Send OAuth access token to v1 backend
+          const endpoint = account.provider === "google" 
+            ? `${getApiUrl()}/api/v1/auth/social/google`
+            : `${getApiUrl()}/api/v1/auth/social/linkedin`;
+          
+          const response = await fetch(endpoint, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
               "Accept": "application/json",
             },
             body: JSON.stringify({
-              provider: account.provider,
-              email: user.email,
-              name: user.name,
-              image: user.image,
-              oauth_token: account.access_token,
-              oauth_id: account.providerAccountId,
+              access_token: account.access_token,
             }),
           });
 
@@ -100,11 +119,11 @@ export const authOptions: NextAuthOptions = {
             return false;
           }
 
-          // Store backend token and user data
-          user.token = data.data?.token || data.token;
-          user.role = data.data?.user?.role || data.user?.role;
-          user.status = data.data?.user?.status || data.user?.status;
-          user.id = data.data?.user?.id?.toString() || data.user?.id?.toString();
+          // v1 API response structure for OAuth
+          user.token = data.data.token;
+          user.role = data.data.user.role;
+          user.status = data.data.user.status || "active";
+          user.id = data.data.user.id.toString();
 
           return true;
         } catch (error) {
@@ -120,9 +139,9 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id;
         token.email = user.email;
-        token.role = user.role;
-        token.status = user.status;
-        token.backendToken = user.token;
+        token.role = user.role || "";
+        token.status = user.status || "";
+        token.backendToken = user.token || "";
       }
 
       return token;

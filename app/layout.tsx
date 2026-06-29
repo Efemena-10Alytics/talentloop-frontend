@@ -1,20 +1,63 @@
 import type { Metadata } from "next";
-import { Mona_Sans, Sora } from 'next/font/google'
+import localFont from 'next/font/local'
+import { Plus_Jakarta_Sans } from 'next/font/google'
 import { Geist, Geist_Mono } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { SessionProvider } from "@/components/providers/SessionProvider";
+import { QueryProvider } from "@/components/providers/QueryProvider";
 
-const monaSans = Mona_Sans({
-  subsets: ['latin'],
-  weight: ['200', '300', '400', '500', '600', '700', '800', '900'],
+const monaSans = localFont({
+  src: [
+    {
+      path: '../public/fonts/Mona_Sans/MonaSans-VariableFont_wdth,wght.ttf',
+      style: 'normal',
+    },
+    {
+      path: '../public/fonts/Mona_Sans/MonaSans-Italic-VariableFont_wdth,wght.ttf',
+      style: 'italic',
+    },
+    {
+      path: '../public/fonts/Mona_Sans/static/MonaSans_Expanded-Black.ttf',
+      weight: '900',
+      style: 'normal',
+    },
+    {
+      path: '../public/fonts/Mona_Sans/static/MonaSans_Expanded-Bold.ttf',
+      weight: '700',
+      style: 'normal',
+    },
+    {
+      path: '../public/fonts/Mona_Sans/static/MonaSans_Expanded-SemiBold.ttf',
+      weight: '600',
+      style: 'normal',
+    },
+    {
+      path: '../public/fonts/Mona_Sans/static/MonaSans_Expanded-Medium.ttf',
+      weight: '500',
+      style: 'normal',
+    },
+    {
+      path: '../public/fonts/Mona_Sans/static/MonaSans_Expanded-Regular.ttf',
+      weight: '400',
+      style: 'normal',
+    },
+  ],
   variable: '--font-mona-sans',
+  display: 'swap',
 })
 
-const sora = Sora({
-  subsets: ['latin'],
-  weight: ['100', '200', '300', '400', '500', '600', '700', '800'],
+const sora = localFont({
+  src: '../public/fonts/Sora-VariableFont_wght.ttf',
   variable: '--font-sora',
+  display: 'swap',
+})
+
+const jakartaSans = Plus_Jakarta_Sans({
+  subsets: ['latin'],
+  weight: ['200', '300', '400', '500', '600', '700', '800'],
+  variable: '--font-jakarta-sans',
 })
 
 const geistSans = Geist({
@@ -40,11 +83,15 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${monaSans.variable} ${sora.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${monaSans.variable} ${sora.variable} ${jakartaSans.variable} antialiased`}
+        suppressHydrationWarning
       >
+        <Script src="https://accounts.google.com/gsi/client" strategy="beforeInteractive" />
         <SessionProvider>
-          {children}
-          <Toaster />
+          <QueryProvider>
+            {children}
+            <Toaster />
+          </QueryProvider>
         </SessionProvider>
       </body>
     </html>

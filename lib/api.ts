@@ -1,7 +1,8 @@
 // API Configuration and Utilities
 
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "https://api.talentloop.app";
+  process.env.NEXT_PUBLIC_API_URL ||
+  "https://talentloop-backend-iu3e.onrender.com";
 
 /**
  * Get the base API URL
@@ -20,14 +21,21 @@ export const getHeaders = (): HeadersInit => {
 
 /**
  * Get headers for authenticated requests
- * Includes the authorization token from NextAuth session
+ * Includes the authorization token from NextAuth session or localStorage
  */
 export const getAuthHeaders = async (): Promise<HeadersInit> => {
-  // For client-side, use getSession from next-auth/react
+  // For client-side, use getSession from next-auth/react or localStorage
   if (typeof window !== "undefined") {
     const { getSession } = await import("next-auth/react");
     const session = await getSession();
-    const token = session?.backendToken;
+    let token = session?.backendToken;
+
+    // Fallback to localStorage if no session token
+    if (!token) {
+      token = localStorage.getItem("auth_token") || undefined;
+    }
+
+    console.log("TOKEN", token);
 
     return {
       "Content-Type": "application/json",
@@ -40,6 +48,29 @@ export const getAuthHeaders = async (): Promise<HeadersInit> => {
   return {
     "Content-Type": "application/json",
     Accept: "application/json",
+  };
+};
+
+/**
+ * Read the backend auth token synchronously from localStorage (client only).
+ * Use this inside React Query queryFns to avoid triggering NextAuth session
+ * broadcasts that can cause refetch loops.
+ */
+export const getStoredAuthToken = (): string | null => {
+  if (typeof window !== "undefined") {
+    return localStorage.getItem("auth_token");
+  }
+  return null;
+};
+
+/**
+ * Build authenticated headers from a known token (synchronous, no session fetch).
+ */
+export const buildAuthHeaders = (token?: string | null): HeadersInit => {
+  return {
+    "Content-Type": "application/json",
+    Accept: "application/json",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
 };
 

@@ -1,12 +1,17 @@
 "use client";
 
-import { Suspense, useState, useRef } from "react";
+import { Suspense, useState, useRef, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useSession } from "next-auth/react";
 import PhoneInput from "react-phone-number-input";
 import "react-phone-number-input/style.css";
 import { SettingsLayout, SettingsCard, TabNav, FormInput, FormTextarea, ActionButtons } from "@/components/settings/SettingsLayout";
 import { ToggleItem } from "@/components/settings/Toggle";
 import { Select } from "@/components/ui/Select";
 import { MultiSelect } from "@/components/ui/MultiSelect";
+import { getApiUrl, getAuthHeaders } from "@/lib/api";
+import { useToast } from "@/components/ui/use-toast";
+import { useUserData } from "@/hooks/useUserData";
 
 /* ─── SVG Icons ─── */
 
@@ -97,10 +102,21 @@ const experienceOptions = [
   { value: "10+", label: "10+ years" },
 ];
 
+const genderOptions = [
+  { value: "male", label: "Male" },
+  { value: "female", label: "Female" },
+  { value: "non-binary", label: "Non-binary" },
+  { value: "prefer not to say", label: "Prefer not to say" },
+];
+
 /* ─── Components ─── */
 
 function SettingsContent() {
   const [activeTab, setActiveTab] = useState("profile");
+  const { data: session } = useSession();
+  const { userData } = useUserData();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
 
@@ -120,17 +136,24 @@ function SettingsContent() {
   const [companies, setCompanies] = useState("");
   const [linkedin, setLinkedin] = useState("");
   const [bio, setBio] = useState("");
+  
+  // Job seeker specific state
+  const [username, setUsername] = useState("");
+  const [gender, setGender] = useState("");
+  const [targetRole, setTargetRole] = useState("");
 
   // Availability tab state
-  const [weeklySchedule, setWeeklySchedule] = useState({
-    monday: { enabled: true, slots: [{ start: "09:00", end: "17:00" }] },
-    tuesday: { enabled: true, slots: [{ start: "09:00", end: "17:00" }, { start: "09:00", end: "17:00" }] },
-    wednesday: { enabled: true, slots: [{ start: "09:00", end: "17:00" }] },
-    thursday: { enabled: true, slots: [{ start: "09:00", end: "17:00" }] },
-    friday: { enabled: true, slots: [{ start: "09:00", end: "17:00" }] },
-    saturday: { enabled: false, slots: [] },
-    sunday: { enabled: false, slots: [] },
+  const [weeklySchedule, setWeeklySchedule] = useState<any>({
+    Monday: { enabled: false, slots: [] },
+    Tuesday: { enabled: false, slots: [] },
+    Wednesday: { enabled: false, slots: [] },
+    Thursday: { enabled: false, slots: [] },
+    Friday: { enabled: false, slots: [] },
+    Saturday: { enabled: false, slots: [] },
+    Sunday: { enabled: false, slots: [] },
   });
+  const [originalSlots, setOriginalSlots] = useState<Map<number, { day: number; start: string; end: string }>>(new Map());
+  const [deletedSlots, setDeletedSlots] = useState<number[]>([]);
 
   // Notifications tab state
   const [notifications, setNotifications] = useState({
@@ -139,6 +162,9 @@ function SettingsContent() {
     reviewNotifications: true,
     paymentNotifications: true,
     marketingEmails: true,
+    jobMatches: true,
+    applicationUpdates: true,
+    interviewInvites: true,
   });
 
   // Account tab state
@@ -148,9 +174,147 @@ function SettingsContent() {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+  // Set email from session
+  useEffect(() => {
+    if (session?.user?.email) {
+      setEmail(session.user.email);
+    }
+  }, [session]);
+
+  const userRole = session?.user?.role;
+  const isCoach = userRole === "coach";
+
+  // Fetch coach profile data
+  const { data: profileData, isLoading: profileLoading } = useQuery({
+    queryKey: ["coach-profile"],
+    queryFn: async () => {
+      const headers = await getAuthHeaders();
+      const response = await fetch(`${getApiUrl()}/api/coach/profile/setup/review`, {
+        method: "GET",
+        headers,
+      });
+      if (!response.ok) throw new Error("Failed to fetch profile");
+      const result = await response.json();
+      return result.data;
+    },
+    enabled: isCoach,
+  });
+
+  // Fetch job seeker profile data from /me endpoint
+  const { data: jobSeekerData, isLoading: jobSeekerLoading } = useQuery({
+    queryKey: ["jobseeker-profile"],
+    queryFn: async () => {
+      return userData;
+    },
+    enabled: !isCoach && !!userData,
+  });
+
+  // Fetch availability data
+  const { data: availabilityData, isLoading: availabilityLoading } = useQuery({
+    queryKey: ["coach-availability"],
+    queryFn: async () => {
+      const headers = await getAuthHeaders();
+      const response = await fetch(`${getApiUrl()}/api/coach/availability`, {
+        method: "GET",
+        headers,
+      });
+      if (!response.ok) throw new Error("Failed to fetch availability");
+      const result = await response.json();
+      return result.data;
+    },
+    enabled: isCoach,
+  });
+
+  // Process coach profile data when loaded
+  useEffect(() => {
+    if (!profileData || !isCoach) return;
+    
+    setFullName(profileData.name || "");
+    setPhone(profileData.phone_number || "");
+    setLocation(profileData.country || "");
+    setLinkedin(profileData.linkedin_url || "");
+    if (profileData.photo_url) setPhotoPreview(profileData.photo_url);
+    
+    setJobTitle(profileData.job_title || "");
+    setIndustry(profileData.industry || "");
+    setFieldsCoached(profileData.fields_coached?.join(", ") || "");
+    setExperience(profileData.years_of_experience || "");
+    setCompanies(profileData.companies_worked_at || "");
+    setProfLanguages(profileData.languages_spoken || []);
+    setBio(profileData.bio || "");
+  }, [profileData, isCoach]);
+
+  // Process job seeker data from /me endpoint
+  useEffect(() => {
+    if (!userData || isCoach) return;
+    
+    setFullName(userData.user?.name || "");
+    setEmail(userData.user?.email || "");
+    if (userData.user?.photo) setPhotoPreview(userData.user.photo);
+    
+    // Note: Additional profile fields will be fetched from profile_summary or separate endpoint
+    // For now, we're using the basic user data from /me
+  }, [userData, isCoach]);
+
+  // Process availability data when loaded
+  useEffect(() => {
+    if (!availabilityData) return;
+
+    const dayNumberToName: Record<number, string> = {
+      0: "Sunday", 1: "Monday", 2: "Tuesday", 3: "Wednesday",
+      4: "Thursday", 5: "Friday", 6: "Saturday",
+    };
+
+    const originalMap = new Map();
+    availabilityData.forEach((slot: any) => {
+      originalMap.set(slot.id, {
+        day: slot.day_of_week,
+        start: slot.start_time,
+        end: slot.end_time,
+      });
+    });
+    setOriginalSlots(originalMap);
+
+    const newSchedule: any = {
+      Monday: { enabled: false, slots: [] },
+      Tuesday: { enabled: false, slots: [] },
+      Wednesday: { enabled: false, slots: [] },
+      Thursday: { enabled: false, slots: [] },
+      Friday: { enabled: false, slots: [] },
+      Saturday: { enabled: false, slots: [] },
+      Sunday: { enabled: false, slots: [] },
+    };
+
+    availabilityData.forEach((slot: any) => {
+      const dayName = dayNumberToName[slot.day_of_week];
+      if (dayName) {
+        if (!newSchedule[dayName].enabled) {
+          newSchedule[dayName] = { enabled: true, slots: [] };
+        }
+        newSchedule[dayName].slots.push({
+          id: slot.id,
+          start: slot.start_time,
+          end: slot.end_time,
+        });
+      }
+    });
+
+    setWeeklySchedule(newSchedule);
+  }, [availabilityData]);
+
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      const maxSize = 5 * 1024 * 1024;
+      if (file.size > maxSize) {
+        toast({
+          variant: "error",
+          title: "File too large",
+          description: "Please upload an image smaller than 5MB.",
+        });
+        e.target.value = "";
+        return;
+      }
       const reader = new FileReader();
       reader.onloadend = () => setPhotoPreview(reader.result as string);
       reader.readAsDataURL(file);
@@ -158,34 +322,211 @@ function SettingsContent() {
   };
 
   const addTimeSlot = (day: string) => {
-    setWeeklySchedule(prev => ({
+    setWeeklySchedule((prev: any) => ({
       ...prev,
       [day]: {
-        ...prev[day as keyof typeof prev],
-        slots: [...prev[day as keyof typeof prev].slots, { start: "09:00", end: "17:00" }]
+        ...prev[day],
+        slots: [...prev[day].slots, { id: `new-${Date.now()}`, start: "09:00", end: "17:00", isNew: true }]
       }
     }));
   };
 
-  const removeTimeSlot = (day: string, index: number) => {
-    setWeeklySchedule(prev => ({
+  const removeTimeSlot = (day: string, slotId: number | string) => {
+    if (typeof slotId === "number") {
+      setDeletedSlots((prev) => [...prev, slotId]);
+    }
+    setWeeklySchedule((prev: any) => ({
       ...prev,
       [day]: {
-        ...prev[day as keyof typeof prev],
-        slots: prev[day as keyof typeof prev].slots.filter((_, i) => i !== index)
+        ...prev[day],
+        slots: prev[day].slots.filter((s: any) => s.id !== slotId)
       }
+    }));
+  };
+
+  const handleSlotChange = (day: string, slotId: string | number, field: "start" | "end", value: string) => {
+    setWeeklySchedule((prev: any) => ({
+      ...prev,
+      [day]: {
+        ...prev[day],
+        slots: prev[day].slots.map((s: any) => {
+          if (s.id === slotId) {
+            const isModified = typeof s.id === "number" ? true : s.isModified;
+            return { ...s, [field]: value, isModified };
+          }
+          return s;
+        }),
+      },
     }));
   };
 
   const toggleDay = (day: string) => {
-    setWeeklySchedule(prev => ({
-      ...prev,
-      [day]: {
-        ...prev[day as keyof typeof prev],
-        enabled: !prev[day as keyof typeof prev].enabled
+    setWeeklySchedule((prev: any) => {
+      const daySchedule = prev[day];
+      if (!daySchedule.enabled && daySchedule.slots.length > 0) {
+        const slotsToDelete = daySchedule.slots
+          .filter((s: any) => typeof s.id === "number")
+          .map((s: any) => s.id as number);
+        setDeletedSlots((prevDeleted) => [...prevDeleted, ...slotsToDelete]);
       }
-    }));
+      return {
+        ...prev,
+        [day]: {
+          ...prev[day],
+          enabled: !prev[day].enabled,
+          slots: !prev[day].enabled && prev[day].slots.length === 0
+            ? [{ id: `new-${Date.now()}`, start: "09:00", end: "17:00", isNew: true }]
+            : !prev[day].enabled ? prev[day].slots : [],
+        },
+      };
+    });
   };
+
+  // Save profile mutation
+  const saveProfileMutation = useMutation({
+    mutationFn: async () => {
+      const headers = await getAuthHeaders();
+      
+      if (isCoach) {
+        // Coach: Update coaching information
+        await fetch(`${getApiUrl()}/api/coach/profile/setup/coaching`, {
+          method: "PATCH",
+          headers: { ...headers, "Content-Type": "application/json" },
+          body: JSON.stringify({ bio }),
+        });
+
+        // Coach: Update background information
+        await fetch(`${getApiUrl()}/api/coach/profile/setup/background`, {
+          method: "PATCH",
+          headers: { ...headers, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            job_title: jobTitle,
+            industry,
+            years_of_experience: experience,
+            companies_worked_at: companies,
+            fields_coached: fieldsCoached.split(",").map(f => f.trim()).filter(Boolean),
+          }),
+        });
+      } else {
+        // Job Seeker: Update basic information
+        const formData = new FormData();
+        if (username) formData.append("username", username.trim());
+        formData.append("country", location);
+        if (phone) formData.append("phone_number", phone);
+        if (gender) formData.append("gender", gender.toLowerCase());
+        if (languages.length > 0) {
+          formData.append("languages_spoken", languages.map(l => l.toLowerCase()).join(","));
+        }
+        if (fileInputRef.current?.files?.[0]) {
+          formData.append("photo", fileInputRef.current.files[0]);
+        }
+
+        const { "Content-Type": _, ...headersWithoutContentType } = headers as Record<string, string>;
+
+        const basicResponse = await fetch(`${getApiUrl()}/api/profile/setup/basic`, {
+          method: "PATCH",
+          headers: headersWithoutContentType,
+          body: formData,
+        });
+
+        if (!basicResponse.ok) {
+          const errorData = await basicResponse.json();
+          throw new Error(errorData.message || "Failed to update basic information");
+        }
+
+        // Job Seeker: Update career information
+        const careerResponse = await fetch(`${getApiUrl()}/api/profile/setup/career`, {
+          method: "PATCH",
+          headers: { ...headers, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            target_role: targetRole.trim() || jobTitle.trim(),
+            experience_level: experience,
+            industry: industry || "",
+          }),
+        });
+
+        if (!careerResponse.ok) {
+          const errorData = await careerResponse.json();
+          throw new Error(errorData.message || "Failed to update career information");
+        }
+      }
+    },
+    onSuccess: () => {
+      toast({ variant: "success", title: "Success", description: "Profile updated successfully" });
+      if (isCoach) {
+        queryClient.invalidateQueries({ queryKey: ["coach-profile"] });
+      } else {
+        queryClient.invalidateQueries({ queryKey: ["jobseeker-profile"] });
+      }
+    },
+    onError: (error: any) => {
+      toast({ variant: "error", title: "Error", description: error.message || "Failed to update profile" });
+    },
+  });
+
+  // Save availability mutation
+  const saveAvailabilityMutation = useMutation({
+    mutationFn: async () => {
+      const headers = await getAuthHeaders();
+      const dayNameToNumber: Record<string, number> = {
+        Sunday: 0, Monday: 1, Tuesday: 2, Wednesday: 3,
+        Thursday: 4, Friday: 5, Saturday: 6,
+      };
+
+      // Delete removed slots
+      for (const slotId of deletedSlots) {
+        await fetch(`${getApiUrl()}/api/coach/availability/${slotId}`, {
+          method: "DELETE",
+          headers,
+        });
+      }
+
+      // Process all enabled days
+      for (const [dayName, daySchedule] of Object.entries(weeklySchedule)) {
+        const schedule = daySchedule as { enabled: boolean; slots: any[] };
+        if (!schedule.enabled) continue;
+        const dayOfWeek = dayNameToNumber[dayName];
+
+        for (const slot of schedule.slots) {
+          const payload = {
+            day_of_week: dayOfWeek,
+            start_time: slot.start,
+            end_time: slot.end,
+          };
+
+          if (slot.isNew || typeof slot.id === "string") {
+            await fetch(`${getApiUrl()}/api/coach/availability`, {
+              method: "POST",
+              headers: { ...headers, "Content-Type": "application/json" },
+              body: JSON.stringify(payload),
+            });
+          } else if (slot.isModified && typeof slot.id === "number") {
+            const original = originalSlots.get(slot.id);
+            const hasChanged = !original || 
+              original.day !== dayOfWeek || 
+              original.start !== slot.start || 
+              original.end !== slot.end;
+            
+            if (hasChanged) {
+              await fetch(`${getApiUrl()}/api/coach/availability/${slot.id}`, {
+                method: "PATCH",
+                headers: { ...headers, "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+              });
+            }
+          }
+        }
+      }
+    },
+    onSuccess: () => {
+      toast({ variant: "success", title: "Success", description: "Availability updated successfully" });
+      setDeletedSlots([]);
+      queryClient.invalidateQueries({ queryKey: ["coach-availability"] });
+    },
+    onError: (error: any) => {
+      toast({ variant: "error", title: "Error", description: error.message || "Failed to save availability" });
+    },
+  });
 
   const passwordRequirements = [
     { text: "Contains at least 8 characters", met: newPassword.length >= 8 },
@@ -196,7 +537,7 @@ function SettingsContent() {
 
   const tabs = [
     { id: "profile", label: "Profile" },
-    { id: "availability", label: "Availability" },
+    ...(isCoach ? [{ id: "availability", label: "Availability" }] : []),
     { id: "notifications", label: "Notifications" },
     { id: "account", label: "Account" },
   ];
@@ -248,36 +589,64 @@ function SettingsContent() {
                 />
               </div>
               <Select label="Location (Country)" placeholder="Select your location" value={location} onChange={setLocation} options={locationOptions} />
-              <Select label="Timezone" placeholder="Select your timezone" value={timezone} onChange={setTimezone} options={timezoneOptions} />
-              <MultiSelect label="Languages Spoken" placeholder="Select languages" value={languages} onChange={setLanguages} options={languageOptions} />
+              {!isCoach && (
+                <>
+                  <FormInput label="Username" placeholder="Enter your username" value={username} onChange={setUsername} />
+                  <Select label="Gender" placeholder="Select your gender" value={gender} onChange={setGender} options={genderOptions} />
+                </>
+              )}
+              {isCoach && (
+                <>
+                  <Select label="Timezone" placeholder="Select your timezone" value={timezone} onChange={setTimezone} options={timezoneOptions} />
+                  <MultiSelect label="Languages Spoken" placeholder="Select languages" value={languages} onChange={setLanguages} options={languageOptions} />
+                </>
+              )}
+              {!isCoach && (
+                <MultiSelect label="Languages Spoken" placeholder="Select languages" value={languages} onChange={setLanguages} options={languageOptions} />
+              )}
             </div>
           </SettingsCard>
 
-          <SettingsCard title="Professional Background">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <FormInput label="Job Title" placeholder="e.g. Senior Product Manager" value={jobTitle} onChange={setJobTitle} />
-              <Select label="Industries You want to Prep Candidates For" placeholder="Select your Industry" value={industry} onChange={setIndustry} options={industryOptions} />
-              <Select label="Fields Coached" placeholder="Select your Industry" value={fieldsCoached} onChange={setFieldsCoached} options={industryOptions} />
-              <Select label="Years of Experience" placeholder="Select" value={experience} onChange={setExperience} options={experienceOptions} />
-              <Select label="Timezone" placeholder="Select your timezone" value={profTimezone} onChange={setProfTimezone} options={timezoneOptions} />
-              <MultiSelect label="Languages Spoken" placeholder="Select languages" value={profLanguages} onChange={setProfLanguages} options={languageOptions} />
-              <FormInput label="Companies Worked At" placeholder="e.g. Google, Meta" value={companies} onChange={setCompanies} />
-              <FormInput label="LinkedIn Profile" placeholder="https://linkedin.com/in/yourprofile" value={linkedin} onChange={setLinkedin} />
-            </div>
-          </SettingsCard>
+          {isCoach ? (
+            <>
+              <SettingsCard title="Professional Background">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <FormInput label="Job Title" placeholder="e.g. Senior Product Manager" value={jobTitle} onChange={setJobTitle} />
+                  <Select label="Industries You want to Prep Candidates For" placeholder="Select your Industry" value={industry} onChange={setIndustry} options={industryOptions} />
+                  <Select label="Fields Coached" placeholder="Select your Industry" value={fieldsCoached} onChange={setFieldsCoached} options={industryOptions} />
+                  <Select label="Years of Experience" placeholder="Select" value={experience} onChange={setExperience} options={experienceOptions} />
+                  <Select label="Timezone" placeholder="Select your timezone" value={profTimezone} onChange={setProfTimezone} options={timezoneOptions} />
+                  <MultiSelect label="Languages Spoken" placeholder="Select languages" value={profLanguages} onChange={setProfLanguages} options={languageOptions} />
+                  <FormInput label="Companies Worked At" placeholder="e.g. Google, Meta" value={companies} onChange={setCompanies} />
+                  <FormInput label="LinkedIn Profile" placeholder="https://linkedin.com/in/yourprofile" value={linkedin} onChange={setLinkedin} />
+                </div>
+              </SettingsCard>
 
-          <SettingsCard title="Bio">
-            <FormTextarea
-              label="About you"
-              placeholder="Tell candidates a bit about yourself and your coaching style"
-              value={bio}
-              onChange={setBio}
-              rows={5}
-              helperText="A compelling bio helps attract more clients."
-            />
-          </SettingsCard>
+              <SettingsCard title="Bio">
+                <FormTextarea
+                  label="About you"
+                  placeholder="Tell candidates a bit about yourself and your coaching style"
+                  value={bio}
+                  onChange={setBio}
+                  rows={5}
+                  helperText="A compelling bio helps attract more clients."
+                />
+              </SettingsCard>
+            </>
+          ) : (
+            <SettingsCard title="Build your profile">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FormInput label="Target Role" placeholder="e.g. Senior Product Manager" value={jobTitle} onChange={setJobTitle} />
+                <Select label="Industry (Optional)" placeholder="Select your Industry" value={industry} onChange={setIndustry} options={industryOptions} />
+                <Select label="Experience Level" placeholder="Select your Industry" value={experience} onChange={setExperience} options={experienceOptions} />
+              </div>
+            </SettingsCard>
+          )}
 
-          <ActionButtons />
+          <ActionButtons 
+            onSave={() => saveProfileMutation.mutate()}
+            saveText={saveProfileMutation.isPending ? "Saving..." : "Save Changes"}
+          />
         </div>
       )}
 
@@ -295,7 +664,9 @@ function SettingsContent() {
           <SettingsCard title="Weekly Availability">
             <p className="text-white/50 font-mona-sans text-sm mb-6">Toggle days on/off and set your available hours</p>
             <div className="space-y-4">
-              {Object.entries(weeklySchedule).map(([day, data]) => (
+              {Object.entries(weeklySchedule).map(([day, dayData]) => {
+                const data = dayData as { enabled: boolean; slots: any[] };
+                return (
                 <div key={day} className="border-b border-white/5 pb-4 last:border-0">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-3">
@@ -324,22 +695,24 @@ function SettingsContent() {
                   </div>
                   {data.enabled && (
                     <div className="space-y-2 ml-14">
-                      {data.slots.map((slot, index) => (
-                        <div key={index} className="flex items-center gap-2">
+                      {data.slots.map((slot: any) => (
+                        <div key={slot.id} className="flex items-center gap-2">
                           <input
                             type="time"
                             value={slot.start}
+                            onChange={(e) => handleSlotChange(day, slot.id, "start", e.target.value)}
                             className="px-3 py-2 rounded-[8px] border border-white/10 bg-white text-black font-mona-sans text-sm outline-none focus:border-[#A2CE3A] transition-colors"
                           />
                           <span className="text-white/50 font-mona-sans text-sm">to</span>
                           <input
                             type="time"
                             value={slot.end}
+                            onChange={(e) => handleSlotChange(day, slot.id, "end", e.target.value)}
                             className="px-3 py-2 rounded-[8px] border border-white/10 bg-white text-black font-mona-sans text-sm outline-none focus:border-[#A2CE3A] transition-colors"
                           />
                           {data.slots.length > 1 && (
                             <button
-                              onClick={() => removeTimeSlot(day, index)}
+                              onClick={() => removeTimeSlot(day, slot.id)}
                               className="p-2 hover:bg-white/5 rounded-[8px] transition-colors"
                             >
                               <TrashSVG />
@@ -350,11 +723,15 @@ function SettingsContent() {
                     </div>
                   )}
                 </div>
-              ))}
+                );
+              })}
             </div>
           </SettingsCard>
 
-          <ActionButtons />
+          <ActionButtons 
+            onSave={() => saveAvailabilityMutation.mutate()}
+            saveText={saveAvailabilityMutation.isPending ? "Saving..." : "Save Changes"}
+          />
         </div>
       )}
 
@@ -362,36 +739,67 @@ function SettingsContent() {
       {activeTab === "notifications" && (
         <div className="space-y-6">
           <SettingsCard title="Notification Preferences">
-            <ToggleItem
-              title="New booking notifications"
-              description="Toggle days on/off and set your available hours"
-              enabled={notifications.newBooking}
-              onChange={(enabled) => setNotifications(prev => ({ ...prev, newBooking: enabled }))}
-            />
-            <ToggleItem
-              title="Session reminders"
-              description="Receive reminders before upcoming sessions"
-              enabled={notifications.sessionReminders}
-              onChange={(enabled) => setNotifications(prev => ({ ...prev, sessionReminders: enabled }))}
-            />
-            <ToggleItem
-              title="Review notifications"
-              description="Get notified when you receive a new review"
-              enabled={notifications.reviewNotifications}
-              onChange={(enabled) => setNotifications(prev => ({ ...prev, reviewNotifications: enabled }))}
-            />
-            <ToggleItem
-              title="Payment notifications"
-              description="Get notified about earnings and payouts"
-              enabled={notifications.paymentNotifications}
-              onChange={(enabled) => setNotifications(prev => ({ ...prev, paymentNotifications: enabled }))}
-            />
-            <ToggleItem
-              title="Marketing emails"
-              description="Receive tips and platform updates"
-              enabled={notifications.marketingEmails}
-              onChange={(enabled) => setNotifications(prev => ({ ...prev, marketingEmails: enabled }))}
-            />
+            {isCoach ? (
+              <>
+                <ToggleItem
+                  title="New booking notifications"
+                  description="Toggle days on/off and set your available hours"
+                  enabled={notifications.newBooking}
+                  onChange={(enabled) => setNotifications(prev => ({ ...prev, newBooking: enabled }))}
+                />
+                <ToggleItem
+                  title="Session reminders"
+                  description="Receive reminders before upcoming sessions"
+                  enabled={notifications.sessionReminders}
+                  onChange={(enabled) => setNotifications(prev => ({ ...prev, sessionReminders: enabled }))}
+                />
+                <ToggleItem
+                  title="Review notifications"
+                  description="Get notified when you receive a new review"
+                  enabled={notifications.reviewNotifications}
+                  onChange={(enabled) => setNotifications(prev => ({ ...prev, reviewNotifications: enabled }))}
+                />
+                <ToggleItem
+                  title="Payment notifications"
+                  description="Get notified about earnings and payouts"
+                  enabled={notifications.paymentNotifications}
+                  onChange={(enabled) => setNotifications(prev => ({ ...prev, paymentNotifications: enabled }))}
+                />
+                <ToggleItem
+                  title="Marketing emails"
+                  description="Receive tips and platform updates"
+                  enabled={notifications.marketingEmails}
+                  onChange={(enabled) => setNotifications(prev => ({ ...prev, marketingEmails: enabled }))}
+                />
+              </>
+            ) : (
+              <>
+                <ToggleItem
+                  title="Job Matches"
+                  description="Receive notifications about jobmatches"
+                  enabled={notifications.jobMatches}
+                  onChange={(enabled) => setNotifications(prev => ({ ...prev, jobMatches: enabled }))}
+                />
+                <ToggleItem
+                  title="Application Updates"
+                  description="Receive notifications about applicationupdates"
+                  enabled={notifications.applicationUpdates}
+                  onChange={(enabled) => setNotifications(prev => ({ ...prev, applicationUpdates: enabled }))}
+                />
+                <ToggleItem
+                  title="Interview Invites"
+                  description="Receive notifications about interviewinvites"
+                  enabled={notifications.interviewInvites}
+                  onChange={(enabled) => setNotifications(prev => ({ ...prev, interviewInvites: enabled }))}
+                />
+                <ToggleItem
+                  title="Marketing Emails"
+                  description="Receive notifications about marketingemails"
+                  enabled={notifications.marketingEmails}
+                  onChange={(enabled) => setNotifications(prev => ({ ...prev, marketingEmails: enabled }))}
+                />
+              </>
+            )}
           </SettingsCard>
 
           <ActionButtons />
@@ -479,8 +887,28 @@ function SettingsContent() {
 
 export default function SettingsPage() {
   return (
-    <Suspense fallback={<div className="text-white">Loading...</div>}>
-      <SettingsContent />
-    </Suspense>
+    <>
+      <Suspense fallback={<div className="text-white">Loading...</div>}>
+        <SettingsContent />
+      </Suspense>
+      
+      {/* Phone Input Custom Styles */}
+      <style jsx global>{`
+        .edit-phone-input .PhoneInputInput {
+          background: transparent;
+          border: none;
+          outline: none;
+          color: white;
+          font-family: 'Mona Sans', sans-serif;
+          font-size: 0.875rem;
+        }
+        .edit-phone-input .PhoneInputCountry {
+          margin-right: 8px;
+        }
+        .edit-phone-input .PhoneInputCountrySelectArrow {
+          border-color: #999;
+        }
+      `}</style>
+    </>
   );
 }

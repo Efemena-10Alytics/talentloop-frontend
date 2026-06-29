@@ -1,0 +1,127 @@
+"use client";
+
+import { useState } from "react";
+import { useParams } from "next/navigation";
+import DashboardNavbar from "@/components/v1-dashboard/DashboardNavbar";
+import StatCard from "@/components/v1-dashboard/StatCard";
+import WorkspaceCVUploads from "@/components/v1-manager/workspace/WorkspaceCVUploads";
+import WorkspaceLinkedIn from "@/components/v1-manager/workspace/WorkspaceLinkedIn";
+import WorkspaceApplications from "@/components/v1-manager/workspace/WorkspaceApplications";
+import WorkspaceMeetings from "@/components/v1-manager/workspace/WorkspaceMeetings";
+
+// Client name map — swap with real API fetch when ready
+const CLIENT_NAMES: Record<string, string> = {
+  "adaeze-nwosu": "Adaeze Nwosu",
+  "taiwo-kolade":  "Taiwo Kolade",
+  "priya-mehta":   "Priya Mehta",
+  "olumide-adeyemi": "Olumide Adeyemi",
+};
+
+const ClientsIcon = () => (
+  <svg width="33" height="32" viewBox="0 0 33 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect width="33" height="32" rx="8" fill="#0C6746"/>
+    <path d="M23.2295 24.6485H25.6567C25.8702 24.6518 26.0813 24.6035 26.272 24.5077C26.4628 24.4119 26.6274 24.2715 26.7519 24.0984C26.8764 23.9252 26.9571 23.7246 26.987 23.5136C27.0169 23.3027 26.9951 23.0876 26.9236 22.8868C26.3047 21.5649 25.3249 20.4438 24.0966 19.6523C22.8683 18.8608 21.4413 18.4309 19.9793 18.4119M19.9793 15.2863C20.5256 15.2864 21.0666 15.1792 21.5714 14.9706C22.0762 14.7621 22.5349 14.4564 22.9213 14.0709C23.3076 13.6854 23.6141 13.2278 23.8232 12.7241C24.0323 12.2204 24.14 11.6806 24.14 11.1354C24.1415 10.5892 24.0349 10.0482 23.8265 9.54316C23.6181 9.03817 23.3118 8.57919 22.9253 8.19252C22.5388 7.80586 22.0796 7.49912 21.574 7.28987C21.0685 7.08063 20.5266 6.973 19.9793 6.97315M13.4799 15.4166C14.7307 15.4136 15.9291 14.9156 16.8124 14.0318C17.6957 13.1481 18.1915 11.9508 18.1912 10.7026C18.1912 9.45541 17.6947 8.25928 16.811 7.37736C15.9272 6.49545 14.7286 6 13.4788 6C12.2289 6 11.0303 6.49545 10.1466 7.37736C9.2628 8.25928 8.76631 9.45541 8.76631 10.7026C8.7663 11.9508 9.26247 13.1479 10.1459 14.0315C11.0294 14.915 12.228 15.4127 13.4788 15.4154M18.7986 26C19.1985 25.9995 19.5904 25.8885 19.9309 25.6793C20.2715 25.4702 20.5474 25.171 20.7281 24.815C20.9087 24.459 20.9871 24.0601 20.9545 23.6624C20.9219 23.2646 20.7797 22.8837 20.5435 22.5617C19.716 21.4656 18.6508 20.5705 17.4275 19.9435C16.2043 19.3165 14.8547 18.9737 13.4799 18.941C12.105 18.9739 10.7554 19.3168 9.53212 19.944C8.30886 20.5712 7.24367 21.4665 6.41632 22.5628C6.18093 22.8848 6.0393 23.2655 6.00707 23.6628C5.97484 24.0601 6.05326 24.4585 6.23367 24.8142C6.41408 25.1698 6.68946 25.4687 7.02941 25.678C7.36936 25.8872 7.76065 25.9987 8.16008 26H18.7986Z" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+
+type WorkspaceTab = "cv-uploads" | "linkedin" | "applications" | "meetings";
+
+const TABS: { id: WorkspaceTab; label: string }[] = [
+  { id: "cv-uploads",   label: "CV Uploads" },
+  { id: "linkedin",     label: "LinkedIn Optimizer" },
+  { id: "applications", label: "Applications" },
+  { id: "meetings",     label: "Meeting Scheduler" },
+];
+
+const activeTabStyle: React.CSSProperties = {
+  background: "#1563743D",
+  border: "0.5px solid #E8EFF11A",
+  borderRadius: "10px",
+  color: "#E8EFF1",
+  fontFamily: "var(--font-mona-sans, sans-serif)",
+  fontWeight: 500,
+  fontSize: "13px",
+  padding: "9px 20px",
+  cursor: "pointer",
+  whiteSpace: "nowrap" as const,
+};
+
+const inactiveTabStyle: React.CSSProperties = {
+  background: "transparent",
+  border: "0.5px solid #FFFFFF1A",
+  borderRadius: "10px",
+  color: "#E8EFF1",
+  fontFamily: "var(--font-mona-sans, sans-serif)",
+  fontWeight: 500,
+  fontSize: "13px",
+  padding: "9px 20px",
+  cursor: "pointer",
+  whiteSpace: "nowrap" as const,
+};
+
+export default function ClientWorkspacePage() {
+  const params = useParams();
+  const clientId = params?.id as string ?? "";
+  const clientName = CLIENT_NAMES[clientId] ?? "Client";
+
+  const [activeTab, setActiveTab] = useState<WorkspaceTab>("cv-uploads");
+
+  return (
+    <div className="min-h-screen p-4 lg:p-6">
+      <DashboardNavbar
+        pageTitle={`Client Workspace — ${clientName}`}
+        pageIcon={<ClientsIcon />}
+      />
+
+      {/* Stats Row */}
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+        <StatCard title="TOTAL APPLICATIONS"  value="47" />
+        <StatCard title="RESPONSES RECEIVED"  value="18" />
+        <StatCard title="RESPONSE RATE"        value="38%" />
+        <StatCard title="SPONSOR-ONLY"         value="31" />
+        <StatCard title="TOTAL CV"             value="4" />
+      </div>
+
+      {/* Tab Bar */}
+      <div
+        className="rounded-2xl p-3 mb-0"
+        style={{
+          background: "#1563741A",
+          border: "0.5px solid #FFFFFF1A",
+          borderBottomLeftRadius: "0px",
+          borderBottomRightRadius: "0px",
+          borderBottom: "none",
+        }}
+      >
+        <div className="flex items-center gap-2 flex-wrap">
+          {TABS.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              style={activeTab === tab.id ? activeTabStyle : inactiveTabStyle}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Tab Content */}
+      <div
+        className="rounded-2xl"
+        style={{
+          background: "#1563741A",
+          border: "0.5px solid #FFFFFF1A",
+          borderTopLeftRadius: "0px",
+          borderTopRightRadius: "0px",
+          borderTop: "1px solid #FFFFFF0A",
+        }}
+      >
+        {activeTab === "cv-uploads"   && <WorkspaceCVUploads clientName={clientName} />}
+        {activeTab === "linkedin"     && <WorkspaceLinkedIn />}
+        {activeTab === "applications" && <WorkspaceApplications />}
+        {activeTab === "meetings"     && <WorkspaceMeetings clientId={clientId} />}
+      </div>
+    </div>
+  );
+}

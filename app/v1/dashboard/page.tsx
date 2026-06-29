@@ -1,0 +1,74 @@
+"use client";
+
+import DashboardNavbar from "@/components/v1-dashboard/DashboardNavbar";
+import StatCard from "@/components/v1-dashboard/StatCard";
+import WelcomeCard from "@/components/v1-dashboard/WelcomeCard";
+import RecentActivities from "@/components/v1-dashboard/RecentActivities";
+import YourProgress from "@/components/v1-dashboard/YourProgress";
+import YourManager from "@/components/v1-dashboard/YourManager";
+
+const DashboardIcon = () => (
+  <svg width="17" height="17" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M15.8332 5.00835L10.3749 0.641682C9.30824 -0.208318 7.64157 -0.216651 6.58324 0.633349L1.1249 5.00835C0.341571 5.63335 -0.133429 6.88335 0.0332373 7.86668L1.08324 14.15C1.3249 15.5583 2.63324 16.6667 4.05824 16.6667H12.8916C14.2999 16.6667 15.6332 15.5333 15.8749 14.1417L16.9249 7.85835C17.0749 6.88335 16.5999 5.63335 15.8332 5.00835ZM9.0999 13.3334C9.0999 13.675 8.81657 13.9584 8.4749 13.9584C8.13324 13.9584 7.8499 13.675 7.8499 13.3334V10.8333C7.8499 10.4917 8.13324 10.2083 8.4749 10.2083C8.81657 10.2083 9.0999 10.4917 9.0999 10.8333V13.3334Z" fill="white"/>
+  </svg>
+);
+
+export default function V1DashboardPage() {
+  return (
+    <div className="min-h-screen p-4 lg:p-6">
+      {/* Navbar */}
+      <DashboardNavbar 
+        pageTitle="Dashboard" 
+        pageIcon={<DashboardIcon />} 
+      />
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-4 mb-8">
+        <StatCard 
+          title="Applications Sent" 
+          value="32" 
+          trend={{ value: "+12", isPositive: true }}
+        />
+        <StatCard 
+          title="Interviews Secured" 
+          value="3" 
+        />
+        <StatCard 
+          title="Days Active" 
+          value="18 Days" 
+        />
+      </div>
+
+      {/* Welcome and Recent Activities Section - Split Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        {/* Left: Welcome Card */}
+        <WelcomeCard 
+          userName="Ricky"
+          cvScore={72}
+          managerName="Sarah"
+          deliveryDate="Thursday, 22 May"
+        />
+
+        {/* Right: Recent Activities */}
+        <RecentActivities />
+      </div>
+
+      {/* Your Progress and Your Manager Section - Split Layout (75% / 25%) */}
+      <div className="flex flex-col lg:flex-row gap-5">
+        {/* Left: Your Progress (75% width - 3 columns) */}
+        <div className="lg:w-[70%]">
+          <YourProgress />
+        </div>
+
+        {/* Right: Your Manager (25% width - 1 column) */}
+        <div className="lg:w-[30%]">
+          <YourManager 
+            name="Happiness Abiyo Ibrahim"
+            rating={4.9}
+            title="Team Lead Employability Associate"
+          />
+        </div>
+      </div>
+    </div>
+  );
+}

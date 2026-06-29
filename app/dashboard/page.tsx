@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import { Suspense } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
+import { Suspense, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import { CoachDashboard } from "@/components/dashboard/CoachDashboard";
 
 /* ─── SVG Icons ─── */
@@ -318,7 +319,38 @@ function JobSeekerDashboard() {
 
 function DashboardContent() {
   const searchParams = useSearchParams();
-  const userType = searchParams.get('us') || 'jobseeker';
+  const router = useRouter();
+  const { data: session } = useSession();
+  const userType = searchParams.get('us');
+  
+  // Auto-redirect based on user role
+  useEffect(() => {
+    if (session?.user?.role) {
+      const userRole = session.user.role.toLowerCase();
+      
+      // If no query param or wrong query param, redirect to correct dashboard
+      if (!userType) {
+        // No query param - redirect based on role
+        if (userRole === 'coach') {
+          router.replace('/dashboard?us=coach');
+        } else {
+          router.replace('/dashboard?us=jobseeker');
+        }
+      } else if (userType !== userRole) {
+        // Query param doesn't match role - redirect to correct dashboard
+        if (userRole === 'coach') {
+          router.replace('/dashboard?us=coach');
+        } else {
+          router.replace('/dashboard?us=jobseeker');
+        }
+      }
+    }
+  }, [session, userType, router]);
+
+  // Show loading while redirecting
+  if (!userType || (session?.user?.role && userType !== session.user.role.toLowerCase())) {
+    return <div className="text-white">Loading...</div>;
+  }
 
   if (userType === 'coach') {
     return <CoachDashboard />;

@@ -1,10 +1,58 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import PhoneInput from "react-phone-number-input";
 import "react-phone-number-input/style.css";
+import { useSession } from "next-auth/react";
+import { getApiUrl, getAuthHeaders } from "@/lib/api";
+import { useToast } from "@/components/ui/use-toast";
+import { useUserData } from "@/hooks/useUserData";
+
+/* ─── Onboarding Progress Storage ─── */
+
+const ONBOARDING_STORAGE_KEY = "coach_onboarding_progress";
+const ONBOARDING_EXPIRY_DAYS = 60;
+
+interface OnboardingProgress {
+  currentStep: number;
+  onboardingStatus: string;
+  timestamp: number;
+}
+
+const saveOnboardingProgress = (step: number, status: string) => {
+  const progress: OnboardingProgress = {
+    currentStep: step,
+    onboardingStatus: status,
+    timestamp: Date.now(),
+  };
+  localStorage.setItem(ONBOARDING_STORAGE_KEY, JSON.stringify(progress));
+};
+
+const loadOnboardingProgress = (): OnboardingProgress | null => {
+  try {
+    const stored = localStorage.getItem(ONBOARDING_STORAGE_KEY);
+    if (!stored) return null;
+
+    const progress: OnboardingProgress = JSON.parse(stored);
+    const expiryTime = ONBOARDING_EXPIRY_DAYS * 24 * 60 * 60 * 1000;
+    const isExpired = Date.now() - progress.timestamp > expiryTime;
+
+    if (isExpired) {
+      localStorage.removeItem(ONBOARDING_STORAGE_KEY);
+      return null;
+    }
+
+    return progress;
+  } catch {
+    return null;
+  }
+};
+
+const clearOnboardingProgress = () => {
+  localStorage.removeItem(ONBOARDING_STORAGE_KEY);
+};
 
 /* ─── Back Arrow SVG ─── */
 const BackArrowSVG = () => (
@@ -102,25 +150,55 @@ function Dropdown({ label, placeholder, options, value, onChange }: {
 /* ─── Main Component ─── */
 export default function CompleteProfilePage() {
   const router = useRouter();
+  const { toast } = useToast();
+  const { data: session } = useSession();
+  const { userData } = useUserData();
+
+  // Auto-redirect jobseekers to their own complete profile page
+  useEffect(() => {
+    if (session?.user?.role) {
+      const userRole = session.user.role.toLowerCase();
+      if (userRole !== 'coach') {
+        router.replace('/complete-your-profile/jobseeker');
+      }
+    }
+  }, [session, router]);
+
+  // Prevent access if onboarding already submitted
+  useEffect(() => {
+    if (userData?.onboarding_status === "submitted") {
+      toast({
+        variant: "error",
+        title: "Profile Already Submitted",
+        description: "Your profile has already been submitted. Redirecting to dashboard.",
+      });
+      router.replace('/dashboard?us=coach');
+    }
+  }, [userData, router, toast]);
 
   const [step, setStep] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [reviewLoading, setReviewLoading] = useState(false);
+  const [reviewData, setReviewData] = useState<any>(null);
 
   /* Step 1: Basic Info */
+  const [name, setName] = useState("");
   const [username, setUsername] = useState("");
-  const [location, setLocation] = useState("");
+  const [linkedinUrl, setLinkedinUrl] = useState("");
+  const [country, setCountry] = useState("");
   const [phone, setPhone] = useState<string | undefined>("");
   const [gender, setGender] = useState("");
   const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   /* Step 2: Background */
   const [jobTitle, setJobTitle] = useState("");
   const [industry, setIndustry] = useState("");
-  const [fieldsCoached, setFieldsCoached] = useState("");
-  const [experience, setExperience] = useState("");
-  const [companies, setCompanies] = useState("");
-  const [linkedin, setLinkedin] = useState("");
+  const [fieldsCoached, setFieldsCoached] = useState<string[]>([]);
+  const [yearsOfExperience, setYearsOfExperience] = useState("");
+  const [companiesWorkedAt, setCompaniesWorkedAt] = useState("");
 
   /* Step 3: Coaching */
   const [interviewTypes, setInterviewTypes] = useState<string[]>([]);
@@ -131,38 +209,271 @@ export default function CompleteProfilePage() {
     setArr(arr.includes(val) ? arr.filter((v) => v !== val) : [...arr, val]);
   };
 
+  // Load onboarding progress on mount
+  useEffect(() => {
+    const progress = loadOnboardingProgress();
+    if (progress && progress.onboardingStatus === "in_progress") {
+      const resumeStep = Math.max(0, progress.currentStep);
+      setStep(resumeStep);
+      toast({
+        variant: "success",
+        title: "Welcome back!",
+        description: `Resuming from step ${resumeStep + 1}`,
+      });
+    }
+  }, []);
+
+  // Fetch review data when step 3 loads
+  useEffect(() => {
+    const fetchReviewData = async () => {
+      if (step !== 3) return;
+
+      setReviewLoading(true);
+
+      try {
+        const response = await fetch(`${getApiUrl()}/api/coach/profile/setup/review`, {
+          method: "GET",
+          headers: await getAuthHeaders(),
+        });
+
+        if (!response.ok) throw new Error("Failed to fetch review data");
+
+        const result = await response.json();
+        setReviewData(result.data);
+      } catch (error: any) {
+        toast({
+          variant: "error",
+          title: "Error",
+          description: error.message || "Failed to load review data",
+        });
+      } finally {
+        setReviewLoading(false);
+      }
+    };
+
+    fetchReviewData();
+  }, [step]);
+
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setPhotoFile(file);
       const reader = new FileReader();
       reader.onloadend = () => setPhotoPreview(reader.result as string);
       reader.readAsDataURL(file);
     }
   };
 
-  const goNext = () => setStep((s) => Math.min(s + 1, 3));
+  const handleBasicInfoSubmit = async () => {
+    if (!photoFile || !name || !username || !linkedinUrl || !country || !phone || !gender || selectedLanguages.length === 0) {
+      toast({
+        variant: "error",
+        title: "Missing fields",
+        description: "Please fill in all required fields",
+      });
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const headers = await getAuthHeaders();
+
+      const formData = new FormData();
+      formData.append("photo", photoFile);
+      formData.append("name", name);
+      formData.append("username", username);
+      formData.append("linkedin_url", linkedinUrl);
+      formData.append("country", country);
+      formData.append("phone_number", phone);
+      formData.append("gender", gender.toLowerCase());
+      formData.append("languages_spoken", selectedLanguages.map(l => l.toLowerCase()).join(","));
+
+      // Remove Content-Type header to let browser set it with boundary for multipart/form-data
+      const { "Content-Type": _, ...headersWithoutContentType } = headers as Record<string, string>;
+
+      const response = await fetch(`${getApiUrl()}/api/coach/profile/setup/basic`, {
+        method: "POST",
+        headers: headersWithoutContentType,
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to save basic info");
+      }
+
+      const result = await response.json();
+      saveOnboardingProgress(result.data.current_step, result.data.onboarding_status);
+
+      toast({
+        variant: "success",
+        title: "Success",
+        description: result.message,
+      });
+
+      setStep(1);
+    } catch (error: any) {
+      toast({
+        variant: "error",
+        title: "Error",
+        description: error.message || "Failed to save basic info",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBackgroundSubmit = async () => {
+    if (!jobTitle || !industry || !yearsOfExperience || !companiesWorkedAt || fieldsCoached.length === 0) {
+      toast({
+        variant: "error",
+        title: "Missing fields",
+        description: "Please fill in all required fields",
+      });
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const response = await fetch(`${getApiUrl()}/api/coach/profile/setup/background`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          ...(await getAuthHeaders()),
+        },
+        body: JSON.stringify({
+          job_title: jobTitle,
+          industry: industry,
+          years_of_experience: yearsOfExperience,
+          companies_worked_at: companiesWorkedAt,
+          fields_coached: fieldsCoached,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to save background");
+      }
+
+      const result = await response.json();
+      saveOnboardingProgress(result.data.current_step, result.data.onboarding_status);
+
+      toast({
+        variant: "success",
+        title: "Success",
+        description: result.message,
+      });
+
+      setStep(2);
+    } catch (error: any) {
+      toast({
+        variant: "error",
+        title: "Error",
+        description: error.message || "Failed to save background",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCoachingSubmit = async () => {
+    if (!bio || interviewTypes.length === 0 || targetLevels.length === 0) {
+      toast({
+        variant: "error",
+        title: "Missing fields",
+        description: "Please fill in all required fields",
+      });
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const response = await fetch(`${getApiUrl()}/api/coach/profile/setup/coaching`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          ...(await getAuthHeaders()),
+        },
+        body: JSON.stringify({
+          bio: bio,
+          interview_types: interviewTypes.map(t => {
+            // Transform to API format: "Behavioral Interviews" -> "behavioral_interview"
+            return t.toLowerCase().replace(/ /g, "_").replace(/s$/, "");
+          }),
+          target_job_levels: targetLevels.map(l => {
+            // Transform to API format: "Entry Levels" -> "entry_level"
+            return l.toLowerCase().replace(/ /g, "_").replace(/s$/, "");
+          }),
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to save coaching preferences");
+      }
+
+      const result = await response.json();
+      saveOnboardingProgress(result.data.current_step, result.data.onboarding_status);
+
+      toast({
+        variant: "success",
+        title: "Success",
+        description: result.message,
+      });
+
+      setStep(3);
+    } catch (error: any) {
+      toast({
+        variant: "error",
+        title: "Error",
+        description: error.message || "Failed to save coaching preferences",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const goBack = () => setStep((s) => Math.max(s - 1, 0));
 
-  const [submitting, setSubmitting] = useState(false);
-  const handleSubmitApplication = async () => {
-    setSubmitting(true);
+  const handleCompleteOnboarding = async () => {
+    setLoading(true);
+
     try {
-      // TODO: replace with real API endpoint
-      await fetch("/api/coach/apply", {
+      const response = await fetch(`${getApiUrl()}/api/coach/profile/setup/submit`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          username, location, phone, gender,
-          languages: selectedLanguages,
-          jobTitle, industry, fieldsCoached, experience, companies, linkedin,
-          interviewTypes, targetLevels, bio,
-        }),
-      }).catch(() => {});
-      router.push("/manage-your-profile");
-    } catch {
-      router.push("/manage-your-profile");
+        headers: await getAuthHeaders(),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to submit profile");
+      }
+
+      const result = await response.json();
+      
+      // Clear onboarding progress from localStorage
+      clearOnboardingProgress();
+
+      toast({
+        variant: "success",
+        title: "Profile Submitted!",
+        description: result.message || "Your coach application has been submitted successfully",
+      });
+
+      // Navigate to assessment page using actual user ID
+      const userId = userData?.user?.id || session?.user?.id;
+      router.push(`/coaches/${userId}/assessment`);
+    } catch (error: any) {
+      toast({
+        variant: "error",
+        title: "Submission Failed",
+        description: error.message || "Failed to submit your profile. Please try again.",
+      });
     } finally {
-      setSubmitting(false);
+      setLoading(false);
     }
   };
 
@@ -237,18 +548,30 @@ export default function CompleteProfilePage() {
                 <span className="text-white/50 text-sm font-mona-sans mt-2">Upload Photo</span>
               </div>
 
+              {/* Name */}
+              <div className="mb-4">
+                <label className="block text-white font-mona-sans text-sm font-semibold mb-2">Full Name *</label>
+                <input type="text" placeholder="Enter your full name" value={name} onChange={(e) => setName(e.target.value)} className="w-full h-11 px-4 bg-white border border-white/10 rounded-[8px] text-[#121212] placeholder-[#ACACAC] font-sora text-sm outline-none focus:border-[#A2CE3A] transition-colors" />
+              </div>
+
               {/* Username */}
               <div className="mb-4">
-                <label className="block text-white font-mona-sans text-sm font-semibold mb-2">Username</label>
+                <label className="block text-white font-mona-sans text-sm font-semibold mb-2">Username *</label>
                 <input type="text" placeholder="Enter your username" value={username} onChange={(e) => setUsername(e.target.value)} className="w-full h-11 px-4 bg-white border border-white/10 rounded-[8px] text-[#121212] placeholder-[#ACACAC] font-sora text-sm outline-none focus:border-[#A2CE3A] transition-colors" />
               </div>
 
-              {/* Location */}
-              <Dropdown label="Location (Country)" placeholder="Select your location" options={COUNTRIES.map((c) => c.name)} value={location} onChange={setLocation} />
+              {/* LinkedIn URL */}
+              <div className="mb-4">
+                <label className="block text-white font-mona-sans text-sm font-semibold mb-2">LinkedIn URL *</label>
+                <input type="url" placeholder="https://linkedin.com/in/yourprofile" value={linkedinUrl} onChange={(e) => setLinkedinUrl(e.target.value)} className="w-full h-11 px-4 bg-white border border-white/10 rounded-[8px] text-[#121212] placeholder-[#ACACAC] font-sora text-sm outline-none focus:border-[#A2CE3A] transition-colors" />
+              </div>
+
+              {/* Country */}
+              <Dropdown label="Country *" placeholder="Select your country" options={COUNTRIES.map((c) => c.name)} value={country} onChange={setCountry} />
 
               {/* Phone */}
               <div className="mb-4">
-                <label className="block text-white font-mona-sans text-sm font-semibold mb-2">Phone number</label>
+                <label className="block text-white font-mona-sans text-sm font-semibold mb-2">Phone number *</label>
                 <PhoneInput
                   international
                   defaultCountry="NG"
@@ -260,11 +583,11 @@ export default function CompleteProfilePage() {
               </div>
 
               {/* Gender */}
-              <Dropdown label="Gender" placeholder="Select your gender" options={GENDERS} value={gender} onChange={setGender} />
+              <Dropdown label="Gender *" placeholder="Select your gender" options={GENDERS} value={gender} onChange={setGender} />
 
               {/* Languages Spoken */}
               <div className="mb-6">
-                <label className="block text-white font-mona-sans text-sm font-semibold mb-2">Languages Spoken</label>
+                <label className="block text-white font-mona-sans text-sm font-semibold mb-2">Languages Spoken *</label>
                 <div className="flex flex-wrap gap-2">
                   {LANGUAGES.map((lang) => {
                     const selected = selectedLanguages.includes(lang);
@@ -278,8 +601,8 @@ export default function CompleteProfilePage() {
               </div>
 
               {/* Continue */}
-              <button onClick={goNext} className="w-full py-3 bg-[#A2CE3A] rounded-[8px] text-[#121212] font-mona-sans text-base font-bold hover:bg-[#92BE2A] transition-colors cursor-pointer">
-                Continue
+              <button onClick={handleBasicInfoSubmit} disabled={loading} className="w-full py-3 bg-[#A2CE3A] rounded-[8px] text-[#121212] font-mona-sans text-base font-bold hover:bg-[#92BE2A] transition-colors cursor-pointer disabled:opacity-60">
+                {loading ? "Saving..." : "Continue"}
               </button>
             </div>
           )}
@@ -291,30 +614,40 @@ export default function CompleteProfilePage() {
               <p className="text-white/50 text-sm font-mona-sans mt-1 mb-6">Tell us about your experience</p>
 
               <div className="mb-4">
-                <label className="block text-white font-mona-sans text-sm font-semibold mb-2">Job Title</label>
+                <label className="block text-white font-mona-sans text-sm font-semibold mb-2">Job Title *</label>
                 <input type="text" placeholder="e.g. Senior Product Manager" value={jobTitle} onChange={(e) => setJobTitle(e.target.value)} className="w-full h-11 px-4 bg-white border border-white/10 rounded-[8px] text-[#121212] placeholder-[#ACACAC] font-sora text-sm outline-none focus:border-[#A2CE3A] transition-colors" />
               </div>
 
-              <Dropdown label="Industries You want to Prep Candidates For" placeholder="Select your Industry" options={INDUSTRIES} value={industry} onChange={setIndustry} />
-              <Dropdown label="Fields Coached" placeholder="Select your Industry" options={FIELDS_COACHED} value={fieldsCoached} onChange={setFieldsCoached} />
-              <Dropdown label="Years of Experience" placeholder="Select" options={EXPERIENCE_YEARS} value={experience} onChange={setExperience} />
+              <Dropdown label="Industry *" placeholder="Select your Industry" options={INDUSTRIES} value={industry} onChange={setIndustry} />
+              
+              <Dropdown label="Years of Experience *" placeholder="Select" options={EXPERIENCE_YEARS} value={yearsOfExperience} onChange={setYearsOfExperience} />
 
               <div className="mb-4">
-                <label className="block text-white font-mona-sans text-sm font-semibold mb-2">Companies Worked At</label>
-                <input type="text" placeholder="e.g. Google, Meta" value={companies} onChange={(e) => setCompanies(e.target.value)} className="w-full h-11 px-4 bg-white border border-white/10 rounded-[8px] text-[#121212] placeholder-[#ACACAC] font-sora text-sm outline-none focus:border-[#A2CE3A] transition-colors" />
+                <label className="block text-white font-mona-sans text-sm font-semibold mb-2">Companies Worked At *</label>
+                <input type="text" placeholder="e.g. Google, Meta" value={companiesWorkedAt} onChange={(e) => setCompaniesWorkedAt(e.target.value)} className="w-full h-11 px-4 bg-white border border-white/10 rounded-[8px] text-[#121212] placeholder-[#ACACAC] font-sora text-sm outline-none focus:border-[#A2CE3A] transition-colors" />
               </div>
 
+              {/* Fields Coached */}
               <div className="mb-6">
-                <label className="block text-white font-mona-sans text-sm font-semibold mb-2">LinkedIn Profile</label>
-                <input type="url" placeholder="https://linkedin.com/in/yourprofile" value={linkedin} onChange={(e) => setLinkedin(e.target.value)} className="w-full h-11 px-4 bg-white border border-white/10 rounded-[8px] text-[#121212] placeholder-[#ACACAC] font-sora text-sm outline-none focus:border-[#A2CE3A] transition-colors" />
+                <label className="block text-white font-mona-sans text-sm font-semibold mb-2">Fields Coached *</label>
+                <div className="flex flex-wrap gap-2">
+                  {FIELDS_COACHED.map((field) => {
+                    const selected = fieldsCoached.includes(field);
+                    return (
+                      <button key={field} type="button" onClick={() => toggleChip(fieldsCoached, setFieldsCoached, field)} className={`px-4 py-2 rounded-full text-sm font-mona-sans cursor-pointer transition-colors ${selected ? "bg-[#A2CE3A]/20 text-[#A2CE3A] border border-[#A2CE3A]" : "bg-white/10 text-white/60 border border-white/10"}`}>
+                        {field}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               <div className="flex gap-3">
                 <button onClick={goBack} className="flex-1 py-3 bg-[#A2CE3A]/20 rounded-[8px] text-[#121212] font-mona-sans text-base font-bold hover:bg-[#A2CE3A]/30 transition-colors cursor-pointer" style={{ backgroundColor: "#ECF8C7", color: "#054711" }}>
                   Back
                 </button>
-                <button onClick={goNext} className="flex-[1.4] py-3 bg-[#A2CE3A] rounded-[8px] text-[#121212] font-mona-sans text-base font-bold hover:bg-[#92BE2A] transition-colors cursor-pointer">
-                  Continue
+                <button onClick={handleBackgroundSubmit} disabled={loading} className="flex-[1.4] py-3 bg-[#A2CE3A] rounded-[8px] text-[#121212] font-mona-sans text-base font-bold hover:bg-[#92BE2A] transition-colors cursor-pointer disabled:opacity-60">
+                  {loading ? "Saving..." : "Continue"}
                 </button>
               </div>
             </div>
@@ -368,8 +701,8 @@ export default function CompleteProfilePage() {
                 <button onClick={goBack} className="flex-1 py-3 rounded-[8px] font-mona-sans text-base font-bold transition-colors cursor-pointer" style={{ backgroundColor: "#ECF8C7", color: "#054711" }}>
                   Back
                 </button>
-                <button onClick={goNext} className="flex-[1.4] py-3 bg-[#A2CE3A] rounded-[8px] text-[#121212] font-mona-sans text-base font-bold hover:bg-[#92BE2A] transition-colors cursor-pointer">
-                  Continue
+                <button onClick={handleCoachingSubmit} disabled={loading} className="flex-[1.4] py-3 bg-[#A2CE3A] rounded-[8px] text-[#121212] font-mona-sans text-base font-bold hover:bg-[#92BE2A] transition-colors cursor-pointer disabled:opacity-60">
+                  {loading ? "Saving..." : "Continue"}
                 </button>
               </div>
             </div>
@@ -381,60 +714,125 @@ export default function CompleteProfilePage() {
               <h2 className="text-2xl font-mona-sans font-bold text-white text-center">Review Your Profile</h2>
               <p className="text-[#A2CE3A] text-sm font-mona-sans text-center mt-1 mb-6">Make sure everything looks good</p>
 
+              {reviewLoading && (
+                <div className="flex justify-center items-center py-10">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#A2CE3A]"></div>
+                </div>
+              )}
+
+              {!reviewLoading && reviewData && (
+              <>
               {/* Profile Card */}
               <div className="border border-white/10 rounded-[12px] p-5 mb-6">
                 {/* Name & Title */}
                 <div className="flex items-center gap-3 mb-5">
-                  <div className="w-10 h-10 rounded-full bg-white/10 overflow-hidden flex-shrink-0">
-                    {photoPreview ? (
+                  <div className="w-16 h-16 rounded-full bg-white/10 overflow-hidden flex-shrink-0">
+                    {reviewData?.photo_url ? (
+                      <img src={reviewData.photo_url} alt="Profile" className="w-full h-full object-cover" />
+                    ) : photoPreview ? (
                       <img src={photoPreview} alt="Profile" className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full bg-white/20" />
                     )}
                   </div>
                   <div>
-                    <p className="text-white font-mona-sans font-bold text-sm">{username || "Richard Samson"}</p>
-                    <p className="text-white/50 font-mona-sans text-xs">{jobTitle || "Senior Product Designer"}</p>
+                    <p className="text-white font-mona-sans font-bold text-base">{reviewData?.name || name}</p>
+                    <p className="text-white/50 font-mona-sans text-sm">@{reviewData?.username || username}</p>
+                    <p className="text-white/70 font-mona-sans text-xs mt-0.5">{reviewData?.job_title || jobTitle}</p>
                   </div>
                 </div>
+
+                {/* Bio */}
+                {reviewData?.bio && (
+                  <div className="mb-5 pb-5 border-b border-white/10">
+                    <p className="text-white/50 text-xs font-mona-sans mb-2">Bio</p>
+                    <p className="text-white text-sm font-mona-sans">{reviewData.bio}</p>
+                  </div>
+                )}
 
                 {/* Info Grid */}
                 <div className="grid grid-cols-2 gap-y-4 gap-x-6 mb-5">
                   <div>
-                    <p className="text-white/50 text-xs font-mona-sans">Location</p>
-                    <p className="text-white text-sm font-mona-sans font-semibold">{location || "Lagos, Nigeria"}</p>
+                    <p className="text-white/50 text-xs font-mona-sans mb-1">Country</p>
+                    <p className="text-white text-sm font-mona-sans font-semibold capitalize">{reviewData?.country || country}</p>
                   </div>
                   <div>
-                    <p className="text-white/50 text-xs font-mona-sans">Experience</p>
-                    <p className="text-white text-sm font-mona-sans font-semibold">{experience || "10-15years"}</p>
+                    <p className="text-white/50 text-xs font-mona-sans mb-1">Phone</p>
+                    <p className="text-white text-sm font-mona-sans font-semibold">{reviewData?.phone_number || phone}</p>
                   </div>
                   <div>
-                    <p className="text-white/50 text-xs font-mona-sans">Industry</p>
-                    <p className="text-white text-sm font-mona-sans font-semibold">{industry || "Technology"}</p>
+                    <p className="text-white/50 text-xs font-mona-sans mb-1">Gender</p>
+                    <p className="text-white text-sm font-mona-sans font-semibold capitalize">{reviewData?.gender || gender}</p>
                   </div>
                   <div>
-                    <p className="text-white/50 text-xs font-mona-sans">Languages</p>
-                    <p className="text-white text-sm font-mona-sans font-semibold">{selectedLanguages.length > 0 ? selectedLanguages.join(", ") : "English, Spanish, French"}</p>
+                    <p className="text-white/50 text-xs font-mona-sans mb-1">Experience</p>
+                    <p className="text-white text-sm font-mona-sans font-semibold">{reviewData?.years_of_experience || yearsOfExperience}</p>
+                  </div>
+                  <div>
+                    <p className="text-white/50 text-xs font-mona-sans mb-1">Industry</p>
+                    <p className="text-white text-sm font-mona-sans font-semibold capitalize">{reviewData?.industry || industry}</p>
+                  </div>
+                  <div>
+                    <p className="text-white/50 text-xs font-mona-sans mb-1">Languages</p>
+                    <p className="text-white text-sm font-mona-sans font-semibold capitalize">{reviewData?.languages_spoken?.join(", ") || selectedLanguages.join(", ")}</p>
                   </div>
                 </div>
+
+                {/* LinkedIn & Companies */}
+                {(reviewData?.linkedin_url || reviewData?.companies_worked_at) && (
+                  <div className="grid grid-cols-1 gap-4 mb-5 pb-5 border-b border-white/10">
+                    {reviewData?.linkedin_url && (
+                      <div>
+                        <p className="text-white/50 text-xs font-mona-sans mb-1">LinkedIn</p>
+                        <a href={reviewData.linkedin_url} target="_blank" rel="noopener noreferrer" className="text-[#A2CE3A] text-sm font-mona-sans hover:underline break-all">{reviewData.linkedin_url}</a>
+                      </div>
+                    )}
+                    {reviewData?.companies_worked_at && (
+                      <div>
+                        <p className="text-white/50 text-xs font-mona-sans mb-1">Companies Worked At</p>
+                        <p className="text-white text-sm font-mona-sans">{reviewData.companies_worked_at}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Fields Coached */}
+                {reviewData?.fields_coached && reviewData.fields_coached.length > 0 && (
+                  <div className="mb-4">
+                    <p className="text-white/50 text-xs font-mona-sans mb-2">Fields Coached</p>
+                    <div className="flex flex-wrap gap-2">
+                      {reviewData.fields_coached.map((field: string) => (
+                        <span key={field} className="px-3 py-1 rounded-full text-xs font-mona-sans text-white bg-white/10">{field}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Interview Types */}
                 <div className="mb-4">
                   <p className="text-white/50 text-xs font-mona-sans mb-2">Interview Types</p>
                   <div className="flex flex-wrap gap-2">
-                    {(interviewTypes.length > 0 ? interviewTypes : ["Technical Interviews", "Behavioral Interviews"]).map((t) => (
-                      <span key={t} className="px-3 py-1 rounded-full text-xs font-mona-sans text-[#7FA429] bg-[#E0EFBD]">{t}</span>
-                    ))}
+                    {(reviewData?.interview_types || interviewTypes || []).map((t: string) => {
+                      // Format snake_case to Title Case: behavioral_interview -> Behavioral Interview
+                      const formatted = t.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+                      return (
+                        <span key={t} className="px-3 py-1 rounded-full text-xs font-mona-sans text-[#7FA429] bg-[#E0EFBD]">{formatted}</span>
+                      );
+                    })}
                   </div>
                 </div>
 
                 {/* Target Levels */}
                 <div>
-                  <p className="text-white/50 text-xs font-mona-sans mb-2">Target levels</p>
+                  <p className="text-white/50 text-xs font-mona-sans mb-2">Target Job Levels</p>
                   <div className="flex flex-wrap gap-2">
-                    {(targetLevels.length > 0 ? targetLevels : ["Mid Level", "Senior Level"]).map((t) => (
-                      <span key={t} className="px-3 py-1 rounded-full text-xs font-mona-sans text-[#7FA429] bg-[#E0EFBD]">{t}</span>
-                    ))}
+                    {(reviewData?.target_job_levels || targetLevels || []).map((t: string) => {
+                      // Format snake_case to Title Case: entry_level -> Entry Level
+                      const formatted = t.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+                      return (
+                        <span key={t} className="px-3 py-1 rounded-full text-xs font-mona-sans text-[#7FA429] bg-[#E0EFBD]">{formatted}</span>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
@@ -448,10 +846,12 @@ export default function CompleteProfilePage() {
                 <button onClick={goBack} className="flex-1 py-3 rounded-[8px] font-mona-sans text-base font-bold transition-colors cursor-pointer" style={{ backgroundColor: "#ECF8C7", color: "#054711" }}>
                   Back
                 </button>
-                <button onClick={handleSubmitApplication} disabled={submitting} className="flex-[1.4] py-3 bg-[#A2CE3A] rounded-[8px] text-[#121212] font-mona-sans text-base font-bold hover:bg-[#92BE2A] transition-colors cursor-pointer disabled:opacity-60">
-                  {submitting ? "Submitting..." : "Submit Application"}
+                <button onClick={handleCompleteOnboarding} disabled={loading} className="flex-[1.4] py-3 bg-[#A2CE3A] rounded-[8px] text-[#121212] font-mona-sans text-base font-bold hover:bg-[#92BE2A] transition-colors cursor-pointer disabled:opacity-60">
+                  {loading ? "Submitting..." : "Complete Setup"}
                 </button>
               </div>
+              </>
+              )}
             </div>
           )}
 

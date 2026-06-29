@@ -1,10 +1,58 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import PhoneInput from "react-phone-number-input";
 import "react-phone-number-input/style.css";
+import { useSession } from "next-auth/react";
+import { getApiUrl, getAuthHeaders } from "@/lib/api";
+import { useToast } from "@/components/ui/use-toast";
+import { ArrowLeft } from "lucide-react";
+
+/* ─── Onboarding Progress Storage ─── */
+
+const ONBOARDING_STORAGE_KEY = "jobseeker_onboarding_progress";
+const ONBOARDING_EXPIRY_DAYS = 60;
+
+interface OnboardingProgress {
+  currentStep: number;
+  onboardingStatus: string;
+  timestamp: number;
+}
+
+const saveOnboardingProgress = (step: number, status: string) => {
+  const progress: OnboardingProgress = {
+    currentStep: step,
+    onboardingStatus: status,
+    timestamp: Date.now(),
+  };
+  localStorage.setItem(ONBOARDING_STORAGE_KEY, JSON.stringify(progress));
+};
+
+const loadOnboardingProgress = (): OnboardingProgress | null => {
+  try {
+    const stored = localStorage.getItem(ONBOARDING_STORAGE_KEY);
+    if (!stored) return null;
+
+    const progress: OnboardingProgress = JSON.parse(stored);
+    const expiryTime = ONBOARDING_EXPIRY_DAYS * 24 * 60 * 60 * 1000; // 60 days in ms
+    const isExpired = Date.now() - progress.timestamp > expiryTime;
+
+    if (isExpired) {
+      localStorage.removeItem(ONBOARDING_STORAGE_KEY);
+      return null;
+    }
+
+    return progress;
+  } catch {
+    return null;
+  }
+};
+
+const clearOnboardingProgress = () => {
+  localStorage.removeItem(ONBOARDING_STORAGE_KEY);
+};
 
 /* ─── SVG Icons ─── */
 
@@ -120,7 +168,118 @@ function Dropdown({ label, placeholder, options, value, onChange }: {
 
 export default function JobseekerCompleteProfilePage() {
   const router = useRouter();
+  const { toast } = useToast();
+  const { data: session } = useSession();
   const [step, setStep] = useState(0);
+  const [completedSteps, setCompletedSteps] = useState<number[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [reviewLoading, setReviewLoading] = useState(false);
+  const [cvProcessing, setCvProcessing] = useState(false);
+  const [processingProgress, setProcessingProgress] = useState(0);
+
+  // Auto-redirect coaches to their own complete profile page
+  useEffect(() => {
+    if (session?.user?.role) {
+      const userRole = session.user.role.toLowerCase();
+      if (userRole === 'coach') {
+        router.replace('/complete-your-profile');
+      }
+    }
+  }, [session, router]);
+
+  // Load onboarding progress on mount
+  useEffect(() => {
+    const progress = loadOnboardingProgress();
+    if (progress && progress.onboardingStatus === "in_progress") {
+      // Resume from last saved step (API returns step 2 after completing step 1, so we use currentStep - 1)
+      const resumeStep = Math.max(0, progress.currentStep - 1);
+      setStep(resumeStep);
+      toast({
+        variant: "success",
+        title: "Welcome back!",
+        description: `Resuming from step ${resumeStep + 1}`,
+      });
+    }
+  }, []);
+
+  // Check CV status when on step 2 (CV Upload tab) - auto-navigate if completed
+  useEffect(() => {
+    const checkCvStatus = async () => {
+      if (step !== 2) return;
+
+      try {
+        const status = await pollCvStatus();
+        
+        if (status === "completed") {
+          // CV is already processed, move to review
+          setCompletedSteps(prev => [...new Set([...prev, 2])]);
+          setStep(3);
+          toast({
+            variant: "success",
+            title: "CV already processed",
+            description: "Your CV has been analyzed. Proceeding to review.",
+          });
+        }
+      } catch (error) {
+        // Silently fail - user can still upload CV manually
+        console.error("Error checking CV status:", error);
+      }
+    };
+
+    checkCvStatus();
+  }, [step]);
+
+  // Fetch CV review data when step 3 loads
+  useEffect(() => {
+    const fetchReviewData = async () => {
+      if (step !== 3) return;
+
+      setReviewLoading(true);
+
+      try {
+        const headers = await getAuthHeaders();
+
+        const response = await fetch(`${getApiUrl()}/api/profile/setup/cv/review`, {
+          method: "GET",
+          headers,
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          toast({
+            variant: "error",
+            title: "Failed to load review data",
+            description: data.message || "Could not fetch CV analysis results",
+          });
+          setReviewLoading(false);
+          return;
+        }
+
+        // Update extracted data from API response
+        if (data.data && data.data.review) {
+          setExtractedData({
+            fullName: data.data.review.full_name || "",
+            currentRole: data.data.review.current_role || "",
+            experience: data.data.review.experience || "",
+            education: data.data.review.education || "",
+            topSkills: data.data.review.top_skills || [],
+            languages: data.data.review.languages || [],
+          });
+        }
+      } catch (error: any) {
+        toast({
+          variant: "error",
+          title: "Error",
+          description: error.message || "Failed to load review data",
+        });
+      } finally {
+        setReviewLoading(false);
+      }
+    };
+
+    fetchReviewData();
+  }, [step]);
 
   // Step 0: Profile
   const [username, setUsername] = useState("");
@@ -129,12 +288,14 @@ export default function JobseekerCompleteProfilePage() {
   const [gender, setGender] = useState("");
   const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Step 1: Basic Info
   const [targetRole, setTargetRole] = useState("");
   const [experienceLevel, setExperienceLevel] = useState("");
   const [industry, setIndustry] = useState("");
+  const [goals, setGoals] = useState("");
 
   // Step 2: CV Upload
   const [cvFile, setCvFile] = useState<File | null>(null);
@@ -143,13 +304,18 @@ export default function JobseekerCompleteProfilePage() {
 
   // Step 3: Review (extracted data)
   const [extractedData, setExtractedData] = useState({
-    fullName: "Richard Samson",
-    currentRole: "Product Manager",
-    experience: "5+ Experience",
-    education: "BSc Computer Science — University of London",
-    topSkills: ["Product Strategy", "Agile", "Stakeholder Management"],
-    languages: ["English", "French", "Spanish"]
+    fullName: "",
+    currentRole: "",
+    experience: "",
+    education: "",
+    topSkills: [] as string[],
+    languages: [] as string[],
   });
+
+  // Editing states for each field
+  const [editingField, setEditingField] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState<string>("");
+  const [editArrayValue, setEditArrayValue] = useState<string[]>([]);
 
   const toggleChip = (arr: string[], setArr: (v: string[]) => void, val: string) => {
     setArr(arr.includes(val) ? arr.filter((v) => v !== val) : [...arr, val]);
@@ -158,9 +324,126 @@ export default function JobseekerCompleteProfilePage() {
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setPhotoFile(file);
       const reader = new FileReader();
       reader.onloadend = () => setPhotoPreview(reader.result as string);
       reader.readAsDataURL(file);
+    }
+  };
+
+  const handleProfileSubmit = async () => {
+    // Validation
+    if (!username.trim()) {
+      toast({
+        variant: "error",
+        title: "Missing username",
+        description: "Please enter your username",
+      });
+      return;
+    }
+
+    if (!location) {
+      toast({
+        variant: "error",
+        title: "Missing location",
+        description: "Please select your country",
+      });
+      return;
+    }
+
+    if (!phone) {
+      toast({
+        variant: "error",
+        title: "Missing phone number",
+        description: "Please enter your phone number",
+      });
+      return;
+    }
+
+    if (!gender) {
+      toast({
+        variant: "error",
+        title: "Missing gender",
+        description: "Please select your gender",
+      });
+      return;
+    }
+
+    if (selectedLanguages.length === 0) {
+      toast({
+        variant: "error",
+        title: "Missing languages",
+        description: "Please select at least one language",
+      });
+      return;
+    }
+
+    if (!photoFile) {
+      toast({
+        variant: "error",
+        title: "Missing photo",
+        description: "Please upload a profile photo",
+      });
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const headers = await getAuthHeaders();
+
+      // Create FormData for file upload
+      const formData = new FormData();
+      formData.append("username", username.trim());
+      formData.append("country", location);
+      formData.append("phone_number", phone);
+      formData.append("gender", gender.toLowerCase());
+      formData.append("languages_spoken", selectedLanguages.map(l => l.toLowerCase()).join(","));
+      formData.append("photo", photoFile);
+
+      // Remove Content-Type header to let browser set it with boundary for multipart/form-data
+      const { "Content-Type": _, ...headersWithoutContentType } = headers as Record<string, string>;
+
+      const response = await fetch(`${getApiUrl()}/api/profile/setup/basic`, {
+        method: "POST",
+        headers: headersWithoutContentType,
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        toast({
+          variant: "error",
+          title: "Profile setup failed",
+          description: data.message || "Failed to save profile information",
+        });
+        setLoading(false);
+        return;
+      }
+
+      toast({
+        variant: "success",
+        title: "Profile saved!",
+        description: "Your basic information has been saved successfully",
+      });
+
+      // Save onboarding progress
+      if (data.data?.current_step && data.data?.onboarding_status) {
+        saveOnboardingProgress(data.data.current_step, data.data.onboarding_status);
+      }
+
+      // Mark step 0 as completed and move to next step
+      setCompletedSteps(prev => [...new Set([...prev, 0])]);
+      setStep(1);
+    } catch (error: any) {
+      toast({
+        variant: "error",
+        title: "Error",
+        description: error.message || "An error occurred while saving your profile",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -181,19 +464,269 @@ export default function JobseekerCompleteProfilePage() {
     }
   };
 
-  const goNext = () => {
-    if (step === 2 && cvUploaded) {
-      // Simulate CV analysis
-      setStep(3);
-    } else {
-      setStep((s) => Math.min(s + 1, 3));
+  const pollCvStatus = async () => {
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch(`${getApiUrl()}/api/profile/setup/cv/status`, {
+        method: "GET",
+        headers,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return null;
+      }
+
+      return data.data?.analysis_status || null;
+    } catch (error) {
+      console.error("Error polling CV status:", error);
+      return null;
+    }
+  };
+
+  const handleCvSubmit = async () => {
+    if (!cvFile) {
+      toast({
+        variant: "error",
+        title: "Missing CV",
+        description: "Please upload your CV to continue",
+      });
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const headers = await getAuthHeaders();
+
+      // Create FormData for file upload
+      const formData = new FormData();
+      formData.append("cv_file", cvFile);
+
+      // Remove Content-Type header to let browser set it with boundary for multipart/form-data
+      const { "Content-Type": _, ...headersWithoutContentType } = headers as Record<string, string>;
+
+      const response = await fetch(`${getApiUrl()}/api/profile/setup/cv/upload-and-analyze`, {
+        method: "POST",
+        headers: headersWithoutContentType,
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        toast({
+          variant: "error",
+          title: "CV upload failed",
+          description: data.message || "Failed to upload and analyze CV",
+        });
+        setLoading(false);
+        return;
+      }
+
+      toast({
+        variant: "success",
+        title: "CV uploaded!",
+        description: "Your CV is being analyzed. This may take up to a minute.",
+      });
+
+      // Save onboarding progress
+      if (data.data?.current_step && data.data?.onboarding_status) {
+        saveOnboardingProgress(data.data.current_step, data.data.onboarding_status);
+      }
+
+      setLoading(false);
+      setCvProcessing(true);
+      setProcessingProgress(0);
+
+      // Start polling for CV processing status
+      const pollInterval = setInterval(async () => {
+        const status = await pollCvStatus();
+
+        // Update progress bar (simulate progress)
+        setProcessingProgress(prev => Math.min(prev + 5, 95));
+
+        if (status === "completed") {
+          clearInterval(pollInterval);
+          setProcessingProgress(100);
+          setCvProcessing(false);
+
+          toast({
+            variant: "success",
+            title: "Analysis complete!",
+            description: "Your CV has been analyzed successfully",
+          });
+
+          // Mark step 2 as completed and move to review step
+          setCompletedSteps(prev => [...new Set([...prev, 2])]);
+          setStep(3);
+        } else if (status === "failed") {
+          clearInterval(pollInterval);
+          setCvProcessing(false);
+          setProcessingProgress(0);
+
+          toast({
+            variant: "error",
+            title: "Analysis failed",
+            description: "Failed to analyze your CV. Please try uploading again.",
+          });
+        }
+        // Continue polling if status is "processing" or "in_progress"
+      }, 20000); // Poll every 20 seconds
+
+      // Timeout after 2 minutes
+      setTimeout(() => {
+        clearInterval(pollInterval);
+        if (cvProcessing) {
+          setCvProcessing(false);
+          setProcessingProgress(0);
+          toast({
+            variant: "error",
+            title: "Processing timeout",
+            description: "CV analysis is taking longer than expected. Please try again.",
+          });
+        }
+      }, 120000); // 2 minutes timeout
+    } catch (error: any) {
+      toast({
+        variant: "error",
+        title: "Error",
+        description: error.message || "An error occurred while uploading your CV",
+      });
+      setLoading(false);
+      setCvProcessing(false);
     }
   };
 
   const goBack = () => setStep((s) => Math.max(s - 1, 0));
 
-  const handleFindCoaches = () => {
-    router.push("/dashboard?us=jobseeker");
+  const handleCareerSubmit = async () => {
+    // Validation
+    if (!targetRole.trim()) {
+      toast({
+        variant: "error",
+        title: "Missing target role",
+        description: "Please enter your target role",
+      });
+      return;
+    }
+
+    if (!experienceLevel) {
+      toast({
+        variant: "error",
+        title: "Missing experience level",
+        description: "Please select your experience level",
+      });
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const headers = await getAuthHeaders();
+
+      const response = await fetch(`${getApiUrl()}/api/profile/setup/career`, {
+        method: "PATCH",
+        headers,
+        body: JSON.stringify({
+          target_role: targetRole.trim(),
+          experience_level: experienceLevel,
+          industry: industry || "",
+          goals: goals.trim() || "",
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        toast({
+          variant: "error",
+          title: "Career setup failed",
+          description: data.message || "Failed to save career information",
+        });
+        setLoading(false);
+        return;
+      }
+
+      toast({
+        variant: "success",
+        title: "Career info saved!",
+        description: "Your career information has been saved successfully",
+      });
+
+      // Save onboarding progress
+      if (data.data?.current_step && data.data?.onboarding_status) {
+        saveOnboardingProgress(data.data.current_step, data.data.onboarding_status);
+      }
+
+      // Mark step 1 as completed and move to next step
+      setCompletedSteps(prev => [...new Set([...prev, 1])]);
+      setStep(2);
+    } catch (error: any) {
+      toast({
+        variant: "error",
+        title: "Error",
+        description: error.message || "An error occurred while saving your career info",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFindCoaches = async () => {
+    setLoading(true);
+
+    try {
+      const headers = await getAuthHeaders();
+
+      const response = await fetch(`${getApiUrl()}/api/profile/setup/cv/review`, {
+        method: "PATCH",
+        headers: {
+          ...headers,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          full_name: extractedData.fullName,
+          current_role: extractedData.currentRole,
+          experience: extractedData.experience,
+          education: extractedData.education,
+          top_skills: extractedData.topSkills,
+          languages: extractedData.languages,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        toast({
+          variant: "error",
+          title: "Failed to save",
+          description: data.message || "Could not save your profile data",
+        });
+        setLoading(false);
+        return;
+      }
+
+      toast({
+        variant: "success",
+        title: "Profile saved",
+        description: "Your profile has been saved successfully",
+      });
+
+      // Clear onboarding progress when user completes all steps
+      clearOnboardingProgress();
+      
+      // Navigate to coaches page
+      router.push("/coaches");
+    } catch (error: any) {
+      toast({
+        variant: "error",
+        title: "Error",
+        description: error.message || "Failed to save profile data",
+      });
+      setLoading(false);
+    }
   };
 
   return (
@@ -205,8 +738,8 @@ export default function JobseekerCompleteProfilePage() {
 
       {/* Header */}
       <div className="relative z-10 flex items-center justify-between px-6 lg:px-12 py-6">
-        <Link href="/" className="cursor-pointer">
-          <BackArrowSVG />
+        <Link href="/" className="cursor-pointer text-white flex items-center gap-1">
+         <ArrowLeft /> Back
         </Link>
         <button className="px-6 py-2.5 bg-[#E8F5D0] hover:bg-[#d9ebc1] text-black font-mona-sans font-semibold text-sm rounded-[10px] transition-colors">
           Save & Exit
@@ -217,12 +750,29 @@ export default function JobseekerCompleteProfilePage() {
       <div className="relative z-10 flex items-center justify-center gap-4 px-6 mb-10">
         {STEPS.map((label, idx) => (
           <div key={idx} className="flex items-center gap-4">
-            <div className="flex flex-col items-center gap-2">
-              <CheckCircleSVG filled={step >= idx} />
-              <span className={`text-xs font-mona-sans ${step >= idx ? "text-[#A2CE3A]" : "text-white/50"}`}>{label}</span>
-            </div>
+            <button
+              onClick={() => {
+                // Allow navigation to current step or any completed step
+                if (idx <= step || completedSteps.includes(idx)) {
+                  setStep(idx);
+                }
+              }}
+              disabled={idx > step && !completedSteps.includes(idx)}
+              className={`flex flex-col items-center gap-2 ${
+                idx <= step || completedSteps.includes(idx)
+                  ? "cursor-pointer hover:opacity-80"
+                  : "cursor-not-allowed opacity-50"
+              } transition-opacity`}
+            >
+              <CheckCircleSVG filled={step >= idx || completedSteps.includes(idx)} />
+              <span className={`text-xs font-mona-sans ${
+                step >= idx || completedSteps.includes(idx) ? "text-[#A2CE3A]" : "text-white/50"
+              }`}>{label}</span>
+            </button>
             {idx < STEPS.length - 1 && (
-              <div className={`w-16 h-0.5 ${step > idx ? "bg-[#A2CE3A]" : "bg-white/20"}`} />
+              <div className={`w-16 h-0.5 ${
+                step > idx || completedSteps.includes(idx) ? "bg-[#A2CE3A]" : "bg-white/20"
+              }`} />
             )}
           </div>
         ))}
@@ -324,10 +874,15 @@ export default function JobseekerCompleteProfilePage() {
               </div>
 
               <button
-                onClick={goNext}
-                className="w-full py-3 bg-[#A2CE3A] hover:bg-[#8fb832] text-black font-mona-sans font-semibold text-base rounded-[10px] transition-colors"
+                onClick={handleProfileSubmit}
+                disabled={loading}
+                className={`w-full py-3 font-mona-sans font-semibold text-base rounded-[10px] transition-colors ${
+                  loading
+                    ? "bg-[#A2CE3A]/50 text-black/50 cursor-not-allowed"
+                    : "bg-[#A2CE3A] hover:bg-[#8fb832] text-black cursor-pointer"
+                }`}
               >
-                Continue
+                {loading ? "Saving..." : "Continue"}
               </button>
             </div>
           )}
@@ -368,18 +923,40 @@ export default function JobseekerCompleteProfilePage() {
                 onChange={setIndustry}
               />
 
+              {/* Goals */}
+              <div className="mb-6">
+                <label className="block text-white font-mona-sans text-sm font-semibold mb-2">Goals (optional)</label>
+                <textarea
+                  placeholder="What are your career goals?"
+                  value={goals}
+                  onChange={(e) => setGoals(e.target.value)}
+                  rows={4}
+                  className="w-full px-4 py-3 bg-white border border-white/10 rounded-[8px] text-[#121212] placeholder-[#ACACAC] font-sora text-sm outline-none focus:border-[#A2CE3A] transition-colors resize-none"
+                />
+              </div>
+
               <div className="flex items-center gap-3 mt-6">
                 <button
                   onClick={goBack}
-                  className="flex-1 py-3 bg-[#E8F5D0] hover:bg-[#d9ebc1] text-black font-mona-sans font-semibold text-base rounded-[10px] transition-colors"
+                  disabled={loading}
+                  className={`flex-1 py-3 font-mona-sans font-semibold text-base rounded-[10px] transition-colors ${
+                    loading
+                      ? "bg-[#E8F5D0]/50 text-black/50 cursor-not-allowed"
+                      : "bg-[#E8F5D0] hover:bg-[#d9ebc1] text-black cursor-pointer"
+                  }`}
                 >
                   Back
                 </button>
                 <button
-                  onClick={goNext}
-                  className="flex-1 py-3 bg-[#A2CE3A] hover:bg-[#8fb832] text-black font-mona-sans font-semibold text-base rounded-[10px] transition-colors"
+                  onClick={handleCareerSubmit}
+                  disabled={loading}
+                  className={`flex-1 py-3 font-mona-sans font-semibold text-base rounded-[10px] transition-colors ${
+                    loading
+                      ? "bg-[#A2CE3A]/50 text-black/50 cursor-not-allowed"
+                      : "bg-[#A2CE3A] hover:bg-[#8fb832] text-black cursor-pointer"
+                  }`}
                 >
-                  Continue
+                  {loading ? "Saving..." : "Continue"}
                 </button>
               </div>
             </div>
@@ -388,129 +965,319 @@ export default function JobseekerCompleteProfilePage() {
           {/* Step 2: CV Upload */}
           {step === 2 && (
             <div>
-              <h2 className="text-2xl font-mona-sans font-bold text-white mb-2">Upload your CV</h2>
-              <p className="text-white/50 font-mona-sans text-sm mb-6">We'll analyze it to find the best coach matches</p>
+              {cvProcessing ? (
+                <div className="flex flex-col items-center justify-center py-12">
+                  <div className="w-20 h-20 mb-6">
+                    <svg className="animate-spin" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <circle cx="40" cy="40" r="35" stroke="#A2CE3A" strokeOpacity="0.2" strokeWidth="8"/>
+                      <path d="M40 5C59.33 5 75 20.67 75 40" stroke="#A2CE3A" strokeWidth="8" strokeLinecap="round"/>
+                    </svg>
+                  </div>
+                  <h2 className="text-2xl font-mona-sans font-bold text-white mb-2">Analyzing your CV</h2>
+                  <p className="text-white/50 font-mona-sans text-sm mb-8 text-center">This may take up to a minute. Please don't close this page.</p>
+                  
+                  <div className="w-full max-w-md">
+                    <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-[#A2CE3A] transition-all duration-500 ease-out"
+                        style={{ width: `${processingProgress}%` }}
+                      />
+                    </div>
+                    <p className="text-white/40 font-mona-sans text-xs mt-2 text-center">{processingProgress}% complete</p>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <h2 className="text-2xl font-mona-sans font-bold text-white mb-2">Upload your CV</h2>
+                  <p className="text-white/50 font-mona-sans text-sm mb-6">We'll analyze it to find the best coach matches</p>
 
-              <input
-                type="file"
-                ref={cvInputRef}
-                accept=".pdf,.doc,.docx"
-                onChange={handleCvUpload}
-                className="hidden"
-              />
+                  <input
+                    type="file"
+                    ref={cvInputRef}
+                    accept=".pdf,.doc,.docx"
+                    onChange={handleCvUpload}
+                    className="hidden"
+                  />
 
-              <div
-                onClick={() => !cvUploaded && cvInputRef.current?.click()}
-                onDrop={handleCvDrop}
-                onDragOver={(e) => e.preventDefault()}
-                className={`border-2 border-dashed rounded-[12px] p-12 flex flex-col items-center justify-center cursor-pointer transition-colors ${
-                  cvUploaded
-                    ? "border-[#A2CE3A] bg-[#A2CE3A]/5"
-                    : "border-white/20 bg-white/5 hover:border-[#A2CE3A]/50"
-                }`}
-              >
-                {cvUploaded ? (
-                  <>
-                    <CheckGreenSVG />
-                    <p className="text-white font-mona-sans font-semibold text-base mt-4">{cvFile?.name || "My Recent Portfolio - Updated"}</p>
-                    <p className="text-white/50 font-mona-sans text-sm mt-1">
-                      {cvFile ? `${(cvFile.size / 1024).toFixed(2)} KB` : "104 KB"} • Click to change
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    <UploadIconSVG />
-                    <p className="text-white/70 font-mona-sans text-sm mt-4">Drop your CV here or click to Browse</p>
-                    <p className="text-white/40 font-mona-sans text-xs mt-1">PDF or DOC, up to 10MB</p>
-                  </>
-                )}
-              </div>
+                  <div
+                    onClick={() => !cvUploaded && cvInputRef.current?.click()}
+                    onDrop={handleCvDrop}
+                    onDragOver={(e) => e.preventDefault()}
+                    className={`border-2 border-dashed rounded-[12px] p-12 flex flex-col items-center justify-center cursor-pointer transition-colors ${
+                      cvUploaded
+                        ? "border-[#A2CE3A] bg-[#A2CE3A]/5"
+                        : "border-white/20 bg-white/5 hover:border-[#A2CE3A]/50"
+                    }`}
+                  >
+                    {cvUploaded ? (
+                      <>
+                        <CheckGreenSVG />
+                        <p className="text-white font-mona-sans font-semibold text-base mt-4">{cvFile?.name || "My Recent Portfolio - Updated"}</p>
+                        <p className="text-white/50 font-mona-sans text-sm mt-1">
+                          {cvFile ? `${(cvFile.size / 1024).toFixed(2)} KB` : "104 KB"} • Click to change
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <UploadIconSVG />
+                        <p className="text-white/70 font-mona-sans text-sm mt-4">Drop your CV here or click to Browse</p>
+                        <p className="text-white/40 font-mona-sans text-xs mt-1">PDF or DOC, up to 10MB</p>
+                      </>
+                    )}
+                  </div>
 
-              <div className="flex items-center gap-3 mt-6">
-                <button
-                  onClick={goBack}
-                  className="flex-1 py-3 bg-[#E8F5D0] hover:bg-[#d9ebc1] text-black font-mona-sans font-semibold text-base rounded-[10px] transition-colors"
-                >
-                  Back
-                </button>
-                <button
-                  onClick={goNext}
-                  disabled={!cvUploaded}
-                  className={`flex-1 py-3 font-mona-sans font-semibold text-base rounded-[10px] transition-colors ${
-                    cvUploaded
-                      ? "bg-[#A2CE3A] hover:bg-[#8fb832] text-black"
-                      : "bg-white/10 text-white/30 cursor-not-allowed"
-                  }`}
-                >
-                  Upload and Analyze
-                </button>
-              </div>
+                  <div className="flex items-center gap-3 mt-6">
+                    <button
+                      onClick={goBack}
+                      disabled={loading}
+                      className={`flex-1 py-3 font-mona-sans font-semibold text-base rounded-[10px] transition-colors ${
+                        loading
+                          ? "bg-[#E8F5D0]/50 text-black/50 cursor-not-allowed"
+                          : "bg-[#E8F5D0] hover:bg-[#d9ebc1] text-black cursor-pointer"
+                      }`}
+                    >
+                      Back
+                    </button>
+                    <button
+                      onClick={handleCvSubmit}
+                      disabled={!cvUploaded || loading}
+                      className={`flex-1 py-3 font-mona-sans font-semibold text-base rounded-[10px] transition-colors ${
+                        cvUploaded && !loading
+                          ? "bg-[#A2CE3A] hover:bg-[#8fb832] text-black cursor-pointer"
+                          : "bg-white/10 text-white/30 cursor-not-allowed"
+                      }`}
+                    >
+                      {loading ? "Uploading..." : "Upload and Analyze"}
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           )}
 
           {/* Step 3: Review */}
           {step === 3 && (
             <div>
-              <div className="flex items-center justify-center mb-6">
-                <div className="px-4 py-1.5 bg-[#A2CE3A]/20 border border-[#A2CE3A] rounded-full flex items-center gap-2">
-                  <CheckCircleSVG filled={true} />
-                  <span className="text-[#A2CE3A] font-mona-sans text-sm font-semibold">Analysis Complete</span>
+              {reviewLoading ? (
+                <div className="flex flex-col items-center justify-center py-12">
+                  <div className="w-16 h-16 mb-4">
+                    <svg className="animate-spin" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <circle cx="32" cy="32" r="28" stroke="#A2CE3A" strokeOpacity="0.2" strokeWidth="6"/>
+                      <path d="M32 4C48.5685 4 62 17.4315 62 34" stroke="#A2CE3A" strokeWidth="6" strokeLinecap="round"/>
+                    </svg>
+                  </div>
+                  <p className="text-white/70 font-mona-sans text-sm">Loading your CV analysis...</p>
                 </div>
-              </div>
+              ) : (
+                <>
+                  <div className="flex items-center justify-center mb-6">
+                    <div className="px-4 py-1.5 bg-[#A2CE3A]/20 border border-[#A2CE3A] rounded-full flex items-center gap-2">
+                      <CheckCircleSVG filled={true} />
+                      <span className="text-[#A2CE3A] font-mona-sans text-sm font-semibold">Analysis Complete</span>
+                    </div>
+                  </div>
 
-              <h2 className="text-2xl font-mona-sans font-bold text-white text-center mb-2">Here's what we found</h2>
-              <p className="text-white/50 font-mona-sans text-sm text-center mb-8">Review and edit any information below</p>
+                  <h2 className="text-2xl font-mona-sans font-bold text-white text-center mb-2">Here's what we found</h2>
+                  <p className="text-white/50 font-mona-sans text-sm text-center mb-8">Review and edit any information below</p>
 
               <div className="space-y-4">
                 {/* Full Name */}
                 <div className="bg-[#0B0D0F] border border-white/10 rounded-[12px] p-4">
                   <div className="flex items-center justify-between">
-                    <div>
+                    <div className="flex-1">
                       <p className="text-white/50 font-mona-sans text-xs mb-1">Full Name</p>
-                      <p className="text-white font-mona-sans font-semibold text-base">{extractedData.fullName}</p>
+                      {editingField === "fullName" ? (
+                        <div className="mt-2">
+                          <input
+                            type="text"
+                            value={editValue}
+                            onChange={(e) => setEditValue(e.target.value)}
+                            className="w-full px-3 py-2 bg-white/5 border border-white/20 rounded-[8px] text-white font-mona-sans text-sm outline-none focus:border-[#A2CE3A] transition-colors"
+                            autoFocus
+                          />
+                          <div className="flex gap-2 mt-2">
+                            <button
+                              onClick={() => {
+                                setExtractedData({ ...extractedData, fullName: editValue });
+                                setEditingField(null);
+                              }}
+                              className="px-3 py-1.5 bg-[#A2CE3A] text-black font-mona-sans text-xs font-semibold rounded-[6px] hover:bg-[#8fb832] transition-colors"
+                            >
+                              Save
+                            </button>
+                            <button
+                              onClick={() => setEditingField(null)}
+                              className="px-3 py-1.5 bg-white/10 text-white font-mona-sans text-xs font-semibold rounded-[6px] hover:bg-white/20 transition-colors"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-white font-mona-sans font-semibold text-base">{extractedData.fullName}</p>
+                      )}
                     </div>
-                    <button className="p-2 hover:bg-white/5 rounded-[8px] transition-colors">
-                      <EditIconSVG />
-                    </button>
+                    {editingField !== "fullName" && (
+                      <button
+                        onClick={() => {
+                          setEditingField("fullName");
+                          setEditValue(extractedData.fullName);
+                        }}
+                        className="p-2 hover:bg-white/5 rounded-[8px] transition-colors"
+                      >
+                        <EditIconSVG />
+                      </button>
+                    )}
                   </div>
                 </div>
 
                 {/* Current Role */}
                 <div className="bg-[#0B0D0F] border border-white/10 rounded-[12px] p-4">
                   <div className="flex items-center justify-between">
-                    <div>
+                    <div className="flex-1">
                       <p className="text-white/50 font-mona-sans text-xs mb-1">Current Role</p>
-                      <p className="text-white font-mona-sans font-semibold text-base">{extractedData.currentRole}</p>
+                      {editingField === "currentRole" ? (
+                        <div className="mt-2">
+                          <input
+                            type="text"
+                            value={editValue}
+                            onChange={(e) => setEditValue(e.target.value)}
+                            className="w-full px-3 py-2 bg-white/5 border border-white/20 rounded-[8px] text-white font-mona-sans text-sm outline-none focus:border-[#A2CE3A] transition-colors"
+                            autoFocus
+                          />
+                          <div className="flex gap-2 mt-2">
+                            <button
+                              onClick={() => {
+                                setExtractedData({ ...extractedData, currentRole: editValue });
+                                setEditingField(null);
+                              }}
+                              className="px-3 py-1.5 bg-[#A2CE3A] text-black font-mona-sans text-xs font-semibold rounded-[6px] hover:bg-[#8fb832] transition-colors"
+                            >
+                              Save
+                            </button>
+                            <button
+                              onClick={() => setEditingField(null)}
+                              className="px-3 py-1.5 bg-white/10 text-white font-mona-sans text-xs font-semibold rounded-[6px] hover:bg-white/20 transition-colors"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-white font-mona-sans font-semibold text-base">{extractedData.currentRole}</p>
+                      )}
                     </div>
-                    <button className="p-2 hover:bg-white/5 rounded-[8px] transition-colors">
-                      <EditIconSVG />
-                    </button>
+                    {editingField !== "currentRole" && (
+                      <button
+                        onClick={() => {
+                          setEditingField("currentRole");
+                          setEditValue(extractedData.currentRole);
+                        }}
+                        className="p-2 hover:bg-white/5 rounded-[8px] transition-colors"
+                      >
+                        <EditIconSVG />
+                      </button>
+                    )}
                   </div>
                 </div>
 
                 {/* Experience */}
                 <div className="bg-[#0B0D0F] border border-white/10 rounded-[12px] p-4">
                   <div className="flex items-center justify-between">
-                    <div>
+                    <div className="flex-1">
                       <p className="text-white/50 font-mona-sans text-xs mb-1">Experience</p>
-                      <p className="text-white font-mona-sans font-semibold text-base">{extractedData.experience}</p>
+                      {editingField === "experience" ? (
+                        <div className="mt-2">
+                          <input
+                            type="text"
+                            value={editValue}
+                            onChange={(e) => setEditValue(e.target.value)}
+                            className="w-full px-3 py-2 bg-white/5 border border-white/20 rounded-[8px] text-white font-mona-sans text-sm outline-none focus:border-[#A2CE3A] transition-colors"
+                            autoFocus
+                          />
+                          <div className="flex gap-2 mt-2">
+                            <button
+                              onClick={() => {
+                                setExtractedData({ ...extractedData, experience: editValue });
+                                setEditingField(null);
+                              }}
+                              className="px-3 py-1.5 bg-[#A2CE3A] text-black font-mona-sans text-xs font-semibold rounded-[6px] hover:bg-[#8fb832] transition-colors"
+                            >
+                              Save
+                            </button>
+                            <button
+                              onClick={() => setEditingField(null)}
+                              className="px-3 py-1.5 bg-white/10 text-white font-mona-sans text-xs font-semibold rounded-[6px] hover:bg-white/20 transition-colors"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-white font-mona-sans font-semibold text-base">{extractedData.experience}</p>
+                      )}
                     </div>
-                    <button className="p-2 hover:bg-white/5 rounded-[8px] transition-colors">
-                      <EditIconSVG />
-                    </button>
+                    {editingField !== "experience" && (
+                      <button
+                        onClick={() => {
+                          setEditingField("experience");
+                          setEditValue(extractedData.experience);
+                        }}
+                        className="p-2 hover:bg-white/5 rounded-[8px] transition-colors"
+                      >
+                        <EditIconSVG />
+                      </button>
+                    )}
                   </div>
                 </div>
 
                 {/* Education */}
                 <div className="bg-[#0B0D0F] border border-white/10 rounded-[12px] p-4">
                   <div className="flex items-center justify-between">
-                    <div>
+                    <div className="flex-1">
                       <p className="text-white/50 font-mona-sans text-xs mb-1">Education</p>
-                      <p className="text-white font-mona-sans font-semibold text-base">{extractedData.education}</p>
+                      {editingField === "education" ? (
+                        <div className="mt-2">
+                          <input
+                            type="text"
+                            value={editValue}
+                            onChange={(e) => setEditValue(e.target.value)}
+                            className="w-full px-3 py-2 bg-white/5 border border-white/20 rounded-[8px] text-white font-mona-sans text-sm outline-none focus:border-[#A2CE3A] transition-colors"
+                            autoFocus
+                          />
+                          <div className="flex gap-2 mt-2">
+                            <button
+                              onClick={() => {
+                                setExtractedData({ ...extractedData, education: editValue });
+                                setEditingField(null);
+                              }}
+                              className="px-3 py-1.5 bg-[#A2CE3A] text-black font-mona-sans text-xs font-semibold rounded-[6px] hover:bg-[#8fb832] transition-colors"
+                            >
+                              Save
+                            </button>
+                            <button
+                              onClick={() => setEditingField(null)}
+                              className="px-3 py-1.5 bg-white/10 text-white font-mona-sans text-xs font-semibold rounded-[6px] hover:bg-white/20 transition-colors"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-white font-mona-sans font-semibold text-base">{extractedData.education}</p>
+                      )}
                     </div>
-                    <button className="p-2 hover:bg-white/5 rounded-[8px] transition-colors">
-                      <EditIconSVG />
-                    </button>
+                    {editingField !== "education" && (
+                      <button
+                        onClick={() => {
+                          setEditingField("education");
+                          setEditValue(extractedData.education);
+                        }}
+                        className="p-2 hover:bg-white/5 rounded-[8px] transition-colors"
+                      >
+                        <EditIconSVG />
+                      </button>
+                    )}
                   </div>
                 </div>
 
@@ -518,57 +1285,135 @@ export default function JobseekerCompleteProfilePage() {
                 <div className="bg-[#0B0D0F] border border-white/10 rounded-[12px] p-4">
                   <div className="flex items-center justify-between mb-3">
                     <p className="text-white/50 font-mona-sans text-xs">Top Skills</p>
-                    <button className="p-2 hover:bg-white/5 rounded-[8px] transition-colors">
-                      <EditIconSVG />
-                    </button>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {extractedData.topSkills.map((skill) => (
-                      <span
-                        key={skill}
-                        className="px-3 py-1.5 bg-[#A2CE3A]/20 text-[#A2CE3A] border border-[#A2CE3A] rounded-full text-sm font-mona-sans"
+                    {editingField !== "topSkills" && (
+                      <button
+                        onClick={() => {
+                          setEditingField("topSkills");
+                          setEditArrayValue([...extractedData.topSkills]);
+                        }}
+                        className="p-2 hover:bg-white/5 rounded-[8px] transition-colors"
                       >
-                        {skill}
-                      </span>
-                    ))}
+                        <EditIconSVG />
+                      </button>
+                    )}
                   </div>
+                  {editingField === "topSkills" ? (
+                    <div className="mt-2">
+                      <input
+                        type="text"
+                        value={editArrayValue.join(", ")}
+                        onChange={(e) => setEditArrayValue(e.target.value.split(",").map(s => s.trim()).filter(Boolean))}
+                        placeholder="Separate skills with commas"
+                        className="w-full px-3 py-2 bg-white/5 border border-white/20 rounded-[8px] text-white font-mona-sans text-sm outline-none focus:border-[#A2CE3A] transition-colors"
+                        autoFocus
+                      />
+                      <div className="flex gap-2 mt-2">
+                        <button
+                          onClick={() => {
+                            setExtractedData({ ...extractedData, topSkills: editArrayValue });
+                            setEditingField(null);
+                          }}
+                          className="px-3 py-1.5 bg-[#A2CE3A] text-black font-mona-sans text-xs font-semibold rounded-[6px] hover:bg-[#8fb832] transition-colors"
+                        >
+                          Save
+                        </button>
+                        <button
+                          onClick={() => setEditingField(null)}
+                          className="px-3 py-1.5 bg-white/10 text-white font-mona-sans text-xs font-semibold rounded-[6px] hover:bg-white/20 transition-colors"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {extractedData.topSkills.map((skill) => (
+                        <span
+                          key={skill}
+                          className="px-3 py-1.5 bg-[#A2CE3A]/20 text-[#A2CE3A] border border-[#A2CE3A] rounded-full text-sm font-mona-sans"
+                        >
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {/* Languages */}
                 <div className="bg-[#0B0D0F] border border-white/10 rounded-[12px] p-4">
                   <div className="flex items-center justify-between mb-3">
                     <p className="text-white/50 font-mona-sans text-xs">Languages</p>
-                    <button className="p-2 hover:bg-white/5 rounded-[8px] transition-colors">
-                      <EditIconSVG />
-                    </button>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {extractedData.languages.map((lang) => (
-                      <span
-                        key={lang}
-                        className="px-3 py-1.5 bg-[#A2CE3A]/20 text-[#A2CE3A] border border-[#A2CE3A] rounded-full text-sm font-mona-sans"
+                    {editingField !== "languages" && (
+                      <button
+                        onClick={() => {
+                          setEditingField("languages");
+                          setEditArrayValue([...extractedData.languages]);
+                        }}
+                        className="p-2 hover:bg-white/5 rounded-[8px] transition-colors"
                       >
-                        {lang}
-                      </span>
-                    ))}
+                        <EditIconSVG />
+                      </button>
+                    )}
                   </div>
+                  {editingField === "languages" ? (
+                    <div className="mt-2">
+                      <input
+                        type="text"
+                        value={editArrayValue.join(", ")}
+                        onChange={(e) => setEditArrayValue(e.target.value.split(",").map(s => s.trim()).filter(Boolean))}
+                        placeholder="Separate languages with commas"
+                        className="w-full px-3 py-2 bg-white/5 border border-white/20 rounded-[8px] text-white font-mona-sans text-sm outline-none focus:border-[#A2CE3A] transition-colors"
+                        autoFocus
+                      />
+                      <div className="flex gap-2 mt-2">
+                        <button
+                          onClick={() => {
+                            setExtractedData({ ...extractedData, languages: editArrayValue });
+                            setEditingField(null);
+                          }}
+                          className="px-3 py-1.5 bg-[#A2CE3A] text-black font-mona-sans text-xs font-semibold rounded-[6px] hover:bg-[#8fb832] transition-colors"
+                        >
+                          Save
+                        </button>
+                        <button
+                          onClick={() => setEditingField(null)}
+                          className="px-3 py-1.5 bg-white/10 text-white font-mona-sans text-xs font-semibold rounded-[6px] hover:bg-white/20 transition-colors"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {extractedData.languages.map((lang) => (
+                        <span
+                          key={lang}
+                          className="px-3 py-1.5 bg-[#A2CE3A]/20 text-[#A2CE3A] border border-[#A2CE3A] rounded-full text-sm font-mona-sans"
+                        >
+                          {lang}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 mt-8">
-                <button
-                  onClick={goBack}
-                  className="flex-1 py-3 bg-[#E8F5D0] hover:bg-[#d9ebc1] text-black font-mona-sans font-semibold text-base rounded-[10px] transition-colors"
-                >
-                  Back
-                </button>
-                <button
-                  onClick={handleFindCoaches}
-                  className="flex-1 py-3 bg-[#A2CE3A] hover:bg-[#8fb832] text-black font-mona-sans font-semibold text-base rounded-[10px] transition-colors"
-                >
-                  Find My Coaches
-                </button>
-              </div>
+                  <div className="flex items-center gap-3 mt-8">
+                    <button
+                      onClick={goBack}
+                      className="flex-1 py-3 bg-[#E8F5D0] hover:bg-[#d9ebc1] text-black font-mona-sans font-semibold text-base rounded-[10px] transition-colors"
+                    >
+                      Back
+                    </button>
+                    <button
+                      onClick={handleFindCoaches}
+                      className="flex-1 py-3 bg-[#A2CE3A] hover:bg-[#8fb832] text-black font-mona-sans font-semibold text-base rounded-[10px] transition-colors"
+                    >
+                      Find My Coaches
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           )}
         </div>
