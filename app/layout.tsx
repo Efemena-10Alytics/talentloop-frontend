@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
 import localFont from 'next/font/local'
-import { Plus_Jakarta_Sans } from 'next/font/google'
-import { Geist, Geist_Mono } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
@@ -54,20 +52,10 @@ const sora = localFont({
   display: 'swap',
 })
 
-const jakartaSans = Plus_Jakarta_Sans({
-  subsets: ['latin'],
-  weight: ['200', '300', '400', '500', '600', '700', '800'],
+const jakartaSans = localFont({
+  src: '../public/fonts/Sora-VariableFont_wght.ttf',
   variable: '--font-jakarta-sans',
-})
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+  display: 'swap',
 });
 
 export const metadata: Metadata = {
@@ -83,7 +71,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${monaSans.variable} ${sora.variable} ${jakartaSans.variable} antialiased`}
+        className={`${monaSans.variable} ${sora.variable} ${jakartaSans.variable} antialiased`}
         suppressHydrationWarning
       >
         <Script src="https://accounts.google.com/gsi/client" strategy="beforeInteractive" />

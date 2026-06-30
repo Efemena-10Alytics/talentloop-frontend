@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import * as Select from "@radix-ui/react-select";
 import { useToast } from "@/components/ui/use-toast";
@@ -15,8 +15,6 @@ interface CredentialsUploadSectionProps {
 export interface CredentialsFormData {
   cvFile: File | null;
   linkedinProfileLink: string;
-  linkedinEmail: string;
-  linkedinPassword: string;
   needsVisaSponsorship: boolean | null;
 }
 
@@ -59,12 +57,24 @@ export default function CredentialsUploadSection({
   const [formData, setFormData] = useState<CredentialsFormData>({
     cvFile: null,
     linkedinProfileLink: initialData?.linkedin_url || "",
-    linkedinEmail: "",
-    linkedinPassword: "",
     needsVisaSponsorship: initialData?.needs_visa_sponsorship !== undefined ? initialData.needs_visa_sponsorship : null,
   });
   const [isDragging, setIsDragging] = useState(false);
   const [loading, setLoading] = useState(false);
+  const seeded = useRef(false);
+
+  useEffect(() => {
+    if (initialData && !seeded.current) {
+      seeded.current = true;
+      setFormData((prev) => ({
+        ...prev,
+        linkedinProfileLink: initialData.linkedin_url || "",
+        needsVisaSponsorship: initialData.needs_visa_sponsorship !== undefined
+          ? initialData.needs_visa_sponsorship
+          : null,
+      }));
+    }
+  }, [initialData]);
 
   const steps = [
     { number: "1", label: "Checkout", completed: true },
@@ -132,15 +142,6 @@ export default function CredentialsUploadSection({
       formDataToSend.append("cv", formData.cvFile);
       formDataToSend.append("category", "cv");
       formDataToSend.append("linkedin_url", formData.linkedinProfileLink);
-      
-      if (formData.linkedinEmail) {
-        formDataToSend.append("linkedin_email", formData.linkedinEmail);
-      }
-      
-      if (formData.linkedinPassword) {
-        formDataToSend.append("linkedin_password", formData.linkedinPassword);
-      }
-      
       formDataToSend.append("needs_visa_sponsorship", formData.needsVisaSponsorship ? "1" : "0");
 
       // Get auth headers (without Content-Type for FormData)
@@ -182,7 +183,7 @@ export default function CredentialsUploadSection({
         description: "Your credentials have been saved successfully",
       });
 
-      // Call onProceed to move to next step or complete
+      setLoading(false);
       onProceed(formData);
     } catch (error: any) {
       console.error("Error saving credentials:", error);
@@ -269,7 +270,7 @@ export default function CredentialsUploadSection({
                   }}
                 >
                   <span className="text-[#00C063] font-mona-sans text-sm font-semibold">
-                    5/6
+                    6/7
                   </span>
                 </div>
               </div>
@@ -335,36 +336,18 @@ export default function CredentialsUploadSection({
                   )}
                 </div>
 
-                {/* LinkedIn Profile Link - Full Width */}
-                <div className="space-y-3">
-                  <label className="block text-sm font-plus-jakarta font-medium" style={{ color: "#E8EFF1" }}>
-                    Paste your LinkedIn Profile Link <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="url"
-                    value={formData.linkedinProfileLink}
-                    onChange={(e) => setFormData({ ...formData, linkedinProfileLink: e.target.value })}
-                    placeholder="https://www.linkedin.com/in/yourprofile"
-                    className="w-full rounded-[40px] px-4 h-[56px] font-sora text-sm text-white outline-none transition-all"
-                    style={{
-                      background: "transparent",
-                      border: "1px solid #FFFFFF1A",
-                    }}
-                  />
-                </div>
-
-                {/* Two Column Layout - LinkedIn Credentials */}
+                {/* Two Column Layout - LinkedIn & Visa Sponsorship */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {/* LinkedIn Email */}
+                  {/* LinkedIn Profile Link */}
                   <div className="space-y-3">
                     <label className="block text-sm font-plus-jakarta font-medium" style={{ color: "#E8EFF1" }}>
-                      LinkedIn Email (Optional)
+                      Paste your LinkedIn Profile Link
                     </label>
                     <input
-                      type="email"
-                      value={formData.linkedinEmail}
-                      onChange={(e) => setFormData({ ...formData, linkedinEmail: e.target.value })}
-                      placeholder="your.email@example.com"
+                      type="url"
+                      value={formData.linkedinProfileLink}
+                      onChange={(e) => setFormData({ ...formData, linkedinProfileLink: e.target.value })}
+                      placeholder="https://www.linkedin.com/in/yourprofile"
                       className="w-full rounded-[40px] px-4 h-[56px] font-sora text-sm text-white outline-none transition-all"
                       style={{
                         background: "transparent",
@@ -373,30 +356,11 @@ export default function CredentialsUploadSection({
                     />
                   </div>
 
-                  {/* LinkedIn Password */}
+                  {/* Visa Sponsorship */}
                   <div className="space-y-3">
                     <label className="block text-sm font-plus-jakarta font-medium" style={{ color: "#E8EFF1" }}>
-                      LinkedIn Password (Optional)
+                      Do You Need Visa Sponsorship?
                     </label>
-                    <input
-                      type="password"
-                      value={formData.linkedinPassword}
-                      onChange={(e) => setFormData({ ...formData, linkedinPassword: e.target.value })}
-                      placeholder="••••••••"
-                      className="w-full rounded-[40px] px-4 h-[56px] font-sora text-sm text-white outline-none transition-all"
-                      style={{
-                        background: "transparent",
-                        border: "1px solid #FFFFFF1A",
-                      }}
-                    />
-                  </div>
-                </div>
-
-                {/* Visa Sponsorship - Full Width */}
-                <div className="space-y-3">
-                  <label className="block text-sm font-plus-jakarta font-medium" style={{ color: "#E8EFF1" }}>
-                    Do You Need Visa Sponsorship? <span className="text-red-500">*</span>
-                  </label>
                   <Select.Root 
                     value={formData.needsVisaSponsorship === null ? "" : formData.needsVisaSponsorship.toString()} 
                     onValueChange={(value) => setFormData({ ...formData, needsVisaSponsorship: value === "true" })}
@@ -439,6 +403,7 @@ export default function CredentialsUploadSection({
                       </Select.Content>
                     </Select.Portal>
                   </Select.Root>
+                  </div>
                 </div>
               </div>
 
@@ -455,31 +420,18 @@ export default function CredentialsUploadSection({
                 >
                   Back
                 </button>
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => onProceed({ cvFile: null, linkedinProfileLink: "", linkedinEmail: "", linkedinPassword: "", needsVisaSponsorship: null })}
-                    className="px-8 h-[52px] rounded-[100px] font-sora text-base font-semibold transition-opacity hover:opacity-80"
-                    style={{
-                      background: "transparent",
-                      border: "1px solid #FFFFFF33",
-                      color: "#FFFFFF",
-                    }}
-                  >
-                    Skip
-                  </button>
-                  <button
-                    onClick={handleProceed}
-                    disabled={loading}
-                    className="w-fit px-8 h-[52px] rounded-[100px] font-sora text-base font-semibold transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
-                    style={{
-                      background: "#A2CE3A",
-                      border: "1px solid #448290",
-                      color: "#000000",
-                    }}
-                  >
-                    {loading ? "Saving..." : "Proceed"}
-                  </button>
-                </div>
+                <button
+                  onClick={handleProceed}
+                  disabled={loading}
+                  className="w-fit px-8 h-[52px] rounded-[100px] font-sora text-base font-semibold transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{
+                    background: "#A2CE3A",
+                    border: "1px solid #448290",
+                    color: "#000000",
+                  }}
+                >
+                  {loading ? "Saving..." : "Proceed"}
+                </button>
               </div>
             </div>
           </div>

@@ -207,7 +207,13 @@ export default function V1SignupFormContent({
         title: result.message || `${provider} sign up successful`,
         description: `Welcome, ${result.data.user.name || result.data.user.email}!`,
       });
-      router.push(isModal ? "/" : "/complete-your-profile/jobseeker");
+      if (!isModal) {
+        if (result.data.user?.stripe_customer_id) {
+          router.push("/v1/dashboard");
+        } else {
+          router.push("/dashboard");
+        }
+      }
     } catch (err: any) {
       toast({
         variant: "error",
@@ -462,6 +468,18 @@ export default function V1SignupFormContent({
       setVerifying(false);
       if (onSuccess) {
         onSuccess();
+      } else {
+        try {
+          const meRes = await fetch("/api/user/me");
+          const meData = await meRes.json();
+          if (meData?.user?.stripe_customer_id) {
+            router.push("/v1/dashboard");
+          } else {
+            router.push("/dashboard");
+          }
+        } catch {
+          router.push("/dashboard");
+        }
       }
     } catch (err: any) {
       toast({

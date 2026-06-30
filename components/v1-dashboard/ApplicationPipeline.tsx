@@ -2,150 +2,50 @@
 
 import { useState } from "react";
 import ApplicationCard from "./ApplicationCard";
+import { useEnrollmentApplications, useEnrollmentStats, StatsPeriod } from "@/hooks/useEnrollmentData";
 
-type Application = {
-  id: string;
-  company: string;
-  position: string;
-  location: string;
-  date: string;
-  status: "Sponsored" | "Call Scheduled" | "Open" | "Done";
-  stage: "Applied" | "Interviews" | "Assessments" | "Rejected" | "Offer";
-};
-
-const sampleApplications: Application[] = [
-  {
-    id: "1",
-    company: "Lloyds Banking",
-    position: "Data Analyst",
-    location: "London",
-    date: "12 May",
-    status: "Sponsored",
-    stage: "Applied",
-  },
-  {
-    id: "2",
-    company: "Deloitte",
-    position: "BI Consultant",
-    location: "Remote",
-    date: "12 May",
-    status: "Open",
-    stage: "Applied",
-  },
-  {
-    id: "3",
-    company: "Deloitte",
-    position: "BI Consultant",
-    location: "Remote",
-    date: "12 May",
-    status: "Open",
-    stage: "Applied",
-  },
-  {
-    id: "4",
-    company: "Deloitte",
-    position: "BI Consultant",
-    location: "Remote",
-    date: "12 May",
-    status: "Open",
-    stage: "Applied",
-  },
-  {
-    id: "5",
-    company: "Deloitte",
-    position: "BI Consultant",
-    location: "Remote",
-    date: "12 May",
-    status: "Open",
-    stage: "Applied",
-  },
-  {
-    id: "6",
-    company: "Barclays",
-    position: "Data Analyst",
-    location: "London",
-    date: "22 May",
-    status: "Sponsored",
-    stage: "Interviews",
-  },
-  {
-    id: "7",
-    company: "NatWest",
-    position: "Data Analyst",
-    location: "Manchester",
-    date: "24 May",
-    status: "Open",
-    stage: "Interviews",
-  },
-  {
-    id: "8",
-    company: "Deloitte",
-    position: "BI Consultant",
-    location: "Remote",
-    date: "12 May",
-    status: "Done",
-    stage: "Interviews",
-  },
-  {
-    id: "9",
-    company: "Lloyds Banking",
-    position: "Data Analyst",
-    location: "London",
-    date: "12 May",
-    status: "Call Scheduled",
-    stage: "Assessments",
-  },
-  {
-    id: "10",
-    company: "Deloitte",
-    position: "BI Consultant",
-    location: "Remote",
-    date: "12 May",
-    status: "Done",
-    stage: "Assessments",
-  },
-  {
-    id: "11",
-    company: "Lloyds Banking",
-    position: "Data Analyst",
-    location: "London",
-    date: "12 May",
-    status: "Sponsored",
-    stage: "Rejected",
-  },
-  {
-    id: "12",
-    company: "Lloyds Banking",
-    position: "Data Analyst",
-    location: "London",
-    date: "12 May",
-    status: "Sponsored",
-    stage: "Offer",
-  },
-  {
-    id: "13",
-    company: "Deloitte",
-    position: "BI Consultant",
-    location: "Remote",
-    date: "12 May",
-    status: "Open",
-    stage: "Offer",
-  },
+const PERIOD_OPTIONS: { label: string; value: StatsPeriod }[] = [
+  { label: "Today", value: "today" },
+  { label: "This Week", value: "week" },
+  { label: "This Month", value: "month" },
+  { label: "This Year", value: "year" },
+  { label: "All Time", value: "all" },
 ];
 
+const STAGES = ["applied", "interview", "assessment", "rejected", "offer"] as const;
+const STAGE_LABELS: Record<string, string> = {
+  applied: "Applied",
+  interview: "Interviews",
+  assessment: "Assessments",
+  rejected: "Rejected",
+  offer: "Offer",
+};
+
 export default function ApplicationPipeline() {
-  const [selectedFilter, setSelectedFilter] = useState("Today");
+  const [period, setPeriod] = useState<StatsPeriod>("today");
 
-  const stages = [
-    { name: "Applied", count: 5, trend: "+12" },
-    { name: "Interviews", count: 3, trend: "+2" },
-    { name: "Assessments", count: 2, trend: "+1" },
-    { name: "Rejected", count: 1 },
-    { name: "Offer", count: 5, trend: "+2" },
-  ];
+  const { data: applications = [], isLoading: appsLoading } = useEnrollmentApplications();
+  const { data: stats } = useEnrollmentStats(period);
 
-  const getApplicationsByStage = (stage: string) => {
-    return sampleApplications.filter((app) => app.stage === stage);
+  const getApplicationsByStage = (stage: string) =>
+    applications.filter((app) => app.status?.toLowerCase().includes(stage));
+
+  const getStageCount = (stage: string): number => {
+    if (stats?.status_breakdown) {
+      const key = Object.keys(stats.status_breakdown).find((k) =>
+        k.toLowerCase().includes(stage)
+      );
+      if (key !== undefined) return stats.status_breakdown[key];
+    }
+    return getApplicationsByStage(stage).length;
+  };
+
+  const getDelta = (stage: string): string | null => {
+    if (!stats?.deltas) return null;
+    const key = Object.keys(stats.deltas).find((k) => k.toLowerCase().includes(stage));
+    if (key === undefined) return null;
+    const val = stats.deltas[key];
+    return val > 0 ? `+${val}` : val < 0 ? `${val}` : null;
   };
 
   return (
@@ -162,13 +62,15 @@ export default function ApplicationPipeline() {
           <h2 className="text-white text-lg font-mona-sans font-bold">
             Application Pipeline
           </h2>
-          <span className="text-[#95ACCB] text-sm font-mona-sans">5</span>
+          <span className="text-[#95ACCB] text-sm font-mona-sans">
+            {applications.length}
+          </span>
         </div>
 
-        {/* Filter Dropdown */}
+        {/* Period Filter */}
         <select
-          value={selectedFilter}
-          onChange={(e) => setSelectedFilter(e.target.value)}
+          value={period}
+          onChange={(e) => setPeriod(e.target.value as StatsPeriod)}
           className="px-4 py-2 rounded-lg font-mona-sans text-sm text-white transition-colors cursor-pointer appearance-none"
           style={{
             background: "rgba(21, 99, 116, 0.1)",
@@ -179,69 +81,77 @@ export default function ApplicationPipeline() {
             paddingRight: "2.5rem",
           }}
         >
-          <option value="Today" className="bg-[#0B0D0F] text-white">
-            Today
-          </option>
-          <option value="This Week" className="bg-[#0B0D0F] text-white">
-            This Week
-          </option>
-          <option value="This Month" className="bg-[#0B0D0F] text-white">
-            This Month
-          </option>
-          <option value="All Time" className="bg-[#0B0D0F] text-white">
-            All Time
-          </option>
+          {PERIOD_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value} className="bg-[#0B0D0F] text-white">
+              {opt.label}
+            </option>
+          ))}
         </select>
       </div>
 
-      {/* Pipeline Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 2xl:grid-cols-5 gap-5">
-        {stages.map((stage) => {
-          const applications = getApplicationsByStage(stage.name);
-          return (
-            <div
-              key={stage.name}
-              className="rounded-2xl p-3"
-              style={{
-                background: "rgba(21, 99, 116, 0.1)",
-                border: "0.5px solid rgba(255, 255, 255, 0.1)",
-              }}
-            >
-              {/* Stage Header */}
+      {appsLoading ? (
+        <div className="flex items-center justify-center py-12">
+          <p className="text-[#95ACCB] font-mona-sans text-sm">Loading applications...</p>
+        </div>
+      ) : (
+        /* Pipeline Grid */
+        <div className="grid grid-cols-1 lg:grid-cols-4 2xl:grid-cols-5 gap-5">
+          {STAGES.map((stage) => {
+            const stageApps = getApplicationsByStage(stage);
+            const count = getStageCount(stage);
+            const delta = getDelta(stage);
+
+            return (
               <div
-                className="rounded-lg p-3 mb-3"
+                key={stage}
+                className="rounded-2xl p-3"
                 style={{
                   background: "rgba(21, 99, 116, 0.1)",
-                  borderTop: "0.5px solid rgba(255, 255, 255, 0.1)",
+                  border: "0.5px solid rgba(255, 255, 255, 0.1)",
                 }}
               >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="text-white text-sm font-mona-sans font-semibold uppercase">
-                      {stage.name}
-                    </span>
-                    {stage.trend && (
-                      <span className="text-[#9EFF00] text-xs font-mona-sans">
-                        {stage.trend}
+                {/* Stage Header */}
+                <div
+                  className="rounded-lg p-3 mb-3"
+                  style={{
+                    background: "rgba(21, 99, 116, 0.1)",
+                    borderTop: "0.5px solid rgba(255, 255, 255, 0.1)",
+                  }}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-white text-sm font-mona-sans font-semibold uppercase">
+                        {STAGE_LABELS[stage]}
                       </span>
-                    )}
+                      {delta && (
+                        <span className="text-[#9EFF00] text-xs font-mona-sans">
+                          {delta}
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-white text-sm font-mona-sans font-bold">
+                      {count}
+                    </span>
                   </div>
-                  <span className="text-white text-sm font-mona-sans font-bold">
-                    {stage.count}
-                  </span>
+                </div>
+
+                {/* Applications List */}
+                <div className="space-y-2">
+                  {stageApps.length === 0 ? (
+                    <p className="text-[#657997] text-xs font-mona-sans text-center py-4">
+                      No applications
+                    </p>
+                  ) : (
+                    stageApps.map((app) => (
+                      <ApplicationCard key={app.id} application={app} />
+                    ))
+                  )}
                 </div>
               </div>
-
-              {/* Applications List */}
-              <div className="space-y-2">
-                {applications.map((app) => (
-                  <ApplicationCard key={app.id} application={app} />
-                ))}
-              </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

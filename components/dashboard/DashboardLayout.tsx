@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useSearchParams, useRouter } from "next/navigation";
 import { Suspense, useState } from "react";
 import { signOut } from "next-auth/react";
+import { clearAuthStorage } from "@/lib/auth";
 import { getApiUrl, getAuthHeaders } from "@/lib/api";
 import { useToast } from "@/components/ui/use-toast";
 import { useUserData } from "@/hooks/useUserData";
@@ -193,8 +194,8 @@ function Sidebar({ isMobileOpen, onClose }: { isMobileOpen?: boolean; onClose?: 
         return;
       }
 
-      // Clear localStorage
-      localStorage.removeItem("auth_token");
+      // Clear all client-side auth state
+      clearAuthStorage();
 
       // Sign out from NextAuth
       await signOut({ callbackUrl: "/signin" });

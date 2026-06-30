@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import V1SignupForm from "@/components/auth/v1-signup-form";
 import OriginalSignupForm from "@/components/auth/original-signup-form";
+import AuthGuard from "@/components/auth/AuthGuard";
 
 
 export default function SignUpPage() {
@@ -22,10 +23,18 @@ function SignUpContent() {
 
   // Render V1 signup form for jobseekers when v1=true
   if (isV1) {
-    return <V1SignupForm />;
+    return (
+      <AuthGuard>
+        <V1SignupForm />
+      </AuthGuard>
+    );
   }
 
   // Render original signup form for all other cases
-  return <OriginalSignupForm type={type} isEmailVerification={isEmailVerification} />;
+  return (
+    <AuthGuard>
+      <OriginalSignupForm type={type} isEmailVerification={isEmailVerification} />
+    </AuthGuard>
+  );
 }
 

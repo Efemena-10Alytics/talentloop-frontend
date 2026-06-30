@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import * as Select from "@radix-ui/react-select";
 import { useToast } from "@/components/ui/use-toast";
@@ -71,6 +71,18 @@ export default function EducationalInfoSection({
     institutionName: initialData?.institution_name || "",
     graduationYear: initialData?.graduation_year || "",
   });
+  const seeded = useRef(false);
+
+  useEffect(() => {
+    if (initialData && !seeded.current) {
+      seeded.current = true;
+      setFormData({
+        highestDegree: initialData.highest_degree || "",
+        institutionName: initialData.institution_name || "",
+        graduationYear: initialData.graduation_year || "",
+      });
+    }
+  }, [initialData]);
 
   const steps = [
     { number: "1", label: "Checkout", completed: true },

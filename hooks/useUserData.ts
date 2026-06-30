@@ -1,17 +1,17 @@
 import { useCallback, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { getApiUrl, buildAuthHeaders, getStoredAuthToken } from "@/lib/api";
 
 interface UserData {
   id: number;
-  name: string;
+  name: string | null;
   email: string;
   role: string;
   status: string;
-  email_verified_at: string;
+  email_verified_at: string | null;
   photo: string;
   stripe_customer_id?: string | null;
+  profile?: ProfileData | null;
 }
 
 interface ProfileData {
@@ -44,30 +44,19 @@ interface UserDataResponse {
   profile?: ProfileData;
 }
 
-/**
- * Resolve the backend auth token, preferring the NextAuth session token and
- * falling back to localStorage. Returns a stable primitive so it can be used
- * safely as part of a React Query key.
- */
-function useAuthToken(): string | null {
-  const { data: session } = useSession();
-  return session?.backendToken ?? getStoredAuthToken();
-}
 
-async function fetchAuthMe(token: string): Promise<Omit<UserDataResponse, "profile">> {
-  const res = await fetch(`${getApiUrl()}/api/v1/auth/me`, {
+async function fetchAuthMe(): Promise<Omit<UserDataResponse, "profile">> {
+  const res = await fetch("/api/user/me", {
     method: "GET",
-    headers: buildAuthHeaders(token),
   });
   if (!res.ok) throw new Error("Failed to fetch user data");
   const json = await res.json();
-  return json.data;
+  return json.data ?? json;
 }
 
-async function fetchProfile(token: string): Promise<ProfileData | null> {
-  const res = await fetch(`${getApiUrl()}/api/v1/profile`, {
+async function fetchProfile(): Promise<ProfileData | null> {
+  const res = await fetch("/api/user/profile", {
     method: "GET",
-    headers: buildAuthHeaders(token),
   });
   if (!res.ok) return null;
   const json = await res.json();
@@ -78,11 +67,12 @@ async function fetchProfile(token: string): Promise<ProfileData | null> {
  * Current authenticated user (GET /api/v1/auth/me) via React Query.
  */
 export function useAuthMe() {
-  const token = useAuthToken();
+  const { status } = useSession();
   return useQuery({
-    queryKey: ["auth-me", token],
-    queryFn: () => fetchAuthMe(token as string),
-    enabled: !!token,
+    queryKey: ["auth-me"],
+    queryFn: fetchAuthMe,
+    enabled: status === "authenticated",
+    retry: false,
   });
 }
 
@@ -90,11 +80,12 @@ export function useAuthMe() {
  * Authenticated user's profile (GET /api/v1/profile) via React Query.
  */
 export function useProfile() {
-  const token = useAuthToken();
+  const { status } = useSession();
   return useQuery<ProfileData | null>({
-    queryKey: ["profile", token],
-    queryFn: () => fetchProfile(token as string),
-    enabled: !!token,
+    queryKey: ["profile"],
+    queryFn: fetchProfile,
+    enabled: status === "authenticated",
+    retry: false,
   });
 }
 

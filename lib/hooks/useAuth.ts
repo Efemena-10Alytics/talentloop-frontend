@@ -3,6 +3,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSession, signOut as nextAuthSignOut } from "next-auth/react";
+import { clearAuthStorage } from "@/lib/auth";
 import { getCurrentUser, logout, type User } from "@/lib/services/auth.service";
 import { useRouter } from "next/navigation";
 
@@ -31,28 +32,15 @@ export const useLogout = () => {
   return useMutation({
     mutationFn: logout,
     onSuccess: async () => {
-      // Clear all queries
       queryClient.clear();
-      
-      // Clear localStorage
-      if (typeof window !== "undefined") {
-        localStorage.removeItem("auth_token");
-      }
-      
-      // Sign out from NextAuth
+      clearAuthStorage();
       await nextAuthSignOut({ redirect: false });
-      
-      // Redirect to signin page
       router.push("/signin?v1=true");
     },
     onError: async (error) => {
       console.error("Logout error:", error);
-      
-      // Even if backend logout fails, clear local session
       queryClient.clear();
-      if (typeof window !== "undefined") {
-        localStorage.removeItem("auth_token");
-      }
+      clearAuthStorage();
       await nextAuthSignOut({ redirect: false });
       router.push("/signin?v1=true");
     },

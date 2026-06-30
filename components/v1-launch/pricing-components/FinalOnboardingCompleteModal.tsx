@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 interface FinalOnboardingCompleteModalProps {
   isOpen: boolean;
@@ -12,12 +12,6 @@ export default function FinalOnboardingCompleteModal({
   isOpen,
   onClose,
 }: FinalOnboardingCompleteModalProps) {
-  const router = useRouter();
-
-  const handleGoToDashboard = () => {
-    router.push("/v1/dashboard");
-  };
-
   return (
     <AnimatePresence>
       {isOpen && (
@@ -103,20 +97,23 @@ export default function FinalOnboardingCompleteModal({
             </motion.p>
 
             {/* Dashboard Button */}
-            <motion.button
+            <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 1.2 }}
-              onClick={handleGoToDashboard}
-              className="w-full h-12 px-6 rounded-[12px] font-mona-sans text-sm font-semibold transition-opacity hover:opacity-90"
-              style={{
-                background: "#00A896",
-                border: "1px solid #FFFFFF1A",
-                color: "#FFFFFF",
-              }}
             >
-              See my dashboard
-            </motion.button>
+              <Link
+                href="/v1/dashboard"
+                className="flex items-center justify-center w-full h-12 px-6 rounded-[12px] font-mona-sans text-sm font-semibold transition-opacity hover:opacity-90"
+                style={{
+                  background: "#A2CE3A",
+                  border: "1px solid #FFFFFF1A",
+                  color: "#000000",
+                }}
+              >
+                See my dashboard
+              </Link>
+            </motion.div>
           </motion.div>
         </div>
       )}

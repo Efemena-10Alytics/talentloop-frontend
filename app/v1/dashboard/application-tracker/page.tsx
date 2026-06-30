@@ -3,6 +3,7 @@
 import DashboardNavbar from "@/components/v1-dashboard/DashboardNavbar";
 import StatCard from "@/components/v1-dashboard/StatCard";
 import ApplicationPipeline from "@/components/v1-dashboard/ApplicationPipeline";
+import { useEnrollmentStats } from "@/hooks/useEnrollmentData";
 
 const ApplicationTrackerIcon = () => (
   <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -12,36 +13,57 @@ const ApplicationTrackerIcon = () => (
 );
 
 export default function ApplicationTrackerPage() {
+  const { data: stats, isLoading } = useEnrollmentStats("all");
+
+  const breakdown = stats?.status_breakdown ?? {};
+  const deltas = stats?.deltas ?? {};
+
+  const getCount = (key: string) => {
+    const found = Object.keys(breakdown).find((k) => k.toLowerCase().includes(key));
+    return found ? String(breakdown[found]) : "0";
+  };
+
+  const getDelta = (key: string) => {
+    const found = Object.keys(deltas).find((k) => k.toLowerCase().includes(key));
+    if (!found) return undefined;
+    const val = deltas[found];
+    return val !== 0 ? { value: val > 0 ? `+${val}` : `${val}`, isPositive: val > 0 } : undefined;
+  };
+
   return (
     <div className="min-h-screen p-4 lg:p-6">
       {/* Navbar */}
-      <DashboardNavbar 
-        pageTitle="Application Tracker" 
-        pageIcon={<ApplicationTrackerIcon />} 
+      <DashboardNavbar
+        pageTitle="Application Tracker"
+        pageIcon={<ApplicationTrackerIcon />}
       />
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
         <StatCard
           title="TOTAL APPLIED"
-          value="32"
-          trend={{ value: "+12", isPositive: true }}
+          value={isLoading ? "—" : (stats?.total_applications ?? "0")}
+          trend={getDelta("applied")}
         />
         <StatCard
           title="INTERVIEWS SECURED"
-          value="3"
+          value={isLoading ? "—" : (stats?.interviews_secured ?? "0")}
+          trend={getDelta("interview")}
         />
         <StatCard
           title="ASSESSMENTS"
-          value="2"
+          value={isLoading ? "—" : getCount("assessment")}
+          trend={getDelta("assessment")}
         />
         <StatCard
           title="REJECTED"
-          value="1"
+          value={isLoading ? "—" : getCount("reject")}
+          trend={getDelta("reject")}
         />
         <StatCard
           title="OFFER"
-          value="6"
+          value={isLoading ? "—" : getCount("offer")}
+          trend={getDelta("offer")}
         />
       </div>
 

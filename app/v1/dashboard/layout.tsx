@@ -3,6 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { AvatarProvider } from "@/context/AvatarContext";
+import { useProfile } from "@/hooks/useUserData";
 
 /* ─── SVG Icons ─── */
 
@@ -85,8 +87,11 @@ export default function V1DashboardLayout({
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
+  const { data: profile } = useProfile();
+  const initialAvatar = (profile as any)?.avatar ?? null;
 
   return (
+    <AvatarProvider initial={initialAvatar}>
     <div className="min-h-screen bg-[#01090B] flex">
       {/* Mobile Menu Button */}
       <button
@@ -118,12 +123,12 @@ export default function V1DashboardLayout({
         <div className="flex flex-col h-full">
           {/* Logo Section */}
           <div className="px-6 py-6">
-            <Link href="/v1/dashboard">
+            <Link href="/">
               <img
                 src="/logo.svg"
                 alt="TalentLoop"
                 className={`transition-all duration-300 ${
-                  isCollapsed ? "w-8" : "w-auto h-8"
+                  isCollapsed ? "w-8" : "w-auto h-12"
                 }`}
               />
             </Link>
@@ -131,7 +136,9 @@ export default function V1DashboardLayout({
 
           {/* Divider */}
           <div className="px-4 mb-6">
+          {!isCollapsed && (
             <DividerSVG />
+          )}
           </div>
 
           {/* Navigation */}
@@ -254,5 +261,6 @@ export default function V1DashboardLayout({
         {children}
       </main>
     </div>
+    </AvatarProvider>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Navbar } from "@/components/navbar";
 import V1FooterSection from "@/components/v1-launch/v1-footer-section";
@@ -9,25 +9,99 @@ import PaymentSelection, { PaymentOption } from "@/components/v1-launch/pricing-
 import EnrollmentConfirmation from "@/components/v1-launch/pricing-components/EnrollmentConfirmation";
 import EditPersonalDataModal, { PersonalData } from "@/components/v1-launch/pricing-components/EditPersonalDataModal";
 import PersonalInfoModal from "@/components/auth/PersonalInfoModal";
-import CareerInfoSection, { CareerFormData } from "@/components/v1-launch/pricing-components/CareerInfoSection";
-import EducationalInfoSection, { EducationFormData } from "@/components/v1-launch/pricing-components/EducationalInfoSection";
-import JobApplicationInfoSection, { JobApplicationFormData } from "@/components/v1-launch/pricing-components/JobApplicationInfoSection";
-import CredentialsUploadSection, { CredentialsFormData } from "@/components/v1-launch/pricing-components/CredentialsUploadSection";
-import DisclaimerSection, { DisclaimerFormData } from "@/components/v1-launch/pricing-components/DisclaimerSection";
+import CareerInfoSection from "@/components/v1-launch/pricing-components/CareerInfoSection";
+import EducationalInfoSection from "@/components/v1-launch/pricing-components/EducationalInfoSection";
+import JobApplicationInfoSection from "@/components/v1-launch/pricing-components/JobApplicationInfoSection";
+import CredentialsUploadSection from "@/components/v1-launch/pricing-components/CredentialsUploadSection";
+import DisclaimerSection from "@/components/v1-launch/pricing-components/DisclaimerSection";
+import FinalOnboardingCompleteModal from "@/components/v1-launch/pricing-components/FinalOnboardingCompleteModal";
 import { getApiUrl, getAuthHeaders, getHeaders } from "@/lib/api";
 import { useToast } from "@/components/ui/use-toast";
 import { useQuery } from "@tanstack/react-query";
-import { useProfile } from "@/hooks/useUserData";
+import { useProfile, useAuthMe } from "@/hooks/useUserData";
+import EmailVerification from "@/components/EmailVerification";
+
+type Step = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
+
+const STEP_MIN = 1;
+const STEP_MAX = 8;
+
+function parseStep(raw: string | null): Step {
+  const n = parseInt(raw ?? "1");
+  if (isNaN(n) || n < STEP_MIN) return 1;
+  if (n > STEP_MAX) return STEP_MAX as Step;
+  return n as Step;
+}
+
+function getPaymentOptionKey(pId: string | null) {
+  return `payment_option_${pId ?? "unknown"}`;
+}
+
+const StepWrapper = ({ children }: { children: React.ReactNode }) => (
+  <div className="bg-[#01090B] min-h-screen py-14 lg:py-20">
+    <div className="p-3">
+      <Navbar v1Launch />
+      {children}
+      <V1FooterSection />
+    </div>
+  </div>
+);
+
+const LoadingScreen = () => (
+  <div className="bg-[#01090B] min-h-screen py-14 lg:py-20 flex items-center justify-center">
+    <div className="text-white font-mona-sans text-lg">Loading...</div>
+  </div>
+);
 
 const CompleteYourPaymentContent = () => {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const { data: session } = useSession();
   const { toast } = useToast();
   const hasShownSuccessToast = useRef(false);
-  const [currentStep, setCurrentStep] = useState<1 | 2 | 3 | 4 | 5 | 6>(1);
-  const [paymentOption, setPaymentOption] = useState<PaymentOption | null>(null);
+
+  // --- URL params (source of truth) ---
+  const pId = searchParams.get("p-id");
+  const cancelParam = searchParams.get("cancel");
+
+  // currentStep is derived directly from URL — no useState, no flicker
+  const currentStep: Step = parseStep(searchParams.get("step"));
+
+  // Navigate to a step — pushes URL so browser back/forward works
+  const goToStep = (step: Step) => {
+    router.push(`/v1/complete-your-payment?p-id=${pId}&step=${step}`);
+  };
+
+  // --- Payment option: persisted in sessionStorage so it survives step navigation ---
+  const [paymentOption, setPaymentOption] = useState<PaymentOption | null>(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      const stored = sessionStorage.getItem(getPaymentOptionKey(pId));
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  const savePaymentOption = (option: PaymentOption) => {
+    setPaymentOption(option);
+    try {
+      sessionStorage.setItem(getPaymentOptionKey(pId), JSON.stringify(option));
+    } catch { /* ignore */ }
+  };
+
+  const clearPaymentOption = () => {
+    setPaymentOption(null);
+    try {
+      sessionStorage.removeItem(getPaymentOptionKey(pId));
+    } catch { /* ignore */ }
+  };
+
+  // --- Modals & form ---
   const [showEditModal, setShowEditModal] = useState(false);
   const [showPersonalInfoModal, setShowPersonalInfoModal] = useState(false);
+  const [showEmailVerificationModal, setShowEmailVerificationModal] = useState(false);
+  const [verifyingOtp, setVerifyingOtp] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [personalData, setPersonalData] = useState<PersonalData>({
     firstName: "",
@@ -37,28 +111,14 @@ const CompleteYourPaymentContent = () => {
     location: "",
   });
 
-  // Extract URL parameters
-  const token = searchParams.get('token');
-  const pId = searchParams.get('p-id'); // Pricing plan ID
-  const stepParam = searchParams.get('step'); // Step to navigate to after payment
-  const cancelParam = searchParams.get('cancel'); // Payment cancelled
-  const planType = searchParams.get('planType') || 'full'; // 'full' or 'installments'
-  const planId = searchParams.get('planId') || 'premium';
-  const planPrice = searchParams.get('planPrice') || '£250';
-  const planAmount = searchParams.get('planAmount');
-  
-  // Parse installments if provided
-  const installmentsParam = searchParams.get('installments');
-  const planInstallments = installmentsParam ? JSON.parse(installmentsParam) : null;
-
-  // Profile data via TanStack Query (shared/cached, no session-driven refetch loop)
+  // --- Data fetching ---
   const {
     data: profile,
-    isLoading: profileLoading,
     refetch: refetchProfile,
   } = useProfile();
 
-  // Pricing plan via TanStack Query (unauthenticated endpoint)
+  const { data: authMeData, refetch: refetchAuthMe } = useAuthMe();
+
   const { data: pricingPlan, isLoading: pricingLoading } = useQuery({
     queryKey: ["pricing", pId],
     queryFn: async () => {
@@ -71,16 +131,22 @@ const CompleteYourPaymentContent = () => {
       return json.data;
     },
     enabled: !!pId,
+    retry: false,
   });
 
-  const initialLoading = profileLoading || (!!pId && pricingLoading);
+  // Only block the very first render of step 1 until pricing is ready.
+  // Profile is NOT needed to render step 1 (PaymentSelection only needs pricing),
+  // and gating on profileLoading would unmount PaymentSelection — destroying the
+  // open sign-in/OTP modal — whenever a background profile refetch runs.
+  const initialLoading = currentStep === 1 && !!pId && pricingLoading;
+
   const hasProfileData = !!(
     profile?.first_name &&
     profile?.last_name &&
     profile?.country
   );
 
-  // Keep editable personal data in sync with the fetched profile
+  // Sync personal data from profile
   useEffect(() => {
     if (profile) {
       setPersonalData({
@@ -95,29 +161,21 @@ const CompleteYourPaymentContent = () => {
     }
   }, [profile, session]);
 
-  // Handle step navigation from URL (after payment success)
+  // Show success toast once after Stripe redirects back to step 3
   useEffect(() => {
-    if (stepParam) {
-      const step = parseInt(stepParam);
-      if (step >= 1 && step <= 6) {
-        setCurrentStep(step as 1 | 2 | 3 | 4 | 5 | 6);
-        
-        // Show success toast only when returning from Stripe (step=3) and only once
-        if (step === 3 && !hasShownSuccessToast.current) {
-          hasShownSuccessToast.current = true;
-          toast({
-            variant: "success",
-            title: "Payment Successful!",
-            description: "Your payment has been processed. Please complete your profile.",
-          });
-        }
-      }
+    if (currentStep === 3 && !hasShownSuccessToast.current) {
+      hasShownSuccessToast.current = true;
+      toast({
+        variant: "success",
+        title: "Payment Successful!",
+        description: "Your payment has been processed. Please complete your profile.",
+      });
     }
-  }, [stepParam]);
+  }, [currentStep]);
 
-  // Handle payment cancellation
+  // Show cancellation toast when returning from Stripe with cancel=true
   useEffect(() => {
-    if (cancelParam === 'true') {
+    if (cancelParam === "true") {
       toast({
         variant: "error",
         title: "Payment Cancelled",
@@ -126,16 +184,111 @@ const CompleteYourPaymentContent = () => {
     }
   }, [cancelParam]);
 
-  // Auto-show PersonalInfoModal when authenticated user has no profile data
+  // Auto-show PersonalInfoModal when authenticated user has no profile data on step 1
   useEffect(() => {
     if (!initialLoading && session && !hasProfileData && currentStep === 1) {
       setShowPersonalInfoModal(true);
     }
   }, [initialLoading, session, hasProfileData, currentStep]);
 
+  // --- Step handlers ---
+
+  // Advance after email is verified: check profile then navigate
+  const handleEmailVerified = async () => {
+    setShowEmailVerificationModal(false);
+    const { data: latestProfile } = await refetchProfile();
+    const complete = !!(
+      latestProfile?.first_name &&
+      latestProfile?.last_name &&
+      latestProfile?.country
+    );
+    if (!complete) {
+      setShowPersonalInfoModal(true);
+    } else {
+      goToStep(2);
+    }
+  };
+
+  const handleOtpVerify = async (otp: string) => {
+    const email = authMeData?.user?.email || session?.user?.email || "";
+    setVerifyingOtp(true);
+    try {
+      const response = await fetch(`${getApiUrl()}/api/v1/auth/verify-email`, {
+        method: "POST",
+        headers: getHeaders(),
+        body: JSON.stringify({ email, otp }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        toast({
+          variant: "error",
+          title: "Verification failed",
+          description: data.message || "Invalid or expired code",
+        });
+        setVerifyingOtp(false);
+        return;
+      }
+      if (data.token) {
+        localStorage.setItem("auth_token", data.token);
+      }
+      toast({
+        variant: "success",
+        title: "Email verified!",
+        description: "Your email has been verified successfully",
+      });
+      setVerifyingOtp(false);
+      await handleEmailVerified();
+    } catch (err: any) {
+      toast({
+        variant: "error",
+        title: "Error",
+        description: err.message || "Verification failed",
+      });
+      setVerifyingOtp(false);
+    }
+  };
+
+  const handleOtpResend = async () => {
+    const email = authMeData?.user?.email || session?.user?.email || "";
+    try {
+      await fetch(`${getApiUrl()}/api/v1/auth/verify-email/resend-otp`, {
+        method: "POST",
+        headers: getHeaders(),
+        body: JSON.stringify({ email }),
+      });
+      toast({
+        variant: "success",
+        title: "Code resent",
+        description: "A new verification code has been sent to your email",
+      });
+    } catch {
+      toast({
+        variant: "error",
+        title: "Error",
+        description: "Failed to resend code",
+      });
+    }
+  };
+
   const handlePaymentSelect = async (selectedPayment: PaymentOption) => {
-    setPaymentOption(selectedPayment);
-    // Refetch profile data before moving to step 2 to ensure we have the latest data
+    savePaymentOption(selectedPayment);
+
+    // Always refetch auth/me to get the latest email_verified_at
+    const { data: latestAuthMe } = await refetchAuthMe();
+    if (!latestAuthMe?.user?.email_verified_at) {
+      // Email not verified — send a fresh OTP then show the verification modal
+      const email = latestAuthMe?.user?.email || session?.user?.email || "";
+      try {
+        await fetch(`${getApiUrl()}/api/v1/auth/verify-email/resend-otp`, {
+          method: "POST",
+          headers: getHeaders(),
+          body: JSON.stringify({ email }),
+        });
+      } catch { /* non-blocking */ }
+      setShowEmailVerificationModal(true);
+      return;
+    }
+
     const { data: latestProfile } = await refetchProfile();
     const complete = !!(
       latestProfile?.first_name &&
@@ -146,181 +299,106 @@ const CompleteYourPaymentContent = () => {
     if (!complete) {
       setShowPersonalInfoModal(true);
     } else {
-      setCurrentStep(2);
+      goToStep(2);
     }
   };
 
   const handlePersonalInfoComplete = async () => {
     setShowPersonalInfoModal(false);
-    // Refetch profile data after personal info is saved
     await refetchProfile();
-    // If user had already selected a payment option, proceed to step 2
     if (paymentOption) {
-      setCurrentStep(2);
+      goToStep(2);
     }
-  };
-
-  const handleEditData = () => {
-    setShowEditModal(true);
-  };
-
-  const handleSavePersonalData = (data: PersonalData) => {
-    setPersonalData(data);
   };
 
   const handleEnrollmentProceed = async () => {
     if (!pricingPlan?.id) {
-      toast({
-        variant: "error",
-        title: "Error",
-        description: "Pricing plan not found",
-      });
+      toast({ variant: "error", title: "Error", description: "Pricing plan not found" });
+      return;
+    }
+
+    // If the user already has a Stripe customer ID, they've paid — skip checkout
+    const { data: latestAuthMe } = await refetchAuthMe();
+    if (latestAuthMe?.user?.stripe_customer_id) {
+      goToStep(3);
       return;
     }
 
     try {
       setSubmitting(true);
 
-      // Build success and cancel URLs based on environment
-      const isDevelopment = process.env.NEXT_PUBLIC_ENVIRONMENT === 'DEVELOPMENT';
-      const baseUrl = isDevelopment 
-        ? (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000')
-        : (process.env.NEXT_PUBLIC_WEBAPP_URL || 'https://talentloop-frontend.vercel.app');
-      
-      const successUrl = `${baseUrl}/v1/complete-your-payment?p-id=${pId}&step=3`;
-      const cancelUrl = `${baseUrl}/v1/complete-your-payment?p-id=${pId}&cancel=true`;
+      const isDevelopment = process.env.NEXT_PUBLIC_ENVIRONMENT === "DEVELOPMENT";
+      const baseUrl = isDevelopment
+        ? typeof window !== "undefined" ? window.location.origin : "http://localhost:3000"
+        : process.env.NEXT_PUBLIC_WEBAPP_URL || "https://www.talentloop.app";
 
-      // Determine payment_option based on selected payment type
-      // payment_option: 1 for full payment, 2 for installments
+      // Stripe success/cancel URLs — step=3 lands on Career Info, step=1 with cancel=true shows toast
+      const successUrl = `${baseUrl}/v1/complete-your-payment?p-id=${pId}&step=3`;
+      const cancelUrl  = `${baseUrl}/v1/complete-your-payment?p-id=${pId}&step=1&cancel=true`;
+
       const paymentOptionNumber = paymentOption?.type === "installments" ? 2 : 1;
 
-      // Prepare request body
-      const requestBody = {
-        pricing_id: pricingPlan.id,
-        payment_option: paymentOptionNumber,
-        success_url: successUrl,
-        cancel_url: cancelUrl,
-      };
-
-      // Create payment plan
       const headers = await getAuthHeaders();
       const response = await fetch(`${getApiUrl()}/api/v1/payment-plans`, {
         method: "POST",
         headers,
-        body: JSON.stringify(requestBody),
+        body: JSON.stringify({
+          pricing_id: pricingPlan.id,
+          payment_option: paymentOptionNumber,
+          success_url: successUrl,
+          cancel_url: cancelUrl,
+        }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        toast({
-          variant: "error",
-          title: "Payment Error",
-          description: data.message || "Failed to create payment plan",
-        });
+        toast({ variant: "error", title: "Payment Error", description: data.message || "Failed to create payment plan" });
         setSubmitting(false);
         return;
       }
 
-      // Redirect to Stripe checkout
       if (data.checkout_url) {
         window.location.href = data.checkout_url;
       } else {
-        toast({
-          variant: "error",
-          title: "Error",
-          description: "No checkout URL received",
-        });
+        toast({ variant: "error", title: "Error", description: "No checkout URL received" });
         setSubmitting(false);
       }
     } catch (error: any) {
       console.error("Payment plan creation error:", error);
-      toast({
-        variant: "error",
-        title: "Error",
-        description: "Failed to initiate payment",
-      });
+      toast({ variant: "error", title: "Error", description: "Failed to initiate payment" });
       setSubmitting(false);
     }
   };
 
-  const handleCompleteOnboarding = () => {
-    setCurrentStep(3);
-  };
+  // --- Render ---
+  const renderStep = () => {
+    if (initialLoading) return <LoadingScreen />;
 
-  const handleCareerInfoBack = () => {
-    setCurrentStep(2);
-  };
-
-  const handleCareerInfoProceed = (careerData: CareerFormData) => {
-    console.log("Career data:", careerData);
-    setCurrentStep(4);
-  };
-
-  const handleEducationInfoBack = () => {
-    setCurrentStep(3);
-  };
-
-  const handleEducationInfoProceed = (educationData: EducationFormData) => {
-    console.log("Education data:", educationData);
-    setCurrentStep(5);
-  };
-
-  const handleJobApplicationInfoBack = () => {
-    setCurrentStep(4);
-  };
-
-  const handleJobApplicationInfoProceed = (jobAppData: JobApplicationFormData) => {
-    console.log("Job Application data:", jobAppData);
-    setCurrentStep(6);
-  };
-
-  const handleCredentialsUploadBack = () => {
-    setCurrentStep(5);
-  };
-
-  const handleCredentialsUploadProceed = (credentialsData: CredentialsFormData) => {
-    console.log("Credentials data:", credentialsData);
-    // TODO: Submit all enrollment data and redirect to dashboard or show final success
-  };
-
-
-  // Render step content
-  const renderStepContent = () => {
-    // Show loading state while fetching data
-    if (currentStep === 1 && initialLoading) {
-      return (
-        <div className="bg-[#01090B] min-h-screen py-14 lg:py-20 flex items-center justify-center">
-          <div className="text-white font-mona-sans text-lg">Loading...</div>
-        </div>
-      );
-    }
-
-    if (currentStep === 1) {
-      return (
-        <div className="bg-[#01090B] min-h-screen py-14 lg:py-20">
-          <div className="p-3">
-            <Navbar v1Launch />
+    switch (currentStep) {
+      case 1:
+        return (
+          <StepWrapper>
             <PaymentSelection
-              planId={pricingPlan?.id || planId}
-              planType={pricingPlan?.title || planId}
-              planPrice={pricingPlan ? `£${pricingPlan.amount}` : planPrice}
-              planAmount={pricingPlan?.amount || planAmount || undefined}
-              planInstallments={pricingPlan?.installments || planInstallments}
+              planId={pricingPlan?.id || pId || ""}
+              planType={pricingPlan?.title || "Premium"}
+              planPrice={pricingPlan ? `£${pricingPlan.amount}` : "£250"}
+              planAmount={pricingPlan?.amount?.toString() || undefined}
+              planInstallments={pricingPlan?.installments || null}
               pricingPlanData={pricingPlan}
               onPaymentSelect={handlePaymentSelect}
             />
-            <V1FooterSection />
-          </div>
-        </div>
-      );
-    }
+          </StepWrapper>
+        );
 
-    if (currentStep === 2 && paymentOption) {
-      return (
-        <div className="bg-[#01090B] min-h-screen py-14 lg:py-20">
-          <div className="p-3">
-            <Navbar v1Launch />
+      case 2:
+        // Guard: if no payment option (e.g. user typed URL manually), send back to step 1
+        if (!paymentOption) {
+          goToStep(1);
+          return <LoadingScreen />;
+        }
+        return (
+          <StepWrapper>
             <EnrollmentConfirmation
               personalData={personalData}
               paymentPlan={{
@@ -331,112 +409,130 @@ const CompleteYourPaymentContent = () => {
                 nextPaymentDate: "Jun 21, 2026",
                 pricingPlanData: pricingPlan,
               }}
-              onEditData={handleEditData}
+              onEditData={() => setShowEditModal(true)}
               onProceed={handleEnrollmentProceed}
-              onCompleteOnboarding={handleCompleteOnboarding}
+              onCompleteOnboarding={() => goToStep(3)}
             />
             <EditPersonalDataModal
               isOpen={showEditModal}
               onClose={() => setShowEditModal(false)}
-              onSave={handleSavePersonalData}
+              onSave={(data) => setPersonalData(data)}
               initialData={personalData}
             />
-            <V1FooterSection />
-          </div>
-        </div>
-      );
-    }
+          </StepWrapper>
+        );
 
-    if (currentStep === 3) {
-      return (
-        <div className="bg-[#01090B] min-h-screen py-14 lg:py-20">
-          <div className="p-3">
-            <Navbar v1Launch />
+      case 3:
+        return (
+          <StepWrapper>
             <CareerInfoSection
-              onBack={handleCareerInfoBack}
-              onProceed={handleCareerInfoProceed}
+              onBack={() => goToStep(2)}
+              onProceed={() => goToStep(4)}
               initialData={profile}
             />
-            <V1FooterSection />
-          </div>
-        </div>
-      );
-    }
+          </StepWrapper>
+        );
 
-    if (currentStep === 4) {
-      return (
-        <div className="bg-[#01090B] min-h-screen py-14 lg:py-20">
-          <div className="p-3">
-            <Navbar v1Launch />
+      case 4:
+        return (
+          <StepWrapper>
             <EducationalInfoSection
-              onBack={handleEducationInfoBack}
-              onProceed={handleEducationInfoProceed}
+              onBack={() => goToStep(3)}
+              onProceed={() => goToStep(5)}
               initialData={profile}
             />
-            <V1FooterSection />
-          </div>
-        </div>
-      );
-    }
+          </StepWrapper>
+        );
 
-    if (currentStep === 5) {
-      return (
-        <div className="bg-[#01090B] min-h-screen py-14 lg:py-20">
-          <div className="p-3">
-            <Navbar v1Launch />
+      case 5:
+        return (
+          <StepWrapper>
             <JobApplicationInfoSection
-              onBack={handleJobApplicationInfoBack}
-              onProceed={handleJobApplicationInfoProceed}
+              onBack={() => goToStep(4)}
+              onProceed={() => goToStep(6)}
               initialData={profile}
             />
-            <V1FooterSection />
-          </div>
-        </div>
-      );
-    }
+          </StepWrapper>
+        );
 
-    if (currentStep === 6) {
-      return (
-        <div className="bg-[#01090B] min-h-screen py-14 lg:py-20">
-          <div className="p-3">
-            <Navbar v1Launch />
+      case 6:
+        return (
+          <StepWrapper>
             <CredentialsUploadSection
-              onBack={handleCredentialsUploadBack}
-              onProceed={handleCredentialsUploadProceed}
+              onBack={() => goToStep(5)}
+              onProceed={() => {
+                clearPaymentOption();
+                goToStep(7);
+              }}
               initialData={profile}
             />
-            <V1FooterSection />
-          </div>
-        </div>
-      );
-    }
+          </StepWrapper>
+        );
 
-    return null;
+      case 7:
+        return (
+          <StepWrapper>
+            <DisclaimerSection
+              onBack={() => goToStep(6)}
+              onProceed={() => goToStep(8)}
+              initialData={profile}
+            />
+          </StepWrapper>
+        );
+
+      case 8:
+        return (
+          <>
+            <StepWrapper>
+              <div />
+            </StepWrapper>
+            <FinalOnboardingCompleteModal
+              isOpen={true}
+              onClose={() => {}}
+            />
+          </>
+        );
+
+      default:
+        return null;
+    }
   };
 
   return (
     <>
-      {renderStepContent()}
-
-      {/* PersonalInfoModal - rendered globally, shown when authenticated user has no profile data */}
+      {renderStep()}
       <PersonalInfoModal
         isOpen={showPersonalInfoModal}
         onComplete={handlePersonalInfoComplete}
       />
+
+      {showEmailVerificationModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
+          <div
+            className="relative z-10 w-full max-w-[480px] mx-4 rounded-[20px] p-6 lg:p-8"
+            style={{
+              background:
+                "linear-gradient(0deg, #313035, #313035), linear-gradient(81.09deg, #222126 13.55%, #111116 187.95%)",
+            }}
+          >
+            <EmailVerification
+              email={authMeData?.user?.email || session?.user?.email || ""}
+              onVerify={handleOtpVerify}
+              onResend={handleOtpResend}
+              verifying={verifyingOtp}
+            />
+          </div>
+        </div>
+      )}
     </>
   );
 };
 
-const CompleteYourPaymentPage = () => {
-  return (
-    <Suspense fallback={
-      <div className="bg-[#01090B] min-h-screen py-14 lg:py-20 flex items-center justify-center">
-        <div className="text-white font-mona-sans text-lg">Loading...</div>
-      </div>
-    }>
-      <CompleteYourPaymentContent />
-    </Suspense>
-  );
-};
+const CompleteYourPaymentPage = () => (
+  <Suspense fallback={<LoadingScreen />}>
+    <CompleteYourPaymentContent />
+  </Suspense>
+);
 
 export default CompleteYourPaymentPage;

@@ -84,20 +84,28 @@ export default function EnrollmentConfirmation({
 
   const canProceed = confirmInfo && acceptTerms;
 
-  const handleProceedClick = () => {
-    if (canProceed) {
+  const handleTermsCheckboxClick = () => {
+    if (!acceptTerms) {
       setShowTermsModal(true);
+    } else {
+      setAcceptTerms(false);
     }
   };
 
-  const handleTermsAgree = async () => {
+  const handleTermsAgree = () => {
+    setAcceptTerms(true);
     setShowTermsModal(false);
-    // Call the API or perform enrollment logic
-    await onProceed();
   };
 
   const handleTermsDecline = () => {
+    setAcceptTerms(false);
     setShowTermsModal(false);
+  };
+
+  const handleProceedClick = async () => {
+    if (canProceed) {
+      await onProceed();
+    }
   };
 
   return (
@@ -350,7 +358,7 @@ export default function EnrollmentConfirmation({
                 </div>
                 <div className="flex items-start gap-3">
                   <button
-                    onClick={() => setAcceptTerms(!acceptTerms)}
+                    onClick={handleTermsCheckboxClick}
                     className="flex-shrink-0 mt-0.5"
                   >
                     {acceptTerms ? <CheckboxCheckedSVG /> : <CheckboxUncheckedSVG />}

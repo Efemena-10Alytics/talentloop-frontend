@@ -1,13 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
+import { useToast } from "@/components/ui/use-toast";
 
-interface NotificationSetting {
-  id: string;
-  title: string;
-  description: string;
-  enabled: boolean;
+interface Prefs {
+  application_updates: boolean;
+  interview_invites: boolean;
+  marketing_emails: boolean;
 }
+
+const ITEMS: { key: keyof Prefs; title: string; description: string }[] = [
+  { key: "application_updates", title: "Application Updates", description: "Receive notifications about application updates" },
+  { key: "interview_invites", title: "Interview Invites", description: "Receive notifications about interview invites" },
+  { key: "marketing_emails", title: "Marketing Emails", description: "Receive notifications about marketing emails" },
+];
+
+const DEFAULT_PREFS: Prefs = {
+  application_updates: true,
+  interview_invites: true,
+  marketing_emails: false,
+};
 
 const BellIcon = () => (
   <svg width="38" height="33" viewBox="0 0 38 33" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -32,33 +45,59 @@ const ToggleInactive = () => (
 );
 
 export default function NotificationsTab() {
-  const [notifications, setNotifications] = useState<NotificationSetting[]>([
-    {
-      id: "application-updates",
-      title: "Application Updates",
-      description: "Receive notifications about application updates",
-      enabled: true,
-    },
-    {
-      id: "interview-invites",
-      title: "Interview Invites",
-      description: "Receive notifications about interview invites",
-      enabled: true,
-    },
-    {
-      id: "marketing-emails",
-      title: "Marketing Emails",
-      description: "Receive notifications about marketing emails",
-      enabled: false,
-    },
-  ]);
+  const { toast } = useToast();
+  const { status } = useSession();
 
-  const toggleNotification = (id: string) => {
-    setNotifications((prev) =>
-      prev.map((notif) =>
-        notif.id === id ? { ...notif, enabled: !notif.enabled } : notif
-      )
-    );
+  const [prefs, setPrefs] = useState<Prefs>(DEFAULT_PREFS);
+  const [original, setOriginal] = useState<Prefs>(DEFAULT_PREFS);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (status !== "authenticated") return;
+    fetch("/api/profile/notification-preferences")
+      .then((r) => r.json())
+      .then((json) => {
+        const data = json.data;
+        if (data && typeof data === "object" && !Array.isArray(data)) {
+          const loaded: Prefs = {
+            application_updates: data.application_updates ?? DEFAULT_PREFS.application_updates,
+            interview_invites: data.interview_invites ?? DEFAULT_PREFS.interview_invites,
+            marketing_emails: data.marketing_emails ?? DEFAULT_PREFS.marketing_emails,
+          };
+          setPrefs(loaded);
+          setOriginal(loaded);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [status]);
+
+  const toggle = (key: keyof Prefs) =>
+    setPrefs((prev) => ({ ...prev, [key]: !prev[key] }));
+
+  const handleCancel = () => setPrefs(original);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const res = await fetch("/api/profile/notification-preferences", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(prefs),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        toast({ variant: "error", title: "Save failed", description: json.message || "An error occurred" });
+        return;
+      }
+      setOriginal(prefs);
+      toast({ variant: "success", title: "Preferences saved!" });
+    } catch {
+      toast({ variant: "error", title: "Save failed", description: "An error occurred" });
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -74,71 +113,74 @@ export default function NotificationsTab() {
         <h2 className="text-white text-lg font-mona-sans font-bold">
           Notification Preferences
         </h2>
-        <span className="text-[#95ACCB] text-sm font-mona-sans">
-          {notifications.length}
-        </span>
+        <span className="text-[#95ACCB] text-sm font-mona-sans">{ITEMS.length}</span>
       </div>
 
-      {/* Notification Items */}
-      <div className="space-y-4">
-        {notifications.map((notification) => (
-          <div
-            key={notification.id}
-            className="p-6 rounded-2xl flex items-center justify-between"
-            style={{
-              background: "rgba(21, 99, 116, 0.1)",
-              border: "0.5px solid rgba(255, 255, 255, 0.1)",
-            }}
-          >
-            <div className="flex items-center gap-4">
-              <div className="flex-shrink-0">
-                <BellIcon />
-              </div>
-              <div>
-                <h3 className="text-white font-mona-sans font-semibold text-base mb-1">
-                  {notification.title}
-                </h3>
-                <p className="text-[#95ACCB] text-sm font-mona-sans">
-                  {notification.description}
-                </p>
-              </div>
-            </div>
+      {loading ? (
+        <p className="text-[#95ACCB] font-mona-sans text-sm">Loading preferences...</p>
+      ) : (
+        <>
+          {/* Notification Items */}
+          <div className="space-y-4">
+            {ITEMS.map((item) => (
+              <div
+                key={item.key}
+                className="p-6 rounded-2xl flex items-center justify-between"
+                style={{
+                  background: "rgba(21, 99, 116, 0.1)",
+                  border: "0.5px solid rgba(255, 255, 255, 0.1)",
+                }}
+              >
+                <div className="flex items-center gap-4">
+                  <div className="flex-shrink-0">
+                    <BellIcon />
+                  </div>
+                  <div>
+                    <h3 className="text-white font-mona-sans font-semibold text-base mb-1">
+                      {item.title}
+                    </h3>
+                    <p className="text-[#95ACCB] text-sm font-mona-sans">
+                      {item.description}
+                    </p>
+                  </div>
+                </div>
 
-            {/* Toggle Switch */}
+                <button
+                  onClick={() => toggle(item.key)}
+                  className="flex-shrink-0 transition-opacity hover:opacity-80"
+                >
+                  {prefs[item.key] ? <ToggleActive /> : <ToggleInactive />}
+                </button>
+              </div>
+            ))}
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex items-center justify-end gap-4 mt-8">
             <button
-              onClick={() => toggleNotification(notification.id)}
-              className="flex-shrink-0 transition-opacity hover:opacity-80"
+              onClick={handleCancel}
+              disabled={saving}
+              className="px-8 py-3 rounded-[10px] font-mona-sans font-medium text-sm transition-opacity hover:opacity-80 disabled:opacity-50"
+              style={{
+                background: "rgba(118, 118, 128, 0.12)",
+                border: "1.5px solid rgba(255, 255, 255, 0.1)",
+                color: "#FFFFFF",
+                height: "48px",
+              }}
             >
-              {notification.enabled ? <ToggleActive /> : <ToggleInactive />}
+              Cancel
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="px-8 py-3 rounded-[10px] font-mona-sans font-semibold text-sm transition-opacity hover:opacity-90 disabled:opacity-50"
+              style={{ background: "#A2CE3A", color: "#121212", height: "48px" }}
+            >
+              {saving ? "Saving..." : "Save"}
             </button>
           </div>
-        ))}
-      </div>
-
-      {/* Action Buttons */}
-      <div className="flex items-center justify-end gap-4 mt-8">
-        <button
-          className="px-8 py-3 rounded-[10px] font-mona-sans font-medium text-sm transition-opacity hover:opacity-80"
-          style={{
-            background: "rgba(118, 118, 128, 0.12)",
-            border: "1.5px solid rgba(255, 255, 255, 0.1)",
-            color: "#FFFFFF",
-            height: "48px",
-          }}
-        >
-          Cancel
-        </button>
-        <button
-          className="px-8 py-3 rounded-[10px] font-mona-sans font-semibold text-sm transition-opacity hover:opacity-90"
-          style={{
-            background: "#A2CE3A",
-            color: "#121212",
-            height: "48px",
-          }}
-        >
-          Save
-        </button>
-      </div>
+        </>
+      )}
     </div>
   );
 }

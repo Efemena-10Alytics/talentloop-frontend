@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import * as Select from "@radix-ui/react-select";
 import { useToast } from "@/components/ui/use-toast";
@@ -96,6 +96,21 @@ export default function CareerInfoSection({
     currentCompanyName: initialData?.current_company || "",
     yearsOfExperience: initialData?.years_of_experience || "",
   });
+  const seeded = useRef(false);
+
+  useEffect(() => {
+    if (initialData && !seeded.current) {
+      seeded.current = true;
+      setFormData({
+        careerPath: initialData.career_path || "",
+        preferredIndustries: initialData.preferred_industries ? initialData.preferred_industries.join(", ") : "",
+        preferredJobTitles: initialData.preferred_job_titles ? initialData.preferred_job_titles.join(", ") : "",
+        currentJobTitle: initialData.current_job_title || "",
+        currentCompanyName: initialData.current_company || "",
+        yearsOfExperience: initialData.years_of_experience || "",
+      });
+    }
+  }, [initialData]);
 
   const steps = [
     { number: "1", label: "Checkout", completed: true },

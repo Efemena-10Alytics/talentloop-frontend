@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import * as Select from "@radix-ui/react-select";
 import { useToast } from "@/components/ui/use-toast";
@@ -62,6 +62,19 @@ export default function JobApplicationInfoSection({
     hadInterviewsRecently: initialData?.had_recent_interviews ? "Yes" : "No",
     interviewFeedback: initialData?.interview_feedback || "",
   });
+  const seeded = useRef(false);
+
+  useEffect(() => {
+    if (initialData && !seeded.current) {
+      seeded.current = true;
+      setFormData({
+        jobTitlesAppliedFor: initialData.previous_job_titles ? initialData.previous_job_titles.join(", ") : "",
+        companiesInterestedIn: initialData.preferred_companies ? initialData.preferred_companies.join(", ") : "",
+        hadInterviewsRecently: initialData.had_recent_interviews ? "Yes" : "No",
+        interviewFeedback: initialData.interview_feedback || "",
+      });
+    }
+  }, [initialData]);
 
   const steps = [
     { number: "1", label: "Checkout", completed: true },

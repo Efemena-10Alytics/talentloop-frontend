@@ -34,8 +34,6 @@ export const getAuthHeaders = async (): Promise<HeadersInit> => {
       token = localStorage.getItem("auth_token") || undefined;
     }
 
-    console.log("TOKEN", token);
-
     return {
       "Content-Type": "application/json",
       Accept: "application/json",

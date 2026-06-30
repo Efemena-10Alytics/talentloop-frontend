@@ -122,14 +122,14 @@ export default function DisclaimerSection({
         method: "PATCH",
         headers,
         body: JSON.stringify({
-          open_to_relocation: formData.openToRelocation === "Yes",
+          open_to_relocation: formData.openToRelocation === "Yes" ? 1 : 0,
           companies_to_avoid: formData.companiesIndustriesToAvoid,
           references: formData.listOfReferences,
           strengths: formData.strengthsToHighlight,
           weaknesses: formData.weaknessesToAddress,
-          accepted_privacy_policy: formData.acceptPrivacyPolicy,
-          accepted_terms: formData.acceptTermsAndCondition,
-          acknowledged_visa_disclaimer: formData.acknowledgeDisclaimer,
+          accepted_privacy_policy: formData.acceptPrivacyPolicy ? 1 : 0,
+          accepted_terms: formData.acceptTermsAndCondition ? 1 : 0,
+          acknowledged_visa_disclaimer: formData.acknowledgeDisclaimer ? 1 : 0,
         }),
       });
 
@@ -444,7 +444,16 @@ export default function DisclaimerSection({
                       {formData.acceptTermsAndCondition ? <CheckboxCheckedSVG /> : <CheckboxUncheckedSVG />}
                     </button>
                     <span className="text-sm font-plus-jakarta" style={{ color: "#8E8E93" }}>
-                      I Have Read and Accept the Terms and Condition
+                      I Have Read and Accept the{" "}
+                      <a
+                        href="/terms-and-conditions"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="underline hover:opacity-80 transition-opacity"
+                        style={{ color: "#A2CE3A" }}
+                      >
+                        Terms and Condition
+                      </a>
                     </span>
                   </div>
                 </div>

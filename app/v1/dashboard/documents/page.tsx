@@ -1,8 +1,10 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import DashboardNavbar from "@/components/v1-dashboard/DashboardNavbar";
 import FileUploadSection from "@/components/v1-dashboard/FileUploadSection";
 import FileCard from "@/components/v1-dashboard/FileCard";
+import { useEnrollmentDocuments, EnrollmentDocument } from "@/hooks/useEnrollmentData";
 
 const DocumentIcon = () => (
   <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -14,63 +16,51 @@ const DocumentIcon = () => (
   </svg>
 );
 
-const sampleFiles = [
-  {
-    id: "1",
-    name: "CV_Adaeze_Nwosu_v3_Optimised.pdf",
-    description: "Optimised by Happiness · 14 May 2025 · ATS Score: 87",
-    status: "Ready" as const,
-    icon: "📄",
-  },
-  {
-    id: "2",
-    name: "CV_Adaeze_Original_Upload.pdf",
-    description: "Uploaded by you · 29 Apr 2025 · ATS Score: 62",
-    status: "Latest" as const,
-    icon: "📄",
-  },
-  {
-    id: "3",
-    name: "CoverLetter_DataAnalyst_Barclays.pdf",
-    description: "Created by Happiness · 12 May 2025",
-    status: "Latest" as const,
-    icon: "📄",
-  },
-];
-
 export default function DocumentsPage() {
+  const { data: fetchedDocs = [], isLoading } = useEnrollmentDocuments();
+  const [documents, setDocuments] = useState<EnrollmentDocument[]>([]);
+
+  useEffect(() => {
+    if (fetchedDocs.length > 0) setDocuments(fetchedDocs);
+  }, [fetchedDocs]);
+
+  const handleUploaded = (doc: EnrollmentDocument) => {
+    setDocuments((prev) => [doc, ...prev]);
+  };
+
+  const handleDeleted = (id: number) => {
+    setDocuments((prev) => prev.filter((d) => d.id !== id));
+  };
+
   return (
     <div className="min-h-screen p-4 lg:p-6">
       {/* Navbar */}
-      <DashboardNavbar 
-        pageTitle="Documents" 
-        pageIcon={<DocumentIcon />} 
+      <DashboardNavbar
+        pageTitle="Documents"
+        pageIcon={<DocumentIcon />}
       />
 
       {/* File Upload Section */}
-      <FileUploadSection />
+      <FileUploadSection onUploaded={handleUploaded} />
 
       {/* Your Files Section */}
       <div className="mt-8">
         <div className="flex items-center gap-2 mb-6">
-          <h2 className="text-white text-lg font-mona-sans font-bold">
-            Your Files
-          </h2>
-          <span className="text-[#95ACCB] text-sm font-mona-sans">3</span>
+          <h2 className="text-white text-lg font-mona-sans font-bold">Your Files</h2>
+          <span className="text-[#95ACCB] text-sm font-mona-sans">{documents.length}</span>
         </div>
 
-        {/* File List */}
-        <div className="space-y-4">
-          {sampleFiles.map((file) => (
-            <FileCard
-              key={file.id}
-              name={file.name}
-              description={file.description}
-              status={file.status}
-              icon={file.icon}
-            />
-          ))}
-        </div>
+        {isLoading ? (
+          <p className="text-[#95ACCB] font-mona-sans text-sm">Loading documents...</p>
+        ) : documents.length === 0 ? (
+          <p className="text-[#657997] font-mona-sans text-sm">No documents uploaded yet.</p>
+        ) : (
+          <div className="space-y-4">
+            {documents.map((doc) => (
+              <FileCard key={doc.id} document={doc} onDeleted={handleDeleted} />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

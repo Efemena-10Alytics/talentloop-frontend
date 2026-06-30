@@ -141,9 +141,11 @@ export default function V1SigninFormContent({
     }
   };
 
-  const handleAuthenticated = () => {
+  const handleAuthenticated = (stripeCustomerId?: string | null) => {
     if (isModal && onSuccess) {
       onSuccess();
+    } else if (stripeCustomerId) {
+      router.push("/v1/dashboard");
     } else {
       router.push("/dashboard");
     }
@@ -162,6 +164,55 @@ export default function V1SigninFormContent({
     setLoading(true);
 
     try {
+      // Step 1: Call backend login directly to get the token and check
+      // email_verified_at — before involving NextAuth (which has a session
+      // propagation delay that can cause the auth/me check to return 401).
+      const loginResponse = await fetch(`${getApiUrl()}/api/v1/auth/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const loginData = await loginResponse.json();
+
+      if (!loginResponse.ok) {
+        const firstError = loginData.errors
+          ? loginData.errors[Object.keys(loginData.errors)[0]]?.[0]
+          : null;
+        toast({
+          variant: "error",
+          title: "Sign in failed",
+          description: firstError || loginData.message || "Invalid email or password",
+        });
+        setLoading(false);
+        return;
+      }
+
+      // Step 2: Check email verification status from the login response
+      if (!loginData.user?.email_verified_at) {
+        // Store token so resend-otp works while user is on the OTP screen
+        if (loginData.token) {
+          localStorage.setItem("auth_token", loginData.token);
+        }
+        await sendVerificationOtp();
+        setShowVerification(true);
+        setLoading(false);
+        toast({
+          variant: "success",
+          title: "Verify your email",
+          description: "We've sent a verification code to your email",
+        });
+        return;
+      }
+
+      // Step 3: Email is verified — store token and create NextAuth session
+      if (loginData.token) {
+        localStorage.setItem("auth_token", loginData.token);
+      }
+
       const result = await signIn("credentials", {
         email,
         password,
@@ -178,30 +229,6 @@ export default function V1SigninFormContent({
         return;
       }
 
-      const headers = await getAuthHeaders();
-      const userResponse = await fetch(`${getApiUrl()}/api/v1/auth/me`, {
-        method: "GET",
-        headers,
-      });
-
-      if (userResponse.ok) {
-        const userData = await userResponse.json();
-
-        if (!(userData.data?.user || userData.user)?.email_verified_at) {
-          // Email not verified yet: send an OTP and switch to the inline
-          // verification step instead of redirecting away.
-          await sendVerificationOtp();
-          setShowVerification(true);
-          setLoading(false);
-          toast({
-            variant: "success",
-            title: "Verify your email",
-            description: "We've sent a verification code to your email",
-          });
-          return;
-        }
-      }
-
       toast({
         variant: "success",
         title: "Welcome back!",
@@ -209,7 +236,7 @@ export default function V1SigninFormContent({
       });
 
       setLoading(false);
-      handleAuthenticated();
+      handleAuthenticated(loginData.user?.stripe_customer_id);
     } catch (error: any) {
       toast({
         variant: "error",

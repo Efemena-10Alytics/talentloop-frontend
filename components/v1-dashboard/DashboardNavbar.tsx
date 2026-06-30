@@ -1,5 +1,8 @@
 "use client";
 
+import { useAvatar } from "@/context/AvatarContext";
+import { useAuthMe } from "@/hooks/useUserData";
+
 interface DashboardNavbarProps {
   pageTitle: string;
   pageIcon: React.ReactNode;
@@ -28,6 +31,18 @@ const DropdownArrow = () => (
 );
 
 export default function DashboardNavbar({ pageTitle, pageIcon, actionSlot }: DashboardNavbarProps) {
+  const { avatarUrl } = useAvatar();
+  const { data: authData } = useAuthMe();
+
+  const firstName = authData?.user?.name?.split(" ")[0] ?? "";
+  const lastName = authData?.user?.name?.split(" ").slice(-1)[0] ?? "";
+  const initials =
+    firstName && lastName
+      ? `${firstName[0]}${lastName[0]}`.toUpperCase()
+      : firstName
+      ? firstName[0].toUpperCase()
+      : "U";
+
   return (
     <nav
       className="bg-[#0e1617] border border-[#FFFFFF1A] rounded-[24px] px-6 py-4 mb-6"
@@ -59,12 +74,18 @@ export default function DashboardNavbar({ pageTitle, pageIcon, actionSlot }: Das
 
           {/* Profile Dropdown */}
           <button className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-            <div className="w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-[#A2CE3A] to-[#156374]">
-              <img
-                src="/placeholder-avatar.png"
-                alt="Profile"
-                className="w-full h-full object-cover"
-              />
+            <div className="w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-[#A2CE3A] to-[#156374] flex items-center justify-center flex-shrink-0">
+              {avatarUrl ? (
+                <img
+                  src={avatarUrl}
+                  alt="Profile"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span className="text-white font-mona-sans font-bold text-sm">
+                  {initials}
+                </span>
+              )}
             </div>
             <div className="hidden lg:block">
               <DropdownArrow />

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { useSession, signOut } from "next-auth/react";
+import { clearAuthStorage } from "@/lib/auth";
 import { useUserData } from "@/hooks/useUserData";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/ui/use-toast";
@@ -224,9 +225,9 @@ export function Navbar({ v1Launch }: { v1Launch?: boolean }) {
                     <div className="h-[30px] w-[30px] rounded-full bg-[#3FB185] flex items-center justify-center flex-shrink-0">
                       <span className="text-white font-mona-sans text-xs font-semibold">
                         {(() => {
-                          // Use profile data if available, otherwise fall back to user name
-                          const firstName = userData?.profile?.first_name;
-                          const lastName = userData?.profile?.last_name;
+                          // Use profile data from user.profile if available
+                          const firstName = userData?.user?.profile?.first_name;
+                          const lastName = userData?.user?.profile?.last_name;
                           
                           if (firstName && lastName) {
                             return (firstName[0]?.toUpperCase() || "") + (lastName[0]?.toUpperCase() || "");
@@ -246,8 +247,8 @@ export function Navbar({ v1Launch }: { v1Launch?: boolean }) {
                     <div className="flex flex-col justify-center flex-1 min-w-0">
                       <p className="text-white font-mona-sans text-xs font-semibold truncate">
                         {(() => {
-                          // Use profile first name if available
-                          const firstName = userData?.profile?.first_name;
+                          // Use profile first name from user.profile if available
+                          const firstName = userData?.user?.profile?.first_name;
                           if (firstName) {
                             return firstName;
                           }
@@ -286,7 +287,7 @@ export function Navbar({ v1Launch }: { v1Launch?: boolean }) {
 
                 {/* Logout Icon */}
                 <button
-                  onClick={() => signOut({ callbackUrl: "/" })}
+                  onClick={() => { clearAuthStorage(); signOut({ callbackUrl: "/" }); }}
                   className="w-10 h-10 rounded-full bg-white/10 hover:bg-red-500/20 flex items-center justify-center transition-all hover:ring-2 hover:ring-red-500"
                   title="Logout"
                 >
@@ -536,6 +537,7 @@ export function Navbar({ v1Launch }: { v1Launch?: boolean }) {
                 {/* Logout Button */}
                 <button
                   onClick={() => {
+                    clearAuthStorage();
                     signOut({ callbackUrl: "/" });
                     setShowMobileSidebar(false);
                   }}

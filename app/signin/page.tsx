@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import V1SigninForm from "@/components/auth/v1-signin-form";
 import OriginalSigninForm from "@/components/auth/original-signin-form";
+import AuthGuard from "@/components/auth/AuthGuard";
 
 function SignInContent() {
   const searchParams = useSearchParams();
@@ -11,10 +12,18 @@ function SignInContent() {
   const isEmailVerification = searchParams.get("e_v") === "true";
 
   if (isV1) {
-    return <V1SigninForm isEmailVerification={isEmailVerification} />;
+    return (
+      <AuthGuard>
+        <V1SigninForm isEmailVerification={isEmailVerification} />
+      </AuthGuard>
+    );
   }
 
-  return <OriginalSigninForm isEmailVerification={isEmailVerification} />;
+  return (
+    <AuthGuard>
+      <OriginalSigninForm isEmailVerification={isEmailVerification} />
+    </AuthGuard>
+  );
 }
 
 export default function SignInPage() {
