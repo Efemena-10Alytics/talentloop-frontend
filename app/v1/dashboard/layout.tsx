@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AvatarProvider } from "@/context/AvatarContext";
-import { useProfile } from "@/hooks/useUserData";
+import { useAuthMe } from "@/hooks/useUserData";
 
 /* ─── SVG Icons ─── */
 
@@ -87,8 +87,8 @@ export default function V1DashboardLayout({
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
-  const { data: profile } = useProfile();
-  const initialAvatar = (profile as any)?.avatar ?? null;
+  const { data: authData } = useAuthMe();
+  const initialAvatar = (authData as any)?.user?.profile?.avatar ?? null;
 
   return (
     <AvatarProvider initial={initialAvatar}>

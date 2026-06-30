@@ -5,7 +5,7 @@ import PhoneInput from "react-phone-number-input";
 import "react-phone-number-input/style.css";
 import { countries } from "@/app/_hooks/countries";
 import { useAvatar } from "@/context/AvatarContext";
-import { useAuthMe, useProfile } from "@/hooks/useUserData";
+import { useAuthMe } from "@/hooks/useUserData";
 import { useToast } from "@/components/ui/use-toast";
 
 const UploadIcon = () => (
@@ -18,23 +18,22 @@ export default function ProfileTab() {
   const { toast } = useToast();
   const { avatarUrl, setAvatarUrl } = useAvatar();
   const { data: authData } = useAuthMe();
-  const { data: profile } = useProfile();
+
+  const apiProfile = (authData as any)?.user?.profile;
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
 
-  const [phoneNumber, setPhoneNumber] = useState((profile as any)?.phone ?? "");
-  const [selectedCountry, setSelectedCountry] = useState((profile as any)?.country ?? "");
-  const [selectedSource, setSelectedSource] = useState((profile as any)?.referral_source ?? "");
+  const [phoneNumber, setPhoneNumber] = useState(apiProfile?.phone ?? "");
+  const [selectedCountry, setSelectedCountry] = useState(apiProfile?.country ?? "");
+  const [selectedSource, setSelectedSource] = useState(apiProfile?.referral_source ?? "");
 
-  const displayAvatar = preview ?? avatarUrl;
+  const displayAvatar = preview ?? avatarUrl ?? apiProfile?.avatar ?? null;
 
-  const name = authData?.user?.name ?? "";
-  const nameParts = name.split(" ");
-  const firstName = nameParts[0] ?? "";
-  const lastName = nameParts.slice(1).join(" ") ?? "";
-  const email = authData?.user?.email ?? "";
+  const firstName: string = apiProfile?.first_name ?? authData?.user?.name?.split(" ")[0] ?? "";
+  const lastName: string = apiProfile?.last_name ?? authData?.user?.name?.split(" ").slice(-1)[0] ?? "";
+  const email: string = authData?.user?.email ?? "";
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

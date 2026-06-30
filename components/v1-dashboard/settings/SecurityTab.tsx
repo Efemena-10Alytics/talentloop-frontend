@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useToast } from "@/components/ui/use-toast";
 
 const GreyCheckmark = () => (
   <svg width="17" height="17" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -15,12 +16,14 @@ const GreenCheckmark = () => (
 );
 
 export default function SecurityTab() {
+  const { toast } = useToast();
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   // Password validation
   const hasUppercase = /[A-Z]/.test(newPassword);
@@ -39,6 +42,51 @@ export default function SecurityTab() {
   };
 
   const passwordStrength = getPasswordStrength();
+
+  const handleCancel = () => {
+    setCurrentPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
+  };
+
+  const handleSave = async () => {
+    if (!currentPassword) {
+      toast({ variant: "error", title: "Current password is required" });
+      return;
+    }
+    if (!hasMinLength || !hasUppercase || !hasNumber || !hasSpecialChar) {
+      toast({ variant: "error", title: "New password doesn't meet requirements" });
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast({ variant: "error", title: "Passwords do not match" });
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const res = await fetch("/api/auth/change-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          current_password: currentPassword,
+          new_password: newPassword,
+          new_password_confirmation: confirmPassword,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        toast({ variant: "error", title: "Failed to change password", description: json.message || "An error occurred" });
+        return;
+      }
+      toast({ variant: "success", title: json.message || "Password changed successfully." });
+      handleCancel();
+    } catch {
+      toast({ variant: "error", title: "Failed to change password", description: "An error occurred" });
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <div
@@ -187,7 +235,9 @@ export default function SecurityTab() {
         {/* Action Buttons */}
         <div className="flex items-center justify-end gap-4">
           <button
-            className="px-8 py-3 rounded-[10px] font-mona-sans font-medium text-sm transition-opacity hover:opacity-80"
+            onClick={handleCancel}
+            disabled={saving}
+            className="px-8 py-3 rounded-[10px] font-mona-sans font-medium text-sm transition-opacity hover:opacity-80 disabled:opacity-50"
             style={{
               background: "rgba(118, 118, 128, 0.12)",
               border: "1.5px solid rgba(255, 255, 255, 0.1)",
@@ -198,14 +248,16 @@ export default function SecurityTab() {
             Cancel
           </button>
           <button
-            className="px-8 py-3 rounded-[10px] font-mona-sans font-semibold text-sm transition-opacity hover:opacity-90"
+            onClick={handleSave}
+            disabled={saving}
+            className="px-8 py-3 rounded-[10px] font-mona-sans font-semibold text-sm transition-opacity hover:opacity-90 disabled:opacity-50"
             style={{
               background: "#A2CE3A",
               color: "#121212",
               height: "48px",
             }}
           >
-            Save
+            {saving ? "Saving..." : "Save"}
           </button>
         </div>
       </div>

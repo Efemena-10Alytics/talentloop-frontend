@@ -34,8 +34,9 @@ export default function DashboardNavbar({ pageTitle, pageIcon, actionSlot }: Das
   const { avatarUrl } = useAvatar();
   const { data: authData } = useAuthMe();
 
-  const firstName = authData?.user?.name?.split(" ")[0] ?? "";
-  const lastName = authData?.user?.name?.split(" ").slice(-1)[0] ?? "";
+  const profile = (authData as any)?.user?.profile;
+  const firstName: string = profile?.first_name ?? authData?.user?.name?.split(" ")[0] ?? "";
+  const lastName: string = profile?.last_name ?? authData?.user?.name?.split(" ").slice(-1)[0] ?? "";
   const initials =
     firstName && lastName
       ? `${firstName[0]}${lastName[0]}`.toUpperCase()
