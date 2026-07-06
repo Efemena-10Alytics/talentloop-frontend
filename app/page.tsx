@@ -1,6 +1,8 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 import { Navbar } from "@/components/navbar";
 import V1CareerSection from "@/components/v1-launch/v1-career-section";
 import V1CTASection from "@/components/v1-launch/v1-cta-section";
@@ -13,12 +15,28 @@ import V1WhyDifferentSection from "@/components/v1-launch/v1-why-different-secti
 import V1FooterSection from "@/components/v1-launch/v1-footer-section";
 import V1VideoTestimonialSection from "@/components/v1-launch/v1-video-testimonials-section";
 import V1Faqs from "@/components/v1-launch/v1-faqs";
+import { useToast } from "@/components/ui/use-toast";
 
-export default function Home() {
+function HomeContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (searchParams.get("no-plan") === "true") {
+      toast({
+        variant: "error",
+        title: "No active plan",
+        description: "You don't have an active plan. Choose a plan below to get started.",
+      });
+      setTimeout(() => {
+        document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" });
+      }, 300);
+      router.replace("/");
+    }
+  }, [searchParams, toast, router]);
 
   const handleStartNow = (planId: string) => {
-    // Redirect to clarity session page with planId
     router.push(`/v1/clarity-session?p-id=${planId}`);
   };
 
@@ -47,5 +65,13 @@ export default function Home() {
         <V1FooterSection />
       </div>
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#01090B]" />}>
+      <HomeContent />
+    </Suspense>
   );
 }

@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { AvatarProvider } from "@/context/AvatarContext";
 import { useAuthMe } from "@/hooks/useUserData";
 
@@ -87,8 +87,20 @@ export default function V1DashboardLayout({
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
-  const { data: authData } = useAuthMe();
+  const router = useRouter();
+  const { data: authData, isLoading: authLoading } = useAuthMe();
   const initialAvatar = (authData as any)?.user?.profile?.avatar ?? null;
+
+  useEffect(() => {
+    if (authLoading) return;
+    if (authData && !authData.current_enrollment?.id) {
+      router.replace("/?no-plan=true");
+    }
+  }, [authData, authLoading, router]);
+
+  if (authLoading) {
+    return <div className="min-h-screen bg-[#01090B]" />;
+  }
 
   return (
     <AvatarProvider initial={initialAvatar}>

@@ -18,6 +18,10 @@ export interface SocialAuthResponse {
     };
     token: string;
     token_type: string;
+    current_enrollment?: {
+      id: number;
+      status: string;
+    } | null;
   };
 }
 

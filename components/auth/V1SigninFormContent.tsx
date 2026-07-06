@@ -141,13 +141,13 @@ export default function V1SigninFormContent({
     }
   };
 
-  const handleAuthenticated = (stripeCustomerId?: string | null) => {
+  const handleAuthenticated = (hasEnrollment?: boolean) => {
     if (isModal && onSuccess) {
       onSuccess();
-    } else if (stripeCustomerId) {
+    } else if (hasEnrollment) {
       router.push("/v1/dashboard");
     } else {
-      router.push("/dashboard");
+      router.push("/");
     }
   };
 
@@ -236,7 +236,7 @@ export default function V1SigninFormContent({
       });
 
       setLoading(false);
-      handleAuthenticated(loginData.user?.stripe_customer_id);
+      handleAuthenticated(!!loginData.current_enrollment?.id);
     } catch (error: any) {
       toast({
         variant: "error",
@@ -257,7 +257,8 @@ export default function V1SigninFormContent({
         title: result.message || "Welcome back!",
         description: `Signed in as ${result.data.user.name || result.data.user.email}`,
       });
-      handleAuthenticated();
+      const hasEnrollment = !!(result.data.current_enrollment?.id);
+      handleAuthenticated(hasEnrollment);
     } catch (err: any) {
       toast({
         variant: "error",

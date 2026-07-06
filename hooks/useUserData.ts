@@ -36,12 +36,22 @@ interface ProfileSummary {
   assessment_passed: string;
 }
 
+interface CurrentEnrollment {
+  id: number;
+  status: string;
+  needs_visa_sponsorship: boolean;
+  end_date: string | null;
+  assigned_at: string | null;
+  completed_at: string | null;
+}
+
 interface UserDataResponse {
   user: UserData;
   onboarding_status: string;
   assessment_status: string;
   profile_summary: ProfileSummary;
   profile?: ProfileData;
+  current_enrollment?: CurrentEnrollment | null;
 }
 
 
