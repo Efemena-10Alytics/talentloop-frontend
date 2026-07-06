@@ -145,7 +145,7 @@ export default function V1SigninFormContent({
     if (isModal && onSuccess) {
       onSuccess();
     } else if (hasEnrollment) {
-      router.push("/v1/dashboard");
+      router.push("/dashboard");
     } else {
       router.push("/");
     }
@@ -528,7 +528,7 @@ export default function V1SigninFormContent({
                 </button>
               ) : (
                 <Link
-                  href="/v1/clarity-session"
+                  href="/clarity-session"
                   className="text-[#A2CE3A] font-semibold hover:underline"
                 >
                   Create your account

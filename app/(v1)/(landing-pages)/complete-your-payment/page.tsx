@@ -69,7 +69,7 @@ const CompleteYourPaymentContent = () => {
 
   // Navigate to a step — pushes URL so browser back/forward works
   const goToStep = (step: Step) => {
-    router.push(`/v1/complete-your-payment?p-id=${pId}&step=${step}`);
+    router.push(`/complete-your-payment?p-id=${pId}&step=${step}`);
   };
 
   // --- Payment option: persisted in sessionStorage so it survives step navigation ---
@@ -333,8 +333,8 @@ const CompleteYourPaymentContent = () => {
         : process.env.NEXT_PUBLIC_WEBAPP_URL || "https://www.talentloop.app";
 
       // Stripe success/cancel URLs — step=3 lands on Career Info, step=1 with cancel=true shows toast
-      const successUrl = `${baseUrl}/v1/complete-your-payment?p-id=${pId}&step=3`;
-      const cancelUrl  = `${baseUrl}/v1/complete-your-payment?p-id=${pId}&step=1&cancel=true`;
+      const successUrl = `${baseUrl}/complete-your-payment?p-id=${pId}&step=3`;
+      const cancelUrl  = `${baseUrl}/complete-your-payment?p-id=${pId}&step=1&cancel=true`;
 
       const paymentOptionNumber = paymentOption?.type === "installments" ? 2 : 1;
 

@@ -209,7 +209,7 @@ export default function V1SignupFormContent({
       });
       if (!isModal) {
         if (result.data.user?.stripe_customer_id) {
-          router.push("/v1/dashboard");
+          router.push("/dashboard");
         } else {
           router.push("/dashboard");
         }
@@ -473,7 +473,7 @@ export default function V1SignupFormContent({
           const meRes = await fetch("/api/user/me");
           const meData = await meRes.json();
           if (meData?.user?.stripe_customer_id) {
-            router.push("/v1/dashboard");
+            router.push("/dashboard");
           } else {
             router.push("/dashboard");
           }

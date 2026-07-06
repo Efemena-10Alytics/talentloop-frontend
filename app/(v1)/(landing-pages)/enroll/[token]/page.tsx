@@ -105,8 +105,8 @@ export default function EnrollPage() {
         ? typeof window !== "undefined" ? window.location.origin : "http://localhost:3000"
         : process.env.NEXT_PUBLIC_WEBAPP_URL || "https://www.talentloop.app";
 
-      const successUrl = `${baseUrl}/v1/complete-your-payment?p-id=${linkData.pricing.id}&step=3`;
-      const cancelUrl = `${baseUrl}/v1/enroll/${token}?cancel=true`;
+      const successUrl = `${baseUrl}/complete-your-payment?p-id=${linkData.pricing.id}&step=3`;
+      const cancelUrl = `${baseUrl}/enroll/${token}?cancel=true`;
 
       const paymentOptionNumber = option.type === "installments" ? 2 : 1;
 

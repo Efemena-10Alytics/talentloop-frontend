@@ -70,13 +70,13 @@ interface NavLink {
 }
 
 const mainNavLinks: NavLink[] = [
-  { name: "Dashboard", href: "/v1/dashboard", icon: <DashboardIcon /> },
-  { name: "Application Tracker", href: "/v1/dashboard/application-tracker", icon: <ApplicationTrackerIcon /> },
-  { name: "Documents", href: "/v1/dashboard/documents", icon: <DocumentIcon /> },
+  { name: "Dashboard", href: "/dashboard", icon: <DashboardIcon /> },
+  { name: "Application Tracker", href: "/dashboard/application-tracker", icon: <ApplicationTrackerIcon /> },
+  { name: "Documents", href: "/dashboard/documents", icon: <DocumentIcon /> },
 ];
 
 const accountNavLinks: NavLink[] = [
-  { name: "Settings", href: "/v1/dashboard/settings", icon: <SettingIcon /> },
+  { name: "Settings", href: "/dashboard/settings", icon: <SettingIcon /> },
 ];
 
 export default function V1DashboardLayout({

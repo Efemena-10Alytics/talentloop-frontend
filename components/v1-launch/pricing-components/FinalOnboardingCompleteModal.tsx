@@ -103,7 +103,7 @@ export default function FinalOnboardingCompleteModal({
               transition={{ delay: 1.2 }}
             >
               <Link
-                href="/v1/dashboard"
+                href="/dashboard"
                 className="flex items-center justify-center w-full h-12 px-6 rounded-[12px] font-mona-sans text-sm font-semibold transition-opacity hover:opacity-90"
                 style={{
                   background: "#A2CE3A",

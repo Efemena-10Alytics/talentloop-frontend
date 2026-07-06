@@ -192,7 +192,7 @@ export function Navbar({ v1Launch }: { v1Launch?: boolean }) {
                         router.push(
                           session.user?.role === "coach"
                             ? "#"
-                            : "/v1/dashboard",
+                            : "/dashboard",
                         );
                       } else {
                         // User doesn't have a plan, show toast and scroll to pricing
@@ -440,7 +440,7 @@ export function Navbar({ v1Launch }: { v1Launch?: boolean }) {
                         router.push(
                           session.user?.role === "coach"
                             ? "#"
-                            : "/v1/dashboard",
+                            : "/dashboard",
                         );
                         setShowMobileSidebar(false);
                       } else {

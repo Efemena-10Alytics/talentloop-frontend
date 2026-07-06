@@ -26,7 +26,7 @@ export default function V1CTASection() {
 
           {/* Sign Up Button */}
           <Link
-            href="/v1/clarity-session"
+            href="/clarity-session"
             className="inline-block px-8 py-3 rounded-[30px] font-mona-sans text-sm font-semibold text-white hover:opacity-90 transition-opacity"
             style={{
               background: "linear-gradient(90deg, #071522 25%, #A2CE3A 100%)",

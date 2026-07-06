@@ -37,7 +37,7 @@ function HomeContent() {
   }, [searchParams, toast, router]);
 
   const handleStartNow = (planId: string) => {
-    router.push(`/v1/clarity-session?p-id=${planId}`);
+    router.push(`/clarity-session?p-id=${planId}`);
   };
 
   return (
