@@ -10,6 +10,7 @@ import BookingDetailsForm, {
 } from "@/components/v1-launch/pricing-components/BookingDetailsForm";
 import V1FooterSection from "@/components/v1-launch/v1-footer-section";
 import { useToast } from "@/components/ui/use-toast";
+import { getApiUrl } from "@/lib/api";
 
 const GoogleMeetIcon = () => (
   <svg
@@ -205,7 +206,7 @@ const ClaritySessionContent = () => {
       };
 
       const response = await fetch(
-        "https://talentloop-backend-iu3e.onrender.com/api/v1/calendly/bookings",
+        `${getApiUrl()}/api/v1/calendly/bookings`,
         {
           method: "POST",
           headers: {

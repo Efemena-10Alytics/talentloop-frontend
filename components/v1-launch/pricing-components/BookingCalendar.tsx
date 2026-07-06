@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { getApiUrl } from "@/lib/api";
 
 interface BookingCalendarProps {
   onDateSelect?: (date: Date) => void;
@@ -92,7 +93,7 @@ export default function BookingCalendar({
     const fetchAvailableSlots = async () => {
       try {
         setLoading(true);
-        const response = await fetch('https://talentloop-backend-iu3e.onrender.com/api/v1/calendly/availability');
+        const response = await fetch(`${getApiUrl()}/api/v1/calendly/availability`);
         const result = await response.json();
         
         if (result.status === 'success' && result.data) {

@@ -1,4 +1,6 @@
-const API_BASE = "https://talentloop-backend-iu3e.onrender.com";
+import { getApiUrl } from "@/lib/api";
+
+const API_BASE = getApiUrl();
 
 export interface SocialAuthResponse {
   status: string;
