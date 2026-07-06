@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useActivePricingPlans } from "@/lib/hooks/usePricing";
 import type { PricingPlan } from "@/lib/services/pricing.service";
@@ -112,6 +112,12 @@ export default function V1PricingSection({ onStartNow }: V1PricingSectionProps) 
         installments: plan.installments,
       }))
     : mockPricingPlans;
+
+  // Auto-select the most popular plan once data is available
+  useEffect(() => {
+    const popular = pricingPlans.find((p) => p.isMostPopular);
+    if (popular) setSelectedPlan(popular.id);
+  }, [apiPlans]);
 
   const activePlan = pricingPlans.find(plan => plan.id === selectedPlan) || pricingPlans[1];
 
