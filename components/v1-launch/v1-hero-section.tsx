@@ -127,7 +127,7 @@ export default function V1HeroSection() {
           className="flex flex-col sm:flex-row justify-center gap-4 mb-16"
         >
           <Link
-            href="/signup?v1=true"
+            href="/v1/clarity-session"
             className="px-8 py-4 text-center rounded-[30px] text-[#090B0E] font-mona-sans text-base font-semibold hover:opacity-90 transition-opacity"
             style={{
               background:
@@ -432,7 +432,7 @@ export default function V1HeroSection() {
                 ready to compete.
               </p>
               <Link
-                href="/signup?v1=true"
+                href="/v1/clarity-session"
                 className="px-12 py-4 w-fit text-center rounded-[30px] text-white font-mona-sans text-base font-semibold hover:opacity-90 transition-opacity"
                 style={{
                   background:

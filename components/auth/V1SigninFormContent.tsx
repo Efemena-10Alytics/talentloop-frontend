@@ -527,7 +527,7 @@ export default function V1SigninFormContent({
                 </button>
               ) : (
                 <Link
-                  href="/signup?v1=true"
+                  href="/v1/clarity-session"
                   className="text-[#A2CE3A] font-semibold hover:underline"
                 >
                   Create your account

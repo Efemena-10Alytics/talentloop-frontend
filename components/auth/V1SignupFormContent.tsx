@@ -653,7 +653,7 @@ export default function V1SignupFormContent({
                 </button>
               ) : (
                 <Link
-                  href="/signin?v1=true"
+                  href="/signin"
                   className="text-[#A2CE3A] font-semibold hover:underline"
                 >
                   Sign in to your account

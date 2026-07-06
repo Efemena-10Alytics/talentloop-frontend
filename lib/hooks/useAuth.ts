@@ -35,14 +35,14 @@ export const useLogout = () => {
       queryClient.clear();
       clearAuthStorage();
       await nextAuthSignOut({ redirect: false });
-      router.push("/signin?v1=true");
+      router.push("/signin");
     },
     onError: async (error) => {
       console.error("Logout error:", error);
       queryClient.clear();
       clearAuthStorage();
       await nextAuthSignOut({ redirect: false });
-      router.push("/signin?v1=true");
+      router.push("/signin");
     },
   });
 };

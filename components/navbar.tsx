@@ -16,7 +16,7 @@ const navLinks = [
 
 const v1Navlinks = [
   { text: "How it works", link: "#how-it-works" },
-    { text: "Experts", link: "#experts" },
+  { text: "Experts", link: "#experts" },
   { text: "Pricing Plan", link: "#pricing" },
   { text: "FAQs", link: "#faqs" },
 ];
@@ -41,7 +41,7 @@ export function Navbar({ v1Launch }: { v1Launch?: boolean }) {
 
       // Detect active section for v1 nav links
       if (v1Launch) {
-        const sections = v1Navlinks.map(link => link.link.replace('#', ''));
+        const sections = v1Navlinks.map((link) => link.link.replace("#", ""));
         let currentSection = "";
 
         for (const sectionId of sections) {
@@ -216,7 +216,8 @@ export function Navbar({ v1Launch }: { v1Launch?: boolean }) {
                     }}
                     className="flex items-center gap-3 px-4 h-[52px] rounded-[31.11px] cursor-pointer transition-all hover:opacity-90"
                     style={{
-                      background: "linear-gradient(94.02deg, #222126 0%, #111116 100%)",
+                      background:
+                        "linear-gradient(94.02deg, #222126 0%, #111116 100%)",
                       border: "0.78px solid #FFFFFF1A",
                       width: "170px",
                     }}
@@ -228,16 +229,26 @@ export function Navbar({ v1Launch }: { v1Launch?: boolean }) {
                           // Use profile data from user.profile if available
                           const firstName = userData?.user?.profile?.first_name;
                           const lastName = userData?.user?.profile?.last_name;
-                          
+
                           if (firstName && lastName) {
-                            return (firstName[0]?.toUpperCase() || "") + (lastName[0]?.toUpperCase() || "");
+                            return (
+                              (firstName[0]?.toUpperCase() || "") +
+                              (lastName[0]?.toUpperCase() || "")
+                            );
                           }
-                          
+
                           // Fallback to name from user object
-                          const name = userData?.user?.name || session.user?.name || "User";
+                          const name =
+                            userData?.user?.name ||
+                            session.user?.name ||
+                            "User";
                           const nameParts = name.split(" ");
-                          const firstInitial = nameParts[0]?.[0]?.toUpperCase() || "U";
-                          const lastInitial = nameParts[nameParts.length - 1]?.[0]?.toUpperCase() || "";
+                          const firstInitial =
+                            nameParts[0]?.[0]?.toUpperCase() || "U";
+                          const lastInitial =
+                            nameParts[
+                              nameParts.length - 1
+                            ]?.[0]?.toUpperCase() || "";
                           return firstInitial + lastInitial;
                         })()}
                       </span>
@@ -252,9 +263,12 @@ export function Navbar({ v1Launch }: { v1Launch?: boolean }) {
                           if (firstName) {
                             return firstName;
                           }
-                          
+
                           // Fallback to name from user object
-                          const name = userData?.user?.name || session.user?.name || "User";
+                          const name =
+                            userData?.user?.name ||
+                            session.user?.name ||
+                            "User";
                           const nameParts = name.split(" ");
                           return nameParts[0] || "User";
                         })()}
@@ -287,7 +301,10 @@ export function Navbar({ v1Launch }: { v1Launch?: boolean }) {
 
                 {/* Logout Icon */}
                 <button
-                  onClick={() => { clearAuthStorage(); signOut({ callbackUrl: "/" }); }}
+                  onClick={() => {
+                    clearAuthStorage();
+                    signOut({ callbackUrl: "/" });
+                  }}
                   className="w-10 h-10 rounded-full bg-white/10 hover:bg-red-500/20 flex items-center justify-center transition-all hover:ring-2 hover:ring-red-500"
                   title="Logout"
                 >
@@ -324,49 +341,16 @@ export function Navbar({ v1Launch }: { v1Launch?: boolean }) {
               </div>
             </>
           ) : (
-            <>
-              {v1Launch ? (
-                <Link
-                  href="/signup?v1=true"
-   className="px-8 py-3.5 rounded-[30px] text-white font-mona-sans text-sm font-semibold hover:opacity-90 transition-opacity inline-block"
+            <Link
+              href="/signin"
+              className="px-8 py-3.5 rounded-[30px] text-white font-mona-sans text-sm font-semibold hover:opacity-90 transition-opacity inline-block"
               style={{
                 background: "linear-gradient(90deg, #071522 25%, #A2CE3A 100%)",
-                boxShadow: "0px -6px 4px 0px #FFFFFF4D inset"
+                boxShadow: "0px -6px 4px 0px #FFFFFF4D inset",
               }}
-                >
-                  Sign Up
-                </Link>
-              ) : (
-                <div className="relative" ref={dropdownRef}>
-                  <button
-                    type="button"
-                    onClick={() => setShowSignUpDropdown(!showSignUpDropdown)}
-                    className="rounded-full bg-[#A2CE3A] px-9 py-2 text-sm font-semibold text-[#121212] transition-transform hover:scale-[1.02] font-mona-sans"
-                  >
-                    Sign Up
-                  </button>
-
-                  {showSignUpDropdown && (
-                    <div className="absolute right-0 top-full mt-2 w-[175px] rounded-[10px] bg-[#1D242D] p-2 shadow-lg">
-                      <Link
-                        href="/signup?type=jobseeker"
-                        className="block rounded-[8px] bg-[#151A20] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#1a2028] font-mona-sans mb-2"
-                        onClick={() => setShowSignUpDropdown(false)}
-                      >
-                        As Jobseeker
-                      </Link>
-                      <Link
-                        href="/signup?type=coach"
-                        className="block rounded-[8px] bg-[#151A20] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#1a2028] font-mona-sans"
-                        onClick={() => setShowSignUpDropdown(false)}
-                      >
-                        As Interview Coach
-                      </Link>
-                    </div>
-                  )}
-                </div>
-              )}
-            </>
+            >
+              Sign In
+            </Link>
           )}
         </div>
       </div>
@@ -579,39 +563,13 @@ export function Navbar({ v1Launch }: { v1Launch?: boolean }) {
               </div>
             ) : (
               <div className="px-4 pb-6 space-y-3 border-t border-white/10 pt-4">
-                {v1Launch ? (
-                  <Link
-                    href="/signin?v1=true"
-                    className="block rounded-lg bg-[#A2CE3A] px-5 py-3 text-sm font-semibold text-[#121212] transition-colors hover:bg-[#92BE2A] font-mona-sans text-center"
-                    onClick={() => setShowMobileSidebar(false)}
-                  >
-                    Sign Up
-                  </Link>
-                ) : (
-                  <>
-                    <Link
-                      href="/signup?type=jobseeker"
-                      className="block rounded-lg bg-[#151A20] px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#1a2028] font-mona-sans text-center"
-                      onClick={() => setShowMobileSidebar(false)}
-                    >
-                      Sign Up as Jobseeker
-                    </Link>
-                    <Link
-                      href="/signup?type=coach"
-                      className="block rounded-lg bg-[#A2CE3A] px-5 py-3 text-sm font-semibold text-[#121212] transition-colors hover:bg-[#92BE2A] font-mona-sans text-center"
-                      onClick={() => setShowMobileSidebar(false)}
-                    >
-                      Sign Up as Coach
-                    </Link>
-                    <Link
-                      href="/signin"
-                      className="block rounded-lg border border-white/20 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/5 font-mona-sans text-center"
-                      onClick={() => setShowMobileSidebar(false)}
-                    >
-                      Sign In
-                    </Link>
-                  </>
-                )}
+                <Link
+                  href="/signin"
+                  className="block rounded-lg bg-[#A2CE3A] px-5 py-3 text-sm font-semibold text-[#121212] transition-colors hover:bg-[#92BE2A] font-mona-sans text-center"
+                  onClick={() => setShowMobileSidebar(false)}
+                >
+                  Sign In
+                </Link>
               </div>
             )}
           </div>
