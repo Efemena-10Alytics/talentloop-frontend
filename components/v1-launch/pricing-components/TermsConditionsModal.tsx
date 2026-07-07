@@ -48,146 +48,157 @@ export default function TermsConditionsModal({
             <div className="p-6 lg:p-8 overflow-y-auto max-h-[50vh] scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
               <div className="space-y-6 text-white/80 font-plus-jakarta text-sm leading-relaxed">
                 <p>
-                  Hello and welcome to Amdari! We are dedicated to offering you hands-on, project-based
-                  internship designed to provide you with real world experience, and we want to make sure
-                  you are aware of all the terms and conditions that come with taking part in our program.
+                  Hello and welcome to TALENTLOOP! We help you land interviews and offers by managing
+                  your job applications, optimizing your CV &amp; LinkedIn, and positioning you for success.
+                  We also want to ensure you&apos;re fully aware of all the terms and conditions associated
+                  with our program.
                 </p>
 
                 <p>
-                  As a participant in our program, please update yourself on the policies and procedures
+                  As a Client in our program, please update yourself on the policies and procedures
                   outlined in this document. Please carefully read and comprehend these terms and
                   conditions before starting this program.
                 </p>
 
-                <p>
-                  Our goal at Amdari is to provide each participant with exceptional opportunities for real-
-                  world experience through projects and internships that build practical skills. However,
-                  we acknowledge that unforeseen circumstances may sometimes necessitate a refund or
-                  deferment.
-                </p>
-
+                {/* A. Removal/Access Restriction Policy */}
                 <div>
                   <h3 className="text-lg font-semibold mb-3" style={{ color: "#A2CE3A" }}>
-                    Removal/Access Restriction Policy for Amdari
+                    A. Removal/Access Restriction Policy for Amdari
                   </h3>
                   <p className="mb-3">
-                    Participants in any of Amdari's programs may have their access restricted or be removed
+                    Clients in any of Amdari&apos;s programs may have their access restricted or be removed
                     under the following circumstances:
                   </p>
-
                   <div className="space-y-3 pl-4">
                     <p>
-                      <strong>1. Installment Payment:</strong> All installment agreements must be honoured. All participants are
-                      required to make installment payments on or before their agreed installment date. If
-                      ability to meet the agreed date is impaired, a mail must be sent to finance@amdari.io to
-                      agree on a compromise to payments. However, this mail must be received before
+                      <strong>1. Installment Payment:</strong> All installment agreements must be honoured.
+                      All clients are required to make installment payments on or before their agreed
+                      installment date which is on a monthly basis. If ability to meet the agreed date is
+                      impaired, a mail must be sent to{" "}
+                      <a href="mailto:talentloop@amdari.io" className="text-[#A2CE3A] underline">
+                        talentloop@amdari.io
+                      </a>{" "}
+                      to agree on a compromise to payments. However, this mail must be received before
                       installment date in order to be considered by the finance team.
                     </p>
-
                     <p>
-                      <strong>2. Failure to make Installment Payment:</strong> Failure to make payment on or before agreed
-                      installment date will result in your profile being flagged for immediate removal. A grace
-                      period of 7 days will be given to make payment before removal. If payment is not made
-                      within this period, access will be restricted, and the participant will be removed from the
-                      program.
+                      <strong>2. Failure to make Installment Payment:</strong> Failure to make payment on
+                      or before agreed installment date will result in your profile being flagged for immediate
+                      removal. A grace period of two (2) days will be provided from the initial agreed
+                      installment date. After which said clients will be removed from all TalentLoop platforms
+                      and contract terminated.
                     </p>
-
                     <p>
-                      <strong>3. Misconduct or Violation of Program Policies:</strong> Any participant found engaging in
-                      misconduct, including but not limited to harassment, dishonesty, or violation of Amdari's
-                      code of conduct, will face immediate removal from the program.
+                      <strong>3. Engagement:</strong> Clients are expected to engage with their associate at
+                      all agreed meeting timeframes. Repeated unexcused absences or missed deadlines
+                      without valid reasons will lead to removal from the program WITHOUT a refund.
                     </p>
-
                     <p>
-                      <strong>4. Failure to Meet Program Requirements:</strong> Participants who consistently fail to meet
-                      program requirements, including attendance, project deadlines, or performance
-                      standards, may have their access restricted or be removed after a warning period.
-                    </p>
-
-                    <p>
-                      <strong>5. Non-Compliance with Terms and Conditions:</strong> Any breach of the terms and conditions
-                      outlined in this document may result in immediate removal or access restriction.
+                      <strong>4. Conduct:</strong> Clients are expected to conduct themselves professionally
+                      and respectfully at all times. If a client engages in disruptive or disrespectful
+                      behavior, they may be given a warning. If the behavior continues, they will be removed
+                      from the program.
                     </p>
                   </div>
                 </div>
 
+                {/* B. Refund Policy */}
                 <div>
                   <h3 className="text-lg font-semibold mb-3" style={{ color: "#A2CE3A" }}>
-                    Refund Policy
+                    B. Refund Policy for TalentLoop
                   </h3>
                   <p className="mb-3">
-                    Amdari is committed to providing high-quality programs and services. However, we
-                    understand that circumstances may arise that require a refund. Please review our refund
-                    policy below:
+                    We have devised the following refund policy to make sure that everything is done fairly
+                    and openly for parties involved:
                   </p>
-
                   <div className="space-y-3 pl-4">
                     <p>
-                      <strong>1. Full Refund:</strong> Participants may request a full refund within 7 days of enrollment if they
-                      have not yet accessed any program materials or attended any sessions. Refund requests
-                      must be submitted in writing to finance@amdari.io.
+                      <strong>1.</strong> Cancellations made more than 7 days prior to the orientation will
+                      receive a full refund (less non-fundable).
                     </p>
-
                     <p>
-                      <strong>2. Partial Refund:</strong> After the 7-day period, refunds will be considered on a case-by-case
-                      basis. Partial refunds may be granted if the participant has completed less than 25% of
-                      the program. Refund amounts will be prorated based on the portion of the program
-                      completed.
+                      <strong>2.</strong> Cancellations made less than 7 days prior to the orientation date
+                      will receive a 75% refund (less non-fundable).
                     </p>
-
                     <p>
-                      <strong>3. No Refund:</strong> No refunds will be issued if the participant has completed more than 25%
-                      of the program or if the participant is removed due to misconduct or violation of program
-                      policies.
+                      <strong>3.</strong> Cancellations made between 0–7 days after the orientation date
+                      will receive a 50% refund (less non-fundable).
                     </p>
-
                     <p>
-                      <strong>4. Processing Time:</strong> Approved refunds will be processed within 14-21 business days from
-                      the date of approval. Refunds will be issued to the original payment method.
+                      <strong>4.</strong> Cancellations made 7 days after the orientation, or for no-shows,
+                      will not be eligible for a refund.
+                    </p>
+                    <p>
+                      <strong>5.</strong> Once the refund request has been received and reviewed, our
+                      finance team will process the refund within 7–10 business days.
+                    </p>
+                    <p>
+                      <strong>6.</strong> Refunds for payments made up to 1 month in advance of the
+                      orientation will be subject to 50% cancellation fees, while 2 months and above in
+                      advance are non-refundable.
+                    </p>
+                    <p>
+                      <strong>7.</strong> All refunds issued will be less a 10% non-refundable fee.
+                    </p>
+                    <p>
+                      <strong>8.</strong> The responsible Employability Associate must be informed of this
+                      and requests for refunds must be submitted to Talentloop via email at{" "}
+                      <a href="mailto:talentloop@amdari.io" className="text-[#A2CE3A] underline">
+                        talentloop@amdari.io
+                      </a>{" "}
+                      and copy{" "}
+                      <a href="mailto:finance@amdari.io" className="text-[#A2CE3A] underline">
+                        finance@amdari.io
+                      </a>.
                     </p>
                   </div>
                 </div>
 
+                {/* C. Deferment Policy */}
                 <div>
                   <h3 className="text-lg font-semibold mb-3" style={{ color: "#A2CE3A" }}>
-                    Deferment Policy
+                    C. Deferment Policy for Talentloop
                   </h3>
                   <p className="mb-3">
-                    Amdari understands that participants may need to defer their enrollment due to personal
-                    or professional reasons. Please review our deferment policy below:
+                    This deferment policy has been created to provide Clients with the opportunity to defer
+                    their enrollment in a program for a future date.
                   </p>
-
+                  <p className="mb-2 font-semibold text-white/90">Deferment Criteria:</p>
+                  <p className="mb-3">
+                    The deferment of a program enrollment may be approved under the following circumstances:
+                  </p>
                   <div className="space-y-3 pl-4">
                     <p>
-                      <strong>1. Deferment Request:</strong> Participants may request to defer their enrollment to a future
-                      cohort by submitting a written request to support@amdari.io. Deferment requests must
-                      be submitted at least 14 days before the program start date.
+                      <strong>1. Health reasons:</strong> In the event of a medical emergency or an illness,
+                      a Client may defer their enrollment to a future program. A medical certificate or
+                      doctor&apos;s note may be required as proof.
                     </p>
-
                     <p>
-                      <strong>2. Approval:</strong> Deferment requests will be reviewed on a case-by-case basis. Approval is
-                      not guaranteed and will depend on availability in future cohorts and the reason for
-                      deferment.
+                      <strong>2. Personal circumstances:</strong> Personal circumstances such as
+                      bereavement, family emergencies, or work-related issues may also be considered as
+                      valid reasons for deferment.
                     </p>
-
                     <p>
-                      <strong>3. Fees:</strong> No additional fees will be charged for approved deferments. However, if the
-                      program fee increases in the future cohort, the participant will be required to pay the
-                      difference.
-                    </p>
-
-                    <p>
-                      <strong>4. Limitations:</strong> Participants may defer their enrollment only once. If a participant defers
-                      and then requests another deferment, the request will not be granted, and the
-                      participant will need to re-enroll and pay the full program fee.
+                      <strong>3. Change in employment:</strong> If a Client&apos;s employment changes and
+                      they are unable to participate in the program, they may defer their enrollment to a
+                      future program.
                     </p>
                   </div>
+                  <p className="mt-4">
+                    This policy has been created to provide Clients with the opportunity to defer their
+                    enrollment in a program for a future date and request for a refund if life presents
+                    unexpected challenges. Talentloop will review each deferment request on a case-by-case
+                    basis and will make a decision based on the information provided by the Client.
+                  </p>
+                  <p className="mt-3">
+                    This policy is subject to change at any time, and Clients will be notified of any changes
+                    in writing. If you have any questions or concerns about our policy, please do not hesitate
+                    to contact us.
+                  </p>
                 </div>
 
-                <p className="pt-4">
-                  By enrolling in Amdari's programs, you acknowledge that you have read, understood, and
-                  agree to abide by these terms and conditions. If you have any questions or concerns,
-                  please contact us at support@amdari.io.
+                <p className="pt-2 font-semibold text-white/90">
+                  Thank you,<br />Team TalentLoop
                 </p>
               </div>
             </div>
