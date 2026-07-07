@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { useActivePricingPlans } from "@/lib/hooks/usePricing";
 import type { PricingPlan } from "@/lib/services/pricing.service";
@@ -94,8 +94,10 @@ const mockPricingPlans = [
 ];
 
 export default function V1PricingSection({ onStartNow }: V1PricingSectionProps) {
-  const [selectedPlan, setSelectedPlan] = useState<number | string>("premium");
+  const defaultPopular = mockPricingPlans.find((p) => p.isMostPopular)?.id ?? "premium";
+  const [selectedPlan, setSelectedPlan] = useState<number | string>(defaultPopular);
   const [hoveredPlan, setHoveredPlan] = useState<number | string | null>(null);
+  const hasAutoSelected = useRef(false);
 
   // Fetch pricing plans from API using Tanstack Query
   const { data: apiPlans, isLoading, isError } = useActivePricingPlans();
@@ -113,10 +115,14 @@ export default function V1PricingSection({ onStartNow }: V1PricingSectionProps) 
       }))
     : mockPricingPlans;
 
-  // Auto-select the most popular plan once data is available
+  // Auto-select the most popular plan only once when API data first arrives
   useEffect(() => {
+    if (hasAutoSelected.current || !apiPlans?.length) return;
     const popular = pricingPlans.find((p) => p.isMostPopular);
-    if (popular) setSelectedPlan(popular.id);
+    if (popular) {
+      setSelectedPlan(popular.id);
+      hasAutoSelected.current = true;
+    }
   }, [apiPlans]);
 
   const activePlan = pricingPlans.find(plan => plan.id === selectedPlan) || pricingPlans[1];
