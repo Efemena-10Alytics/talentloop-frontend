@@ -95,3 +95,42 @@ export function useEnrollmentStats(period: StatsPeriod = "today") {
     retry: false,
   });
 }
+
+export interface DashboardData {
+  applications_sent: number;
+  interviews_secured: number;
+  days_active: number;
+  plan_title: string;
+  welcome: {
+    delivery_date: string | null;
+  };
+  manager: {
+    name: string;
+    title: string;
+    avatar: string | null;
+    rating: number | null;
+  };
+  next_meeting: {
+    title: string;
+    manager_name: string;
+    scheduled_at: string;
+    meeting_link: string;
+  } | null;
+}
+
+async function fetchDashboard(): Promise<DashboardData | null> {
+  const res = await fetch("/api/dashboard");
+  if (!res.ok) return null;
+  const json = await res.json();
+  return json.data ?? null;
+}
+
+export function useDashboard() {
+  const { status } = useSession();
+  return useQuery({
+    queryKey: ["dashboard"],
+    queryFn: fetchDashboard,
+    enabled: status === "authenticated",
+    retry: false,
+  });
+}

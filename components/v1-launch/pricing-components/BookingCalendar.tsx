@@ -146,6 +146,28 @@ export default function BookingCalendar({
   const availableTimesForSelectedDate = selectedDate ? getAvailableTimesForDate(selectedDate) : [];
 
   return (
+    <>
+      <style>{`
+        .clarity-time-scroll {
+          scrollbar-width: thin;
+          scrollbar-color: #A2CE3A transparent;
+        }
+        .clarity-time-scroll::-webkit-scrollbar {
+          width: 4px;
+          background: transparent;
+        }
+        .clarity-time-scroll::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .clarity-time-scroll::-webkit-scrollbar-thumb {
+          background: #A2CE3A;
+          border-radius: 9999px;
+          min-height: 40px;
+        }
+        .clarity-time-scroll::-webkit-scrollbar-thumb:hover {
+          background: #b8e048;
+        }
+      `}</style>
     <div
       className="rounded-[24px] p-6 lg:p-6"
       style={{
@@ -224,9 +246,9 @@ export default function BookingCalendar({
                   style={
                     isDisabled
                       ? {
-                          color: "#3A3A3A",
+                          color: "#727272",
                           cursor: "not-allowed",
-                          opacity: 0.4,
+                          opacity: 0.5,
                         }
                       : isSelected
                       ? {
@@ -235,7 +257,7 @@ export default function BookingCalendar({
                           color: "#A2CE3A",
                         }
                       : {
-                          color: "#A8A8A8",
+                          color: "#FFFFFF",
                         }
                   }
                 >
@@ -250,7 +272,7 @@ export default function BookingCalendar({
         <div className="lg:w-[30%] flex flex-col">
           {/* Scrollable Time Slots */}
           <div 
-            className="flex flex-col gap-2 overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent pr-2"
+            className="flex flex-col gap-2 overflow-y-auto pr-2 clarity-time-scroll"
             style={{ maxHeight: "320px" }}
           >
             {loading ? (
@@ -300,5 +322,6 @@ export default function BookingCalendar({
         </div>
       </div>
     </div>
+    </>
   );
 }

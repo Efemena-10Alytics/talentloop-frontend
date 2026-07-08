@@ -2,7 +2,7 @@
 
 import { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Navbar } from "@/components/navbar";
 import BookingCalendar from "@/components/v1-launch/pricing-components/BookingCalendar";
 import BookingDetailsForm, {
@@ -254,153 +254,262 @@ const ClaritySessionContent = () => {
     window.location.href = "/";
   };
 
+  const featureItems = [
+    {
+      icon: <GoogleMeetIcon />,
+      title: "Link would be sent on booking",
+      desc: "You'll receive a Google Meet link via email",
+    },
+    {
+      icon: <ClockIcon />,
+      title: "Monday to Friday. 20 min",
+      desc: "Quick session to align on your career goals",
+    },
+    {
+      icon: <MicIcon />,
+      title: "Speak to a career coach One - on - one",
+      desc: "Personal consultation with an expert",
+    },
+  ];
+
   return (
-    <div className="bg-[#01090B] min-h-screen py-14 lg:py-20">
+    <div className="bg-[#01090B] min-h-screen">
       <div className="p-3">
         <Navbar v1Launch />
 
-        <section className="relative py-14 lg:py-20">
-          <div className="max-w-[1400px] mx-auto px-3 lg:px-6">
+        <section className="relative py-14 lg:py-20 overflow-hidden">
+          {/* Ambient glow blobs */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.6 }}
+            animate={{ opacity: 0.18, scale: 1 }}
+            transition={{ duration: 2, ease: "easeOut" }}
+            className="pointer-events-none absolute -top-32 -left-32 w-[500px] h-[500px] rounded-full"
+            style={{ background: "radial-gradient(circle, #A2CE3A 0%, transparent 70%)", filter: "blur(60px)" }}
+          />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.6 }}
+            animate={{ opacity: 0.12, scale: 1 }}
+            transition={{ duration: 2.4, ease: "easeOut", delay: 0.3 }}
+            className="pointer-events-none absolute -bottom-32 -right-32 w-[600px] h-[600px] rounded-full"
+            style={{ background: "radial-gradient(circle, #156374 0%, transparent 70%)", filter: "blur(80px)" }}
+          />
+
+          <div className="max-w-[1400px] mx-auto px-3 lg:px-6 relative">
             {/* Section Heading */}
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
-              viewport={{ once: true }}
-              className="text-center mb-6"
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, ease: "easeOut" }}
+              className="text-center mb-10"
             >
-              <h2 className="text-4xl lg:text-5xl font-semibold leading-tight mb-4">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.85 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+                className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-4"
+                style={{ background: "#A2CE3A14", border: "1px solid #A2CE3A30" }}
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-[#A2CE3A] inline-block" />
+                <span className="text-[#A2CE3A] font-mona-sans text-xs font-semibold tracking-wide uppercase">
+                  Free Session
+                </span>
+              </motion.div>
+
+              <motion.h2
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.7, delay: 0.15 }}
+                className="text-4xl lg:text-5xl font-semibold leading-tight mb-3"
+              >
                 <span className="text-white font-mona-sans">
                   Book your clarity session
                 </span>
-              </h2>
-              <p className="text-[#CCCCCC] font-sora text-sm">
+              </motion.h2>
+              <motion.p
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.25 }}
+                className="text-[#CCCCCC] font-sora text-sm"
+              >
                 Book a free clarity session with a career coach
-              </p>
+              </motion.p>
             </motion.div>
 
-            {/* Booking Flow */}
-            <div
+            {/* Booking Flow Card */}
+            <motion.div
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.75, delay: 0.3, ease: "easeOut" }}
               className="rounded-[32px] p-6 lg:p-10 max-w-6xl mx-auto"
               style={{ background: "#0F1416" }}
             >
               <div className="flex flex-col lg:flex-row gap-8">
                 {/* Left Side - Info */}
-                <div
+                <motion.div
+                  layout
+                  transition={{ duration: 0.4, ease: "easeInOut" }}
                   className={`${currentStep === 1 ? "lg:w-[35%]" : "lg:w-[50%]"}`}
                 >
                   {/* Step Indicator */}
-                  <div
+                  <motion.div
+                    initial={{ opacity: 0, x: -16 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.5, delay: 0.45 }}
                     className="inline-flex items-center justify-center h-[28px] px-4 rounded-[32px] mb-6"
                     style={{
                       background: "#00C0630D",
                       border: "1.5px solid #00C06326",
                     }}
                   >
-                    <span className="text-[#00C063] font-mona-sans text-sm font-semibold">
-                      {currentStep}/2
-                    </span>
-                  </div>
+                    <AnimatePresence mode="wait">
+                      <motion.span
+                        key={currentStep}
+                        initial={{ opacity: 0, y: -8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 8 }}
+                        transition={{ duration: 0.2 }}
+                        className="text-[#00C063] font-mona-sans text-sm font-semibold"
+                      >
+                        {currentStep}/2
+                      </motion.span>
+                    </AnimatePresence>
+                  </motion.div>
 
-                  <h2 className="text-white font-mona-sans font-bold text-3xl lg:text-4xl mb-4">
+                  <motion.h2
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.6, delay: 0.5 }}
+                    className="text-white font-mona-sans font-bold text-3xl lg:text-4xl mb-4"
+                  >
                     Get Clarity with a Career Coach
-                  </h2>
+                  </motion.h2>
 
-                  <p className="text-white/60 font-sora text-sm mb-8">
+                  <motion.p
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.6, delay: 0.58 }}
+                    className="text-white/60 font-sora text-sm mb-8"
+                  >
                     Choose a time that works for you. The session helps us
                     understand your goals so we can tailor your package.
-                  </p>
+                  </motion.p>
 
-                  {/* Features */}
+                  {/* Feature Items */}
                   <div className="space-y-4">
-                    <div className="flex items-start gap-4">
-                      <GoogleMeetIcon />
-                      <div>
-                        <h3 className="text-white font-mona-sans font-semibold text-base mb-1">
-                          Link would be sent on booking
-                        </h3>
-                        <p className="text-white/50 font-sora text-sm">
-                          You'll receive a Google Meet link via email
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start gap-4">
-                      <ClockIcon />
-                      <div>
-                        <h3 className="text-white font-mona-sans font-semibold text-base mb-1">
-                          Monday to Friday. 20 min
-                        </h3>
-                        <p className="text-white/50 font-sora text-sm">
-                          Quick session to align on your career goals
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start gap-4">
-                      <MicIcon />
-                      <div>
-                        <h3 className="text-white font-mona-sans font-semibold text-base mb-1">
-                          Speak to a career coach One - on - one
-                        </h3>
-                        <p className="text-white/50 font-sora text-sm">
-                          Personal consultation with an expert
-                        </p>
-                      </div>
-                    </div>
+                    {featureItems.map((item, i) => (
+                      <motion.div
+                        key={i}
+                        initial={{ opacity: 0, x: -24 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.55, delay: 0.65 + i * 0.12, ease: "easeOut" }}
+                        whileHover={{ x: 4 }}
+                        className="flex items-start gap-4 cursor-default"
+                      >
+                        <motion.div
+                          whileHover={{ scale: 1.08, rotate: 3 }}
+                          transition={{ type: "spring", stiffness: 300, damping: 18 }}
+                        >
+                          {item.icon}
+                        </motion.div>
+                        <div>
+                          <h3 className="text-white font-mona-sans font-semibold text-base mb-1">
+                            {item.title}
+                          </h3>
+                          <p className="text-white/50 font-sora text-sm">
+                            {item.desc}
+                          </p>
+                        </div>
+                      </motion.div>
+                    ))}
                   </div>
-                </div>
+                </motion.div>
 
-                {/* Right Side - Calendar/Form */}
-                <div
+                {/* Right Side - Calendar / Form with step transition */}
+                <motion.div
+                  layout
+                  transition={{ duration: 0.4, ease: "easeInOut" }}
                   className={`${currentStep === 1 ? "lg:w-[65%]" : "lg:w-[50%]"}`}
                 >
-                  {currentStep === 1 ? (
-                    <>
-                      <BookingCalendar
-                        onDateSelect={setSelectedDate}
-                        onTimeSelect={setSelectedTime}
-                      />
-                      {/* Action Buttons */}
-                      <div className="flex items-center gap-4 mt-6">
-                        <button
-                          onClick={() => window.history.back()}
-                          className="flex-1 h-12 rounded-full font-mona-sans font-semibold text-sm transition-all"
-                          style={{
-                            background: "transparent",
-                            border: "1.5px solid #FFFFFF1A",
-                            color: "#FFFFFF",
-                          }}
+                  <AnimatePresence mode="wait">
+                    {currentStep === 1 ? (
+                      <motion.div
+                        key="step-1"
+                        initial={{ opacity: 0, x: 40 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -40 }}
+                        transition={{ duration: 0.38, ease: "easeInOut" }}
+                      >
+                        <BookingCalendar
+                          onDateSelect={setSelectedDate}
+                          onTimeSelect={setSelectedTime}
+                        />
+                        {/* Action Buttons */}
+                        <motion.div
+                          initial={{ opacity: 0, y: 16 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.4, delay: 0.55 }}
+                          className="flex items-center gap-4 mt-6"
                         >
-                          Back
-                        </button>
-                        <button
-                          onClick={handleContinue}
-                          className="flex-1 h-12 rounded-full font-mona-sans font-semibold text-sm transition-all"
-                          style={{
-                            background: "#A2CE3A",
-                            color: "#0B0D0F",
-                          }}
-                          disabled={!selectedDate || !selectedTime}
-                        >
-                          Continue
-                        </button>
-                      </div>
-                    </>
-                  ) : (
-                    <BookingDetailsForm
-                      selectedDate={selectedDate}
-                      selectedTime={selectedTime}
-                      onBack={handleBack}
-                      onSubmit={handleFormSubmit}
-                    />
-                  )}
-                </div>
+                          <motion.button
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.97 }}
+                            onClick={() => window.history.back()}
+                            className="flex-1 h-12 rounded-full font-mona-sans font-semibold text-sm transition-colors"
+                            style={{
+                              background: "transparent",
+                              border: "1.5px solid #FFFFFF1A",
+                              color: "#FFFFFF",
+                            }}
+                          >
+                            Back
+                          </motion.button>
+                          <motion.button
+                            whileHover={(!selectedDate || !selectedTime) ? {} : { scale: 1.02 }}
+                            whileTap={(!selectedDate || !selectedTime) ? {} : { scale: 0.97 }}
+                            onClick={handleContinue}
+                            className="flex-1 h-12 rounded-full font-mona-sans font-semibold text-sm transition-opacity"
+                            style={{
+                              background: "#A2CE3A",
+                              color: "#0B0D0F",
+                              opacity: (!selectedDate || !selectedTime) ? 0.45 : 1,
+                            }}
+                            disabled={!selectedDate || !selectedTime}
+                          >
+                            Continue
+                          </motion.button>
+                        </motion.div>
+                      </motion.div>
+                    ) : (
+                      <motion.div
+                        key="step-2"
+                        initial={{ opacity: 0, x: 40 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -40 }}
+                        transition={{ duration: 0.38, ease: "easeInOut" }}
+                      >
+                        <BookingDetailsForm
+                          selectedDate={selectedDate}
+                          selectedTime={selectedTime}
+                          onBack={handleBack}
+                          onSubmit={handleFormSubmit}
+                        />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
               </div>
-            </div>
+            </motion.div>
           </div>
         </section>
-        <V1FooterSection />
+
+        <motion.div
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          transition={{ duration: 0.8 }}
+          viewport={{ once: true }}
+        >
+          <V1FooterSection />
+        </motion.div>
       </div>
 
       {/* Success Modal */}

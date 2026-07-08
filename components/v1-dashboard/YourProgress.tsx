@@ -7,7 +7,28 @@ const CalendarIcon = () => (
   </svg>
 );
 
-export default function YourProgress() {
+interface NextMeeting {
+  title: string;
+  manager_name: string;
+  scheduled_at: string;
+  meeting_link: string;
+}
+
+interface YourProgressProps {
+  nextMeeting?: NextMeeting | null;
+}
+
+function formatMeetingDate(iso: string) {
+  const d = new Date(iso);
+  return {
+    day: d.getDate(),
+    month: d.toLocaleString("en-US", { month: "short" }),
+    time: d.toLocaleString("en-US", { hour: "numeric", minute: "2-digit", hour12: true }),
+  };
+}
+
+export default function YourProgress({ nextMeeting }: YourProgressProps) {
+  const meeting = nextMeeting ? formatMeetingDate(nextMeeting.scheduled_at) : null;
   return (
     <div
       className="rounded-[20px] p-6"
@@ -63,46 +84,69 @@ export default function YourProgress() {
         </div>
       </div>
 
-      {/* CV Review Call Card */}
-      <div
-        className="p-4 rounded-2xl"
-        style={{
-          background: "rgba(21, 99, 116, 0.1)",
-          border: "0.5px solid rgba(255, 255, 255, 0.1)",
-        }}
-      >
-        <div className="flex items-center gap-4">
-          {/* Date Box */}
-          <div
-            className="flex flex-col items-center justify-center rounded-[24px] w-20 h-20 flex-shrink-0"
-            style={{
-              background: "rgba(21, 99, 116, 0.1)",
-              border: "1px solid rgba(255, 255, 255, 0.1)",
-            }}
-          >
-            <p className="text-white text-2xl font-mona-sans font-bold leading-none">22</p>
-            <p className="text-[#95ACCB] text-xs font-mona-sans mt-1">May</p>
-          </div>
+      {/* Next Meeting Card */}
+      {nextMeeting && meeting ? (
+        <div
+          className="p-4 rounded-2xl"
+          style={{
+            background: "rgba(21, 99, 116, 0.1)",
+            border: "0.5px solid rgba(255, 255, 255, 0.1)",
+          }}
+        >
+          <div className="flex items-center gap-4">
+            {/* Date Box */}
+            <div
+              className="flex flex-col items-center justify-center rounded-[24px] w-20 h-20 flex-shrink-0"
+              style={{
+                background: "rgba(21, 99, 116, 0.1)",
+                border: "1px solid rgba(255, 255, 255, 0.1)",
+              }}
+            >
+              <p className="text-white text-2xl font-mona-sans font-bold leading-none">{meeting.day}</p>
+              <p className="text-[#95ACCB] text-xs font-mona-sans mt-1">{meeting.month}</p>
+            </div>
 
-          {/* Content */}
-          <div className="flex-1">
-            <h4 className="text-white font-mona-sans font-semibold text-base mb-2">
-              CV Review Call
-            </h4>
-            <p className="text-[#95ACCB] text-sm font-mona-sans mb-2">
-              With Happiness Abiyo Ibrahim
-            </p>
-            <div className="flex items-center gap-2 text-[#A9B4C4] text-xs font-mona-sans">
-              <CalendarIcon />
-              <span>10:00 AM</span>
-              <span>•</span>
-              <span>30 min</span>
-              <span>•</span>
-              <span>Google Meet</span>
+            {/* Content */}
+            <div className="flex-1">
+              <h4 className="text-white font-mona-sans font-semibold text-base mb-2">
+                {nextMeeting.title}
+              </h4>
+              <p className="text-[#95ACCB] text-sm font-mona-sans mb-2">
+                With {nextMeeting.manager_name}
+              </p>
+              <div className="flex items-center gap-2 text-[#A9B4C4] text-xs font-mona-sans">
+                <CalendarIcon />
+                <span>{meeting.time}</span>
+                {nextMeeting.meeting_link && (
+                  <>
+                    <span>•</span>
+                    <a
+                      href={nextMeeting.meeting_link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[#A2CE3A] hover:underline"
+                    >
+                      Join Meeting
+                    </a>
+                  </>
+                )}
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      ) : (
+        <div
+          className="p-4 rounded-2xl"
+          style={{
+            background: "rgba(21, 99, 116, 0.1)",
+            border: "0.5px solid rgba(255, 255, 255, 0.1)",
+          }}
+        >
+          <p className="text-[#95ACCB] text-sm font-mona-sans text-center">
+            No upcoming meetings scheduled
+          </p>
+        </div>
+      )}
     </div>
   );
 }

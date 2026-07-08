@@ -424,14 +424,6 @@ export default function V1ExpertsSection() {
                         </p>
 
                         <div className="flex items-center">
-                          {getRandomClientImages(3).map((imageSrc, index) => (
-                            <img
-                              key={index}
-                              src={imageSrc}
-                              alt=""
-                              className="h-5 w-5 rounded-full"
-                            />
-                          ))}
                           <p className="text-white font-mona-sans text-xs m-2">
                             +{clientCounts} more clients handled
                           </p>

@@ -257,7 +257,7 @@ export function Navbar({ v1Launch }: { v1Launch?: boolean }) {
                     {/* User Info */}
                     <div className="flex flex-col justify-center flex-1 min-w-0">
                       <p className="text-white font-mona-sans text-xs font-semibold truncate">
-                        {(() => {
+                        {/* {(() => {
                           // Use profile first name from user.profile if available
                           const firstName = userData?.user?.profile?.first_name;
                           if (firstName) {
@@ -271,10 +271,11 @@ export function Navbar({ v1Launch }: { v1Launch?: boolean }) {
                             "User";
                           const nameParts = name.split(" ");
                           return nameParts[0] || "User";
-                        })()}
+                        })()} */}
+                        Dashboard
                       </p>
                       <p className="text-[#FFFFFF99] font-mona-sans text-[10px] font-normal">
-                        Premium Account
+                        {userData?.user?.stripe_customer_id ? "Premium Account" : "No active plan"}
                       </p>
                     </div>
                   </div>

@@ -33,26 +33,29 @@ const columnImages = [
   // Column 1
   [
     { role: "UX Designer", image: "/Image-1.png" },
-    {  role: "Product Manager", image: "/Image-2.png" },
+    { role: "Product Manager", image: "/Image-2.png" },
     { role: "Content Strategist", image: "/Image-3.png" },
-    {  role: "Software Engineer", image: "/Image-4.png" },
-    {  role: "Data Analyst", image: "/Image-5.png" },
+    { role: "Software Engineer", image: "/Image-7.png" },
+    { role: "Data Analyst", image: "/Image-8.png" },
+    { role: "Career Coach", image: "/Image-9.png" },
   ],
   // Column 2
   [
+    { role: "Data Analyst", image: "/Image-4.png" },
+    { role: "Software Engineer", image: "/Image-5.png" },
+    { role: "UX Designer", image: "/Image-6.png" },
+    { role: "Product Manager", image: "/Image-1.png" },
     { role: "Content Strategist", image: "/Image-3.png" },
-    { role: "UX Designer", image: "/Image-1.png" },
-    {  role: "Product Manager", image: "/Image-2.png" },
-    {  role: "Data Analyst", image: "/Image-5.png" },
-    {  role: "Software Engineer", image: "/Image-4.png" },
+    { role: "Career Coach", image: "/Image-7.png" },
   ],
   // Column 3
   [
-    {  role: "Software Engineer", image: "/Image-4.png" },
-    {  role: "Data Analyst", image: "/Image-5.png" },
-    {  role: "Product Manager", image: "/Image-2.png" },
-    { role: "UX Designer", image: "/Image-1.png" },
-    { role: "Content Strategist", image: "/Image-3.png" },
+    { role: "Career Coach", image: "/Image-6.png" },
+    { role: "Content Strategist", image: "/Image-9.png" },
+    { role: "Data Analyst", image: "/Image-2.png" },
+    { role: "UX Designer", image: "/Image-5.png" },
+    { role: "Product Manager", image: "/Image-8.png" },
+    { role: "Software Engineer", image: "/Image-4.png" },
   ],
 ];
 

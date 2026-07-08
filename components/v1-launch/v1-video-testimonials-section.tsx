@@ -92,13 +92,6 @@ export default function V1VideoTestimonialSection() {
                       controls
                     />
                   </div>
-                  {video.title && (
-                    <div className="px-4 pb-4">
-                      <p className="text-white font-mona-sans text-sm font-semibold">
-                        {video.title}
-                      </p>
-                    </div>
-                  )}
                 </div>
               ))}
             </div>

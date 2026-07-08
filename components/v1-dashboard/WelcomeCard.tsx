@@ -14,9 +14,9 @@ const BellIcon = () => (
 
 interface WelcomeCardProps {
   userName: string;
-  cvScore: number;
-  managerName: string;
-  deliveryDate: string;
+  cvScore?: number;
+  managerName?: string;
+  deliveryDate?: string | null;
 }
 
 export default function WelcomeCard({ userName, cvScore, managerName, deliveryDate }: WelcomeCardProps) {
@@ -65,8 +65,12 @@ export default function WelcomeCard({ userName, cvScore, managerName, deliveryDa
           </div>
           <div className="flex-1">
             <p className="text-white/90 text-sm font-mona-sans leading-relaxed">
-Your manager Happiness is currently optimizing your CV. Expected delivery:
-              <span className="font-semibold">{deliveryDate}</span>
+              {managerName
+                ? `Your manager ${managerName} is currently optimizing your CV.`
+                : "Your manager is currently optimizing your CV."}
+              {deliveryDate && (
+                <> Expected delivery: <span className="font-semibold">{deliveryDate}</span></>
+              )}
             </p>
           </div>
         </div>

@@ -1,11 +1,12 @@
 interface YourManagerProps {
   name: string;
-  rating: number;
+  rating?: number | null;
   title: string;
-  imageUrl?: string;
+  imageUrl?: string | null;
+  meetingLink?: string | null;
 }
 
-export default function YourManager({ name, rating, title, imageUrl }: YourManagerProps) {
+export default function YourManager({ name, rating, title, imageUrl, meetingLink }: YourManagerProps) {
   return (
     <div
       className="rounded-[20px] p-6 flex flex-col"
@@ -43,10 +44,12 @@ export default function YourManager({ name, rating, title, imageUrl }: YourManag
         <h4 className="text-white font-mona-sans font-semibold text-sm 2xl:text-base mb-2">
           {name}
         </h4>
-        <div className="flex items-center justify-center gap-2">
-          <span className="text-[#A2CE3A] text-lg">⭐</span>
-          <span className="text-white text-sm font-mona-sans">{rating}</span>
-        </div>
+        {rating != null && (
+          <div className="flex items-center justify-center gap-2">
+            <span className="text-[#A2CE3A] text-lg">⭐</span>
+            <span className="text-white text-sm font-mona-sans">{rating}</span>
+          </div>
+        )}
         </div>
         <div
           className="absolute lg:-top-20 right-5 2xl:right-10 w-fit px-4 py-1.5 rounded-full"
@@ -61,15 +64,31 @@ export default function YourManager({ name, rating, title, imageUrl }: YourManag
       </div>
 
       {/* Join Session Button */}
-      <button
-        className="w-full py-3 rounded-[10px] font-sora font-semibold text-sm transition-opacity hover:opacity-90"
-        style={{
-          background: "#A2CE3A",
-          color: "#121212",
-        }}
-      >
-        Join Session
-      </button>
+      {meetingLink ? (
+        <a
+          href={meetingLink}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="w-full py-3 rounded-[10px] font-sora font-semibold text-sm transition-opacity hover:opacity-90 text-center block"
+          style={{
+            background: "#A2CE3A",
+            color: "#121212",
+          }}
+        >
+          Join Session
+        </a>
+      ) : (
+        <button
+          disabled
+          className="w-full py-3 rounded-[10px] font-sora font-semibold text-sm opacity-40 cursor-not-allowed"
+          style={{
+            background: "#A2CE3A",
+            color: "#121212",
+          }}
+        >
+          No Session Scheduled
+        </button>
+      )}
     </div>
   );
 }

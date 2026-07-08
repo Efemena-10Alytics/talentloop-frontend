@@ -6,6 +6,8 @@ import WelcomeCard from "@/components/v1-dashboard/WelcomeCard";
 import RecentActivities from "@/components/v1-dashboard/RecentActivities";
 import YourProgress from "@/components/v1-dashboard/YourProgress";
 import YourManager from "@/components/v1-dashboard/YourManager";
+import { useDashboard } from "@/hooks/useEnrollmentData";
+import { useAuthMe } from "@/hooks/useUserData";
 
 const DashboardIcon = () => (
   <svg width="17" height="17" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -13,7 +15,23 @@ const DashboardIcon = () => (
   </svg>
 );
 
+function formatDeliveryDate(iso: string | null | undefined): string | null {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return null;
+  return d.toLocaleDateString("en-US", { weekday: "long", day: "numeric", month: "long" });
+}
+
 export default function V1DashboardPage() {
+  const { data: dashboard, isLoading } = useDashboard();
+  const { data: authData } = useAuthMe();
+
+  const profile = (authData as any)?.user?.profile;
+  const firstName: string =
+    profile?.first_name ?? authData?.user?.name?.split(" ")[0] ?? "";
+
+  const deliveryDate = formatDeliveryDate(dashboard?.welcome?.delivery_date);
+
   return (
     <div className="min-h-screen p-4 lg:p-6">
       {/* Navbar */}
@@ -26,16 +44,15 @@ export default function V1DashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-4 mb-8">
         <StatCard 
           title="Applications Sent" 
-          value="32" 
-          trend={{ value: "+12", isPositive: true }}
+          value={isLoading ? "—" : String(dashboard?.applications_sent ?? 0)}
         />
         <StatCard 
           title="Interviews Secured" 
-          value="3" 
+          value={isLoading ? "—" : String(dashboard?.interviews_secured ?? 0)}
         />
         <StatCard 
           title="Days Active" 
-          value="18 Days" 
+          value={isLoading ? "—" : `${dashboard?.days_active ?? 0} Days`}
         />
       </div>
 
@@ -43,10 +60,9 @@ export default function V1DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         {/* Left: Welcome Card */}
         <WelcomeCard 
-          userName="Ricky"
-          cvScore={72}
-          managerName="Sarah"
-          deliveryDate="Thursday, 22 May"
+          userName={firstName || "there"}
+          managerName={dashboard?.manager?.name}
+          deliveryDate={deliveryDate}
         />
 
         {/* Right: Recent Activities */}
@@ -57,15 +73,17 @@ export default function V1DashboardPage() {
       <div className="flex flex-col lg:flex-row gap-5">
         {/* Left: Your Progress (75% width - 3 columns) */}
         <div className="lg:w-[70%]">
-          <YourProgress />
+          <YourProgress nextMeeting={dashboard?.next_meeting ?? null} />
         </div>
 
         {/* Right: Your Manager (25% width - 1 column) */}
         <div className="lg:w-[30%]">
           <YourManager 
-            name="Happiness Abiyo Ibrahim"
-            rating={4.9}
-            title="Team Lead Employability Associate"
+            name={dashboard?.manager?.name ?? "—"}
+            rating={dashboard?.manager?.rating}
+            title={dashboard?.manager?.title ?? ""}
+            imageUrl={dashboard?.manager?.avatar}
+            meetingLink={dashboard?.next_meeting?.meeting_link}
           />
         </div>
       </div>
