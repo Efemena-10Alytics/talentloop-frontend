@@ -85,8 +85,7 @@ export default function V1VideoTestimonialSection() {
                 >
                   <div className="rounded-lg overflow-hidden">
                     <ReactPlayer
-                      //@ts-ignore
-                      url={video.file_url}
+                      src={video.file_url}
                       width="100%"
                       height="420px"
                       controls
