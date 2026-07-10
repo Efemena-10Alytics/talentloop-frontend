@@ -302,19 +302,6 @@ const ClaritySessionContent = () => {
               transition={{ duration: 0.7, ease: "easeOut" }}
               className="text-center mb-10"
             >
-              <motion.div
-                initial={{ opacity: 0, scale: 0.85 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.5, delay: 0.1 }}
-                className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-4"
-                style={{ background: "#A2CE3A14", border: "1px solid #A2CE3A30" }}
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-[#A2CE3A] inline-block" />
-                <span className="text-[#A2CE3A] font-mona-sans text-xs font-semibold tracking-wide uppercase">
-                  Free Session
-                </span>
-              </motion.div>
-
               <motion.h2
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -331,7 +318,7 @@ const ClaritySessionContent = () => {
                 transition={{ duration: 0.6, delay: 0.25 }}
                 className="text-[#CCCCCC] font-sora text-sm"
               >
-                Book a free clarity session with a career coach
+              Before purchasing the Premium package, book a free clarity session with our team.
               </motion.p>
             </motion.div>
 
