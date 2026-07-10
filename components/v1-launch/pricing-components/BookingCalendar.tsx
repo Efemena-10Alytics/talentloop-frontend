@@ -28,6 +28,7 @@ export default function BookingCalendar({
   const [availableSlots, setAvailableSlots] = useState<AvailableSlot[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [partial, setPartial] = useState(false);
 
   const getDaysInMonth = (date: Date) => {
     const year = date.getFullYear();
@@ -103,6 +104,7 @@ export default function BookingCalendar({
       try {
         setLoading(true);
         setError(null);
+        setPartial(false);
 
         const now = new Date();
         const isCurrentMonth =
@@ -124,6 +126,7 @@ export default function BookingCalendar({
 
         if (result.status === 'success' && result.data) {
           setAvailableSlots(result.data);
+          setPartial(Boolean(result.partial));
         } else {
           setError('Failed to load available time slots');
         }
@@ -237,6 +240,12 @@ export default function BookingCalendar({
               <ChevronRight className="w-4 h-4 text-[#A8A8A8]" />
             </button>
           </div>
+
+          {partial && !loading && !error && (
+            <div className="mb-3 text-[#A8A8A8] font-mona-sans text-xs">
+              Some dates may be temporarily unavailable — try again in a moment.
+            </div>
+          )}
 
           {/* Day Names */}
           <div className="grid grid-cols-7 gap-2 mb-3">
