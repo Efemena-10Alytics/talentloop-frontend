@@ -63,7 +63,7 @@ export default function YourProgress({ nextMeeting }: YourProgressProps) {
       </div>
 
       {/* CV Optimization Card */}
-      <div
+      {/* <div
         className="p-4 rounded-2xl mb-4"
         style={{
           background: "rgba(21, 99, 116, 0.2)",
@@ -82,7 +82,7 @@ export default function YourProgress({ nextMeeting }: YourProgressProps) {
             </p>
           </div>
         </div>
-      </div>
+      </div> */}
 
       {/* Next Meeting Card */}
       {nextMeeting && meeting ? (
