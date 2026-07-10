@@ -88,29 +88,62 @@ export default function BookingCalendar({
     }
   };
 
-  // Fetch available time slots from API
+  const formatDateYMD = (date: Date) => {
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, "0");
+    const day = date.getDate().toString().padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+  // Fetch available time slots for the currently displayed month
   useEffect(() => {
+    const controller = new AbortController();
+
     const fetchAvailableSlots = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`${getApiUrl()}/api/v1/calendly/availability`);
+        setError(null);
+
+        const now = new Date();
+        const isCurrentMonth =
+          currentDate.getFullYear() === now.getFullYear() &&
+          currentDate.getMonth() === now.getMonth();
+        const monthStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+        const nextMonthStart = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1);
+
+        const params = new URLSearchParams({
+          start: formatDateYMD(isCurrentMonth ? now : monthStart),
+          end: formatDateYMD(nextMonthStart),
+        });
+
+        const response = await fetch(
+          `${getApiUrl()}/api/v1/calendly/availability?${params.toString()}`,
+          { signal: controller.signal }
+        );
         const result = await response.json();
-        
+
         if (result.status === 'success' && result.data) {
           setAvailableSlots(result.data);
         } else {
           setError('Failed to load available time slots');
         }
       } catch (err) {
+        if (err instanceof DOMException && err.name === 'AbortError') return;
         console.error('Error fetching availability:', err);
         setError('Failed to load available time slots');
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
       }
     };
 
+    setSelectedDate(null);
+    setSelectedTime(null);
     fetchAvailableSlots();
-  }, []);
+
+    return () => controller.abort();
+  }, [currentDate]);
 
   // Get available dates from slots
   const getAvailableDates = () => {
