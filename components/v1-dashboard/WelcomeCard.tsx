@@ -65,12 +65,13 @@ export default function WelcomeCard({ userName, cvScore, managerName, deliveryDa
           </div>
           <div className="flex-1">
             <p className="text-white/90 text-sm font-mona-sans leading-relaxed">
-              {managerName
+              {/* {managerName
                 ? `Your manager ${managerName} is currently optimizing your CV.`
                 : "Your manager is currently optimizing your CV."}
               {deliveryDate && (
                 <> Expected delivery: <span className="font-semibold">{deliveryDate}</span></>
-              )}
+              )} */}
+            {"Please be patient while we assign a manager to you"}
             </p>
           </div>
         </div>

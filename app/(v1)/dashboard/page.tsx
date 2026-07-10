@@ -79,7 +79,7 @@ export default function V1DashboardPage() {
         {/* Right: Your Manager (25% width - 1 column) */}
         <div className="lg:w-[30%]">
           <YourManager 
-            name={dashboard?.manager?.name ?? "—"}
+            name={dashboard?.manager?.name ?? ""}
             rating={dashboard?.manager?.rating}
             title={dashboard?.manager?.title ?? ""}
             imageUrl={dashboard?.manager?.avatar}

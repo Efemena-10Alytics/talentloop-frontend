@@ -402,10 +402,10 @@ const CompleteYourPaymentContent = () => {
             <EnrollmentConfirmation
               personalData={personalData}
               paymentPlan={{
-                planName: pricingPlan?.title || (paymentOption.type === "installments" ? "2 Installments" : "Full Payment"),
-                paymentType: paymentOption.type,
-                firstPayment: paymentOption.installmentDetails?.first,
-                secondPayment: paymentOption.installmentDetails?.second,
+                planName: pricingPlan?.title || (paymentOption?.type === "installments" ? "2 Installments" : "Full Payment"),
+                paymentType: paymentOption?.type,
+                firstPayment: paymentOption?.installmentDetails?.first,
+                secondPayment: paymentOption?.installmentDetails?.second,
                 nextPaymentDate: "Jun 21, 2026",
                 pricingPlanData: pricingPlan,
               }}

@@ -306,21 +306,6 @@ export default function PaymentSelection({
               </div>
             </div>
 
-            {/* Plan Features */}
-            {pricingPlanData?.tags && pricingPlanData.tags.length > 0 && (
-              <div className="space-y-2 mb-6">
-                <p className="text-white/80 font-sora text-xs mb-3">What's included:</p>
-                {pricingPlanData.tags.map((tag: string, index: number) => (
-                  <div key={index} className="flex items-start gap-2">
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" className="flex-shrink-0 mt-0.5">
-                      <path d="M13.3346 4L6.0013 11.3333L2.66797 8" stroke="#A2CE3A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                    <span className="text-white/70 font-sora text-sm">{tag}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-
             {/* Installment Breakdown */}
             {selectedPayment === "installments" && "installment1" in planDetails && (
               <div 
