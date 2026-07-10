@@ -1,17 +1,35 @@
 "use client";
 
-import { useState, useRef } from "react";
-import { useParams, useSearchParams } from "next/navigation";
+import { useState, useEffect, useRef } from "react";
+import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useQuery } from "@tanstack/react-query";
 import { Navbar } from "@/components/navbar";
 import V1FooterSection from "@/components/v1-launch/v1-footer-section";
 import PaymentSelection, { PaymentOption } from "@/components/v1-launch/pricing-components/PaymentSelection";
+import EnrollmentConfirmation from "@/components/v1-launch/pricing-components/EnrollmentConfirmation";
+import EditPersonalDataModal, { PersonalData } from "@/components/v1-launch/pricing-components/EditPersonalDataModal";
 import PersonalInfoModal from "@/components/auth/PersonalInfoModal";
 import { getApiUrl, getAuthHeaders, getHeaders } from "@/lib/api";
 import { useToast } from "@/components/ui/use-toast";
 import { useProfile, useAuthMe } from "@/hooks/useUserData";
 import EmailVerification from "@/components/EmailVerification";
+
+type Step = 1 | 2;
+
+const STEP_MIN = 1;
+const STEP_MAX = 2;
+
+function parseStep(raw: string | null): Step {
+  const n = parseInt(raw ?? "1");
+  if (isNaN(n) || n < STEP_MIN) return 1;
+  if (n > STEP_MAX) return STEP_MAX as Step;
+  return n as Step;
+}
+
+function getPendingPaymentKey(token: string) {
+  return `enroll_payment_option_${token || "unknown"}`;
+}
 
 const StepWrapper = ({ children }: { children: React.ReactNode }) => (
   <div className="bg-[#01090B] min-h-screen py-14 lg:py-20">
@@ -44,16 +62,57 @@ export default function EnrollPage() {
   const params = useParams();
   const token = (params?.token as string) ?? "";
   const searchParams = useSearchParams();
+  const router = useRouter();
   const { data: session } = useSession();
   const { toast } = useToast();
   const hasShownCancelToast = useRef(false);
 
   const cancelParam = searchParams.get("cancel");
 
+  // currentStep is derived directly from URL — no useState, no flicker
+  const currentStep: Step = parseStep(searchParams.get("step"));
+
+  // Navigate to a step — pushes URL so browser back/forward works
+  const goToStep = (step: Step) => {
+    router.push(`/enroll/${token}?step=${step}`);
+  };
+
+  // --- Pending payment option: persisted in sessionStorage so it survives step navigation ---
+  const [pendingPaymentOption, setPendingPaymentOption] = useState<PaymentOption | null>(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      const stored = sessionStorage.getItem(getPendingPaymentKey(token));
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  const savePendingPaymentOption = (option: PaymentOption) => {
+    setPendingPaymentOption(option);
+    try {
+      sessionStorage.setItem(getPendingPaymentKey(token), JSON.stringify(option));
+    } catch { /* ignore */ }
+  };
+
+  const clearPendingPaymentOption = () => {
+    setPendingPaymentOption(null);
+    try {
+      sessionStorage.removeItem(getPendingPaymentKey(token));
+    } catch { /* ignore */ }
+  };
+
   const [showPersonalInfoModal, setShowPersonalInfoModal] = useState(false);
   const [showEmailVerificationModal, setShowEmailVerificationModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [verifyingOtp, setVerifyingOtp] = useState(false);
-  const [pendingPaymentOption, setPendingPaymentOption] = useState<PaymentOption | null>(null);
+  const [personalData, setPersonalData] = useState<PersonalData>({
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    location: "",
+  });
 
   const { data: profile, refetch: refetchProfile } = useProfile();
   const { data: authMeData, refetch: refetchAuthMe } = useAuthMe();
@@ -77,6 +136,21 @@ export default function EnrollPage() {
     retry: false,
   });
 
+  // Sync personal data from profile (needed for the EnrollmentConfirmation summary)
+  useEffect(() => {
+    if (profile) {
+      setPersonalData({
+        firstName: profile.first_name || "",
+        middleName: profile.middle_name || "",
+        lastName: profile.last_name || "",
+        email: session?.user?.email || "",
+        phone: profile.phone || "",
+        location: profile.country || "",
+        city: profile.city || "",
+      });
+    }
+  }, [profile, session]);
+
   if (cancelParam === "true" && !hasShownCancelToast.current) {
     hasShownCancelToast.current = true;
     toast({
@@ -85,6 +159,15 @@ export default function EnrollPage() {
       description: "Your payment was cancelled. You can try again when ready.",
     });
   }
+
+  // Guard: if landing on step 2 without a pending payment option (e.g. direct link
+  // or refresh after sessionStorage was cleared), send back to step 1.
+  useEffect(() => {
+    if (currentStep === 2 && !pendingPaymentOption) {
+      goToStep(1);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentStep, pendingPaymentOption]);
 
   const submitPayment = async (option: PaymentOption) => {
     if (!linkData) return;
@@ -106,7 +189,7 @@ export default function EnrollPage() {
         : process.env.NEXT_PUBLIC_WEBAPP_URL || "https://www.talentloop.app";
 
       const successUrl = `${baseUrl}/complete-your-payment?p-id=${linkData.pricing.id}&step=3`;
-      const cancelUrl = `${baseUrl}/enroll/${token}?cancel=true`;
+      const cancelUrl = `${baseUrl}/enroll/${token}?step=1&cancel=true`;
 
       const paymentOptionNumber = option.type === "installments" ? 2 : 1;
 
@@ -129,6 +212,7 @@ export default function EnrollPage() {
       }
 
       if (data.checkout_url) {
+        clearPendingPaymentOption();
         window.location.href = data.checkout_url;
       } else {
         toast({ variant: "error", title: "Error", description: "No checkout URL received" });
@@ -138,8 +222,10 @@ export default function EnrollPage() {
     }
   };
 
+  // Step 1 -> after picking a payment option: verify email + profile, then go to
+  // step 2 (confirmation) instead of jumping straight to Stripe.
   const handlePaymentSelect = async (option: PaymentOption) => {
-    setPendingPaymentOption(option);
+    savePendingPaymentOption(option);
 
     const { data: latestAuthMe } = await refetchAuthMe();
     if (!latestAuthMe?.user?.email_verified_at) {
@@ -163,7 +249,7 @@ export default function EnrollPage() {
       return;
     }
 
-    await submitPayment(option);
+    goToStep(2);
   };
 
   const handleOtpVerify = async (otp: string) => {
@@ -192,7 +278,7 @@ export default function EnrollPage() {
       if (!complete) {
         setShowPersonalInfoModal(true);
       } else if (pendingPaymentOption) {
-        await submitPayment(pendingPaymentOption);
+        goToStep(2);
       }
     } catch (err: any) {
       toast({ variant: "error", title: "Error", description: err.message || "Verification failed" });
@@ -218,6 +304,14 @@ export default function EnrollPage() {
     setShowPersonalInfoModal(false);
     await refetchProfile();
     if (pendingPaymentOption) {
+      goToStep(2);
+    }
+  };
+
+  // Step 2 -> "Proceed" (only enabled once both checkboxes are checked) is what
+  // actually triggers the Stripe checkout now.
+  const handleEnrollmentProceed = async () => {
+    if (pendingPaymentOption) {
       await submitPayment(pendingPaymentOption);
     }
   };
@@ -232,19 +326,61 @@ export default function EnrollPage() {
     return <ErrorScreen message="This enrollment link is no longer available." />;
   }
 
+  const renderStep = () => {
+    switch (currentStep) {
+      case 1:
+        return (
+          <StepWrapper>
+            <PaymentSelection
+              planId={linkData.pricing.id}
+              planType={linkData.pricing.title}
+              planPrice={`£${linkData.pricing.amount}`}
+              planAmount={linkData.pricing.amount?.toString()}
+              planInstallments={linkData.pricing.installments || null}
+              pricingPlanData={linkData.pricing}
+              onPaymentSelect={handlePaymentSelect}
+            />
+          </StepWrapper>
+        );
+
+      case 2:
+        // Guard: if no pending payment option (e.g. user typed URL manually), send back to step 1
+        if (!pendingPaymentOption) {
+          return <LoadingScreen />;
+        }
+        return (
+          <StepWrapper>
+            <EnrollmentConfirmation
+              personalData={personalData}
+              paymentPlan={{
+                planName: linkData.pricing?.title || (pendingPaymentOption?.type === "installments" ? "2 Installments" : "Full Payment"),
+                paymentType: pendingPaymentOption?.type,
+                firstPayment: pendingPaymentOption?.installmentDetails?.first,
+                secondPayment: pendingPaymentOption?.installmentDetails?.second,
+                nextPaymentDate: "Jun 21, 2026",
+                pricingPlanData: linkData.pricing,
+              }}
+              onEditData={() => setShowEditModal(true)}
+              onProceed={handleEnrollmentProceed}
+              onCompleteOnboarding={() => {}}
+            />
+            <EditPersonalDataModal
+              isOpen={showEditModal}
+              onClose={() => setShowEditModal(false)}
+              onSave={(data) => setPersonalData(data)}
+              initialData={personalData}
+            />
+          </StepWrapper>
+        );
+
+      default:
+        return null;
+    }
+  };
+
   return (
     <>
-      <StepWrapper>
-        <PaymentSelection
-          planId={linkData.pricing.id}
-          planType={linkData.pricing.title}
-          planPrice={`£${linkData.pricing.amount}`}
-          planAmount={linkData.pricing.amount?.toString()}
-          planInstallments={linkData.pricing.installments || null}
-          pricingPlanData={linkData.pricing}
-          onPaymentSelect={handlePaymentSelect}
-        />
-      </StepWrapper>
+      {renderStep()}
 
       <PersonalInfoModal
         isOpen={showPersonalInfoModal}

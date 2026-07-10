@@ -280,14 +280,18 @@ export default function V1HeroSection() {
                   </svg>
                 </div>
                 <span className="text-white font-bold text-sm font-mona-sans">
-                  Mock Interview Score
+            Interview Prep Score
+                              <br />
+                  <p className="text-white/60 text-[8px] font-sora">
+                    Out of 100
+                  </p>
                 </span>
               </div>
-              <div className="text-4xl font-bold text-white mb-2">78</div>
+              <div className="text-4xl font-bold text-white mb-2">98</div>
               <div className="w-full bg-white/10 rounded-full h-2">
                 <div
                   className="bg-[#A2CE3A] h-2 rounded-full"
-                  style={{ width: "78%" }}
+                  style={{ width: "98%" }}
                 ></div>
               </div>
             </div>
@@ -335,7 +339,7 @@ export default function V1HeroSection() {
                 </span>
               </div>
               <div className="text-2xl font-bold text-white font-sora mb-1">
-                Moderate
+                Extremely High
               </div>
               <p className="text-white/50 text-xs font-sora">
                 Strong foundation with room for improvement
