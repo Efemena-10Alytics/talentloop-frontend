@@ -294,7 +294,7 @@ const ClaritySessionContent = () => {
             style={{ background: "radial-gradient(circle, #156374 0%, transparent 70%)", filter: "blur(80px)" }}
           />
 
-          <div className="max-w-[1400px] mx-auto px-3 lg:px-6 relative">
+          <div className="max-w-[1400px] mx-auto px-3 lg:px-6 pt-10 relative">
             {/* Section Heading */}
             <motion.div
               initial={{ opacity: 0, y: 30 }}
