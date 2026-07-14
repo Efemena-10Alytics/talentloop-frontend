@@ -156,7 +156,6 @@ const CompleteYourPaymentContent = () => {
         email: session?.user?.email || "",
         phone: profile.phone || "",
         location: profile.country || "",
-        city: profile.city || "",
       });
     }
   }, [profile, session]);

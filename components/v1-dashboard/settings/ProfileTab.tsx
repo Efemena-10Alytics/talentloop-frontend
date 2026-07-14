@@ -72,13 +72,13 @@ export default function ProfileTab() {
 
   return (
     <div
-      className="rounded-[20px] p-6 lg:p-8"
+      className="rounded-[20px] p-4 sm:p-6 lg:p-8"
       style={{
         background: "rgba(21, 99, 116, 0.1)",
         border: "1px solid rgba(255, 255, 255, 0.1)",
       }}
     >
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
         {/* Left: Avatar Upload */}
         <div className="lg:col-span-1">
           <div
@@ -133,7 +133,7 @@ export default function ProfileTab() {
         {/* Right: Form Fields (read-only display from profile) */}
         <div className="lg:col-span-2">
           <div
-            className="rounded-2xl p-6 space-y-6"
+            className="rounded-2xl p-4 sm:p-6 space-y-4 sm:space-y-6"
             style={{ border: "0.5px solid rgba(255, 255, 255, 0.1)" }}
           >
             {/* First Name & Last Name */}
@@ -229,21 +229,20 @@ export default function ProfileTab() {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex items-center justify-end gap-4 pt-4">
+            <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-3 sm:gap-4 pt-4">
               <button
-                className="px-8 py-3 rounded-[10px] font-mona-sans font-medium text-sm transition-opacity hover:opacity-80"
+                className="px-6 sm:px-8 py-2.5 sm:py-3 rounded-[10px] font-mona-sans font-medium text-xs sm:text-sm transition-opacity hover:opacity-80 h-10 sm:h-12"
                 style={{
                   background: "rgba(118, 118, 128, 0.12)",
                   border: "1.5px solid rgba(255, 255, 255, 0.1)",
                   color: "#FFFFFF",
-                  height: "48px",
                 }}
               >
                 Cancel
               </button>
               <button
-                className="px-8 py-3 rounded-[10px] font-mona-sans font-semibold text-sm transition-opacity hover:opacity-90"
-                style={{ background: "#A2CE3A", color: "#121212", height: "48px" }}
+                className="px-6 sm:px-8 py-2.5 sm:py-3 rounded-[10px] font-mona-sans font-semibold text-xs sm:text-sm transition-opacity hover:opacity-90 h-10 sm:h-12"
+                style={{ background: "#A2CE3A", color: "#121212" }}
               >
                 Save
               </button>

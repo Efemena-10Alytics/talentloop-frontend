@@ -68,14 +68,14 @@ export default function FileUploadSection({ onUploaded }: FileUploadSectionProps
   return (
     <div className="space-y-4">
       {/* Category selector */}
-      <div className="flex items-center gap-3">
-        <span className="text-[#95ACCB] font-mona-sans text-sm">Category:</span>
-        <div className="flex gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+        <span className="text-[#95ACCB] font-mona-sans text-xs sm:text-sm flex-shrink-0">Category:</span>
+        <div className="flex flex-wrap gap-2">
           {CATEGORY_OPTIONS.map((opt) => (
             <button
               key={opt.value}
               onClick={() => setCategory(opt.value)}
-              className="px-4 py-1.5 rounded-[100px] text-sm font-mona-sans transition-all"
+              className="px-3 sm:px-4 py-1.5 rounded-[100px] text-xs sm:text-sm font-mona-sans transition-all"
               style={{
                 background: category === opt.value ? "#A2CE3A" : "rgba(21,99,116,0.15)",
                 border: category === opt.value ? "none" : "1px solid rgba(255,255,255,0.1)",
@@ -94,7 +94,7 @@ export default function FileUploadSection({ onUploaded }: FileUploadSectionProps
         className={`rounded-[10px] flex flex-col items-center justify-center transition-colors cursor-pointer ${
           isDragging ? "bg-[#1a2229]" : "bg-[#151A20]"
         }`}
-        style={{ height: "200px", border: `2px dashed ${isDragging ? "#A2CE3A" : "#546881"}` }}
+        style={{ minHeight: "150px", height: "auto", border: `2px dashed ${isDragging ? "#A2CE3A" : "#546881"}` }}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
@@ -107,12 +107,12 @@ export default function FileUploadSection({ onUploaded }: FileUploadSectionProps
           accept=".pdf,.doc,.docx"
           onChange={handleFileChange}
         />
-        <div className="text-center px-4">
-          <div className="text-5xl mb-3">📂</div>
+        <div className="text-center px-4 py-6">
+          <div className="text-4xl sm:text-5xl mb-3">📂</div>
           {selectedFile ? (
-            <p className="text-white font-mona-sans text-sm font-medium mb-1">{selectedFile.name}</p>
+            <p className="text-white font-mona-sans text-xs sm:text-sm font-medium mb-1 break-words">{selectedFile.name}</p>
           ) : (
-            <p className="text-[#7e848a] font-sora text-base mb-1">Drop files here or click to browse</p>
+            <p className="text-[#7e848a] font-sora text-sm sm:text-base mb-1">Drop files here or click to browse</p>
           )}
           <p className="text-[#7e848a] font-sora text-xs">CV, Cover Letter, or any career document · Max 10MB · PDF, DOCX</p>
         </div>
@@ -123,7 +123,7 @@ export default function FileUploadSection({ onUploaded }: FileUploadSectionProps
         <button
           onClick={() => upload(selectedFile)}
           disabled={uploading}
-          className="w-full h-11 rounded-lg font-mona-sans font-semibold text-sm transition-opacity hover:opacity-90 disabled:opacity-50"
+          className="w-full h-10 sm:h-11 rounded-lg font-mona-sans font-semibold text-xs sm:text-sm transition-opacity hover:opacity-90 disabled:opacity-50"
           style={{ background: "#A2CE3A", color: "#121212" }}
         >
           {uploading ? "Uploading..." : `Upload as ${CATEGORY_OPTIONS.find(o => o.value === category)?.label}`}

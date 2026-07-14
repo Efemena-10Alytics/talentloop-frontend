@@ -50,22 +50,22 @@ export default function FileCard({ document, onDeleted }: FileCardProps) {
   return (
     <>
       <div
-        className="p-6 rounded-2xl"
+        className="p-4 sm:p-6 rounded-2xl"
         style={{
           background: "rgba(21, 99, 116, 0.2)",
           border: "0.5px solid rgba(255, 255, 255, 0.1)",
         }}
       >
-        <div className="flex items-center gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
           {/* File Icon */}
-          <div className="text-5xl flex-shrink-0">📄</div>
+          <div className="text-4xl sm:text-5xl flex-shrink-0">📄</div>
 
           {/* File Info */}
           <div className="flex-1 min-w-0">
-            <h3 className="text-white font-mona-sans font-semibold text-base mb-1 truncate">
+            <h3 className="text-white font-mona-sans font-semibold text-sm sm:text-base mb-1 truncate">
               {document.original_filename}
             </h3>
-            <p className="text-[#95ACCB] text-sm font-mona-sans">
+            <p className="text-[#95ACCB] text-xs sm:text-sm font-mona-sans">
               {categoryLabel} · {formattedDate}
             </p>
           </div>
@@ -83,12 +83,12 @@ export default function FileCard({ document, onDeleted }: FileCardProps) {
           </div>
 
           {/* Action Buttons */}
-          <div className="flex items-center gap-2 flex-shrink-0 lg:ml-3">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 flex-shrink-0 w-full sm:w-auto">
             <a
               href={document.file_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="px-4 py-2.5 rounded-lg font-mona-sans font-medium text-sm transition-opacity hover:opacity-80"
+              className="px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg font-mona-sans font-medium text-xs sm:text-sm transition-opacity hover:opacity-80 text-center"
               style={{
                 background: "rgba(0, 0, 0, 0.12)",
                 border: "1px solid rgba(255, 255, 255, 0.06)",
@@ -101,7 +101,7 @@ export default function FileCard({ document, onDeleted }: FileCardProps) {
             <a
               href={document.file_url}
               download={document.original_filename}
-              className="px-4 py-2.5 rounded-lg font-mona-sans font-semibold text-sm transition-opacity hover:opacity-90"
+              className="px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg font-mona-sans font-semibold text-xs sm:text-sm transition-opacity hover:opacity-90 text-center"
               style={{ background: "#A2CE3A", color: "#121212" }}
             >
               Download
@@ -109,7 +109,7 @@ export default function FileCard({ document, onDeleted }: FileCardProps) {
 
             <button
               onClick={() => setShowConfirm(true)}
-              className="w-9 h-9 flex items-center justify-center rounded-lg transition-colors hover:bg-red-500/20 text-red-400"
+              className="w-full sm:w-9 h-10 sm:h-9 flex items-center justify-center rounded-lg transition-colors hover:bg-red-500/20 text-red-400"
               style={{ border: "1px solid rgba(255, 255, 255, 0.06)" }}
               title="Delete document"
             >

@@ -34,12 +34,12 @@ export default function SettingsPage() {
       />
 
       {/* Tabs */}
-      <div className="flex gap-2 mb-8 border border-[#FFFFFF1A] rounded-[10px] p-1 w-fit">
+      <div className="flex flex-wrap gap-2 mb-8 border border-[#FFFFFF1A] rounded-[10px] p-1">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`px-6 py-3 rounded-[10px] font-mona-sans text-sm font-medium transition-all ${
+            className={`flex-1 sm:flex-none px-3 sm:px-6 py-2 sm:py-3 rounded-[10px] font-mona-sans text-xs sm:text-sm font-medium transition-all whitespace-nowrap ${
               activeTab === tab.id
                 ? "bg-[#1563741A] text-white"
                 : "text-[#95ACCB] hover:text-white hover:bg-[#1563740D]"
