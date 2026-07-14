@@ -23,7 +23,6 @@ export interface PersonalData {
   email: string;
   phone: string;
   location: string;
-  city?: string;
 }
 
 export default function EditPersonalDataModal({
@@ -66,7 +65,6 @@ export default function EditPersonalDataModal({
           last_name: formData.lastName,
           country: formData.location,
           phone: formData.phone,
-          city: formData.city || "",
         }),
       });
 
@@ -223,24 +221,6 @@ export default function EditPersonalDataModal({
                     border: "1px solid #FFFFFF1A",
                   }}
                   required
-                />
-              </div>
-
-              {/* City */}
-              <div>
-                <label className="block text-white font-mona-sans text-sm font-medium mb-2">
-                  City
-                </label>
-                <input
-                  type="text"
-                  value={formData.city || ""}
-                  onChange={(e) => handleChange("city", e.target.value)}
-                  className="w-full rounded-[40px] px-4 h-[56px] font-sora text-sm text-white outline-none transition-all"
-                  style={{
-                    background: "transparent",
-                    border: "1px solid #FFFFFF1A",
-                  }}
-                  placeholder="Enter your city"
                 />
               </div>
 

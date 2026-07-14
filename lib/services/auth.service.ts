@@ -52,22 +52,34 @@ export const login = async (email: string, password: string): Promise<LoginRespo
 
 /**
  * Logout current user
+ * Clears all storage before calling the logout endpoint
  */
 export const logout = async (): Promise<LogoutResponse> => {
-  const headers = await getAuthHeaders();
+  const { clearAuthStorage } = await import("@/lib/auth");
   
-  const response = await fetch(`${getApiUrl()}/api/v1/auth/logout`, {
-    method: "POST",
-    headers,
-  });
+  // Clear all storage FIRST before calling endpoint
+  clearAuthStorage();
+  
+  try {
+    const headers = await getAuthHeaders();
+    
+    const response = await fetch(`${getApiUrl()}/api/v1/auth/logout`, {
+      method: "POST",
+      headers,
+    });
 
-  const data = await response.json();
+    const data = await response.json();
 
-  if (!response.ok) {
-    throw new Error(data.message || "Logout failed");
+    if (!response.ok) {
+      throw new Error(data.message || "Logout failed");
+    }
+
+    return data;
+  } catch (error) {
+    // Even if logout endpoint fails, storage is already cleared
+    // Return a success response so the user is redirected to signin
+    return { message: "Logged out (storage cleared)" };
   }
-
-  return data;
 };
 
 /**

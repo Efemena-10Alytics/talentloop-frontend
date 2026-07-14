@@ -24,6 +24,8 @@ export const useCurrentUser = () => {
 
 /**
  * Hook to logout user
+ * Clears storage before calling logout endpoint
+ * Redirects to signin regardless of endpoint success/failure
  */
 export const useLogout = () => {
   const queryClient = useQueryClient();
@@ -32,15 +34,15 @@ export const useLogout = () => {
   return useMutation({
     mutationFn: logout,
     onSuccess: async () => {
+      // Storage is already cleared in logout function
       queryClient.clear();
-      clearAuthStorage();
       await nextAuthSignOut({ redirect: false });
       router.push("/signin");
     },
     onError: async (error) => {
+      // Storage is already cleared in logout function, even if endpoint fails
       console.error("Logout error:", error);
       queryClient.clear();
-      clearAuthStorage();
       await nextAuthSignOut({ redirect: false });
       router.push("/signin");
     },
