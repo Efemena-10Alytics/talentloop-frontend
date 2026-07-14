@@ -11,34 +11,97 @@ import EmailVerification from "@/components/EmailVerification";
 /* ─── SVGs ─── */
 
 const EyeOpenSVG = () => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M12 5C5.636 5 2 12 2 12C2 12 5.636 19 12 19C18.364 19 22 12 22 12C22 12 18.364 5 12 5Z" stroke="#888" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-    <circle cx="12" cy="12" r="3" stroke="#888" strokeWidth="1.5"/>
+  <svg
+    width="22"
+    height="22"
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      d="M12 5C5.636 5 2 12 2 12C2 12 5.636 19 12 19C18.364 19 22 12 22 12C22 12 18.364 5 12 5Z"
+      stroke="#888"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <circle cx="12" cy="12" r="3" stroke="#888" strokeWidth="1.5" />
   </svg>
 );
 
 const EyeClosedSVG = () => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M2 12C2 12 5.636 5 12 5C18.364 5 22 12 22 12" stroke="#888" strokeWidth="1.5" strokeLinecap="round"/>
-    <path d="M2 12C2 12 5.636 19 12 19C18.364 19 22 12 22 12" stroke="#888" strokeWidth="1.5" strokeLinecap="round"/>
-    <path d="M3 3L21 21" stroke="#888" strokeWidth="1.5" strokeLinecap="round"/>
-    <circle cx="12" cy="12" r="3" stroke="#888" strokeWidth="1.5"/>
+  <svg
+    width="22"
+    height="22"
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      d="M2 12C2 12 5.636 5 12 5C18.364 5 22 12 22 12"
+      stroke="#888"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+    />
+    <path
+      d="M2 12C2 12 5.636 19 12 19C18.364 19 22 12 22 12"
+      stroke="#888"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+    />
+    <path
+      d="M3 3L21 21"
+      stroke="#888"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+    />
+    <circle cx="12" cy="12" r="3" stroke="#888" strokeWidth="1.5" />
   </svg>
 );
 
 const GoogleSVG = () => (
-  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M18.171 8.368H17.5V8.333H10V11.667H14.709C14.022 13.607 12.177 15 10 15C7.239 15 5 12.761 5 10C5 7.239 7.239 5 10 5C11.274 5 12.434 5.481 13.317 6.267L15.674 3.91C14.186 2.522 12.195 1.667 10 1.667C5.398 1.667 1.667 5.398 1.667 10C1.667 14.602 5.398 18.333 10 18.333C14.602 18.333 18.333 14.602 18.333 10C18.333 9.441 18.278 8.897 18.171 8.368Z" fill="#FFC107"/>
-    <path d="M2.628 6.121L5.366 8.129C6.107 6.295 7.9 5 10 5C11.274 5 12.434 5.481 13.317 6.267L15.674 3.91C14.186 2.522 12.195 1.667 10 1.667C6.946 1.667 4.308 3.474 2.628 6.121Z" fill="#FF3D00"/>
-    <path d="M10 18.333C12.152 18.333 14.107 17.51 15.579 16.17L13.011 13.987C12.166 14.625 11.117 15 10 15C7.832 15 5.992 13.618 5.299 11.688L2.582 13.783C4.245 16.482 6.901 18.333 10 18.333Z" fill="#4CAF50"/>
-    <path d="M18.171 8.368H17.5V8.333H10V11.667H14.709C14.382 12.588 13.784 13.382 13.01 13.987L15.579 16.17C15.403 16.332 18.333 14.167 18.333 10C18.333 9.441 18.278 8.897 18.171 8.368Z" fill="#1976D2"/>
+  <svg
+    width="20"
+    height="20"
+    viewBox="0 0 20 20"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      d="M18.171 8.368H17.5V8.333H10V11.667H14.709C14.022 13.607 12.177 15 10 15C7.239 15 5 12.761 5 10C5 7.239 7.239 5 10 5C11.274 5 12.434 5.481 13.317 6.267L15.674 3.91C14.186 2.522 12.195 1.667 10 1.667C5.398 1.667 1.667 5.398 1.667 10C1.667 14.602 5.398 18.333 10 18.333C14.602 18.333 18.333 14.602 18.333 10C18.333 9.441 18.278 8.897 18.171 8.368Z"
+      fill="#FFC107"
+    />
+    <path
+      d="M2.628 6.121L5.366 8.129C6.107 6.295 7.9 5 10 5C11.274 5 12.434 5.481 13.317 6.267L15.674 3.91C14.186 2.522 12.195 1.667 10 1.667C6.946 1.667 4.308 3.474 2.628 6.121Z"
+      fill="#FF3D00"
+    />
+    <path
+      d="M10 18.333C12.152 18.333 14.107 17.51 15.579 16.17L13.011 13.987C12.166 14.625 11.117 15 10 15C7.832 15 5.992 13.618 5.299 11.688L2.582 13.783C4.245 16.482 6.901 18.333 10 18.333Z"
+      fill="#4CAF50"
+    />
+    <path
+      d="M18.171 8.368H17.5V8.333H10V11.667H14.709C14.382 12.588 13.784 13.382 13.01 13.987L15.579 16.17C15.403 16.332 18.333 14.167 18.333 10C18.333 9.441 18.278 8.897 18.171 8.368Z"
+      fill="#1976D2"
+    />
   </svg>
 );
 
 const LinkedInSVG = () => (
-  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect width="20" height="20" rx="2" fill="#0A66C2"/>
-    <path d="M6.5 8.5V14M6.5 6V6.01M9 14V8.5M11.5 14V11C11.5 9.5 13 9 13.5 10.5V14" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+  <svg
+    width="20"
+    height="20"
+    viewBox="0 0 20 20"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <rect width="20" height="20" rx="2" fill="#0A66C2" />
+    <path
+      d="M6.5 8.5V14M6.5 6V6.01M9 14V8.5M11.5 14V11C11.5 9.5 13 9 13.5 10.5V14"
+      stroke="white"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
   </svg>
 );
 
@@ -46,7 +109,9 @@ interface OriginalSigninFormProps {
   isEmailVerification: boolean;
 }
 
-export default function OriginalSigninForm({ isEmailVerification }: OriginalSigninFormProps) {
+export default function OriginalSigninForm({
+  isEmailVerification,
+}: OriginalSigninFormProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [email, setEmail] = useState("");
@@ -92,7 +157,7 @@ export default function OriginalSigninForm({ isEmailVerification }: OriginalSign
 
       if (userResponse.ok) {
         const userData = await userResponse.json();
-        
+
         if (!userData.data?.user?.email_verified_at) {
           router.push("/signin?e_v=true");
           setLoading(false);
@@ -285,7 +350,7 @@ export default function OriginalSigninForm({ isEmailVerification }: OriginalSign
                   </button>
                   <button
                     onClick={() => handleOAuthSignIn("linkedin")}
-                    className="w-full flex items-center justify-center gap-3 py-3 rounded-[10px] border border-white/20 text-white font-mona-sans text-sm font-medium hover:bg-white/5 transition-colors cursor-pointer"
+                    className="w-full  items-center justify-center gap-3 py-3 rounded-[10px] border border-white/20 text-white font-mona-sans text-sm font-medium hover:bg-white/5 transition-colors cursor-pointer hidden"
                   >
                     <LinkedInSVG />
                     Sign In with LinkedIn
@@ -329,7 +394,10 @@ export default function OriginalSigninForm({ isEmailVerification }: OriginalSign
 
                 <p className="text-white/50 font-mona-sans text-sm text-center mb-5">
                   Don&apos;t have an account?{" "}
-                  <Link href="/signup?type=coach" className="text-[#A2CE3A] font-semibold hover:underline">
+                  <Link
+                    href="/signup?type=coach"
+                    className="text-[#A2CE3A] font-semibold hover:underline"
+                  >
                     Create your account
                   </Link>
                 </p>
@@ -347,7 +415,10 @@ export default function OriginalSigninForm({ isEmailVerification }: OriginalSign
                 </button>
 
                 <p className="text-center">
-                  <Link href="/forgot-password" className="text-[#A2CE3A] font-mona-sans text-sm font-semibold hover:underline">
+                  <Link
+                    href="/forgot-password"
+                    className="text-[#A2CE3A] font-mona-sans text-sm font-semibold hover:underline"
+                  >
                     Forgot password?
                   </Link>
                 </p>

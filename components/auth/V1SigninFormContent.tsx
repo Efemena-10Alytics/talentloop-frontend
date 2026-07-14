@@ -125,7 +125,9 @@ export default function V1SigninFormContent({
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [socialLoading, setSocialLoading] = useState<"google" | "linkedin" | null>(null);
+  const [socialLoading, setSocialLoading] = useState<
+    "google" | "linkedin" | null
+  >(null);
   const [verifying, setVerifying] = useState(false);
   const [showVerification, setShowVerification] = useState(isEmailVerification);
 
@@ -171,7 +173,7 @@ export default function V1SigninFormContent({
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Accept": "application/json",
+          Accept: "application/json",
         },
         body: JSON.stringify({ email, password }),
       });
@@ -185,7 +187,8 @@ export default function V1SigninFormContent({
         toast({
           variant: "error",
           title: "Sign in failed",
-          description: firstError || loginData.message || "Invalid email or password",
+          description:
+            firstError || loginData.message || "Invalid email or password",
         });
         setLoading(false);
         return;
@@ -247,7 +250,10 @@ export default function V1SigninFormContent({
     }
   };
 
-  const handleSocialSuccess = async (provider: "google" | "linkedin", access_token: string) => {
+  const handleSocialSuccess = async (
+    provider: "google" | "linkedin",
+    access_token: string,
+  ) => {
     setSocialLoading(provider);
     try {
       const result = await socialLogin(provider, access_token);
@@ -257,7 +263,7 @@ export default function V1SigninFormContent({
         title: result.message || "Welcome back!",
         description: `Signed in as ${result.data.user.name || result.data.user.email}`,
       });
-      const hasEnrollment = !!(result.data.current_enrollment?.id);
+      const hasEnrollment = !!result.data.current_enrollment?.id;
       handleAuthenticated(hasEnrollment);
     } catch (err: any) {
       toast({
@@ -273,7 +279,11 @@ export default function V1SigninFormContent({
   const googleLogin = () => {
     const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
     if (!clientId) {
-      toast({ variant: "error", title: "Not configured", description: "Google sign in is not set up yet" });
+      toast({
+        variant: "error",
+        title: "Not configured",
+        description: "Google sign in is not set up yet",
+      });
       return;
     }
     const client = (window as any).google?.accounts?.oauth2?.initTokenClient({
@@ -295,7 +305,11 @@ export default function V1SigninFormContent({
       const code = await openLinkedInOAuth(clientId, redirectUri);
       await handleSocialSuccess("linkedin", code);
     } catch (err: any) {
-      toast({ variant: "error", title: "Error", description: err.message || "LinkedIn sign in failed" });
+      toast({
+        variant: "error",
+        title: "Error",
+        description: err.message || "LinkedIn sign in failed",
+      });
     }
   };
 
@@ -369,13 +383,16 @@ export default function V1SigninFormContent({
 
   const handleResend = async () => {
     try {
-      const response = await fetch(`${getApiUrl()}/api/v1/auth/verify-email/resend-otp`, {
-        method: "POST",
-        headers: getHeaders(),
-        body: JSON.stringify({
-          email,
-        }),
-      });
+      const response = await fetch(
+        `${getApiUrl()}/api/v1/auth/verify-email/resend-otp`,
+        {
+          method: "POST",
+          headers: getHeaders(),
+          body: JSON.stringify({
+            email,
+          }),
+        },
+      );
 
       const data = await response.json();
 
@@ -447,15 +464,19 @@ export default function V1SigninFormContent({
                 className="flex items-center justify-center gap-2.5 px-4 py-2.5 bg-transparent border border-white/20 rounded-[12px] text-white font-mona-sans text-sm font-medium hover:border-white/40 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 <GoogleSVG />
-                {socialLoading === "google" ? "Connecting..." : "Sign In with Google"}
+                {socialLoading === "google"
+                  ? "Connecting..."
+                  : "Sign In with Google"}
               </button>
               <button
                 onClick={handleLinkedInSignIn}
                 disabled={socialLoading === "linkedin"}
-                className="flex items-center justify-center gap-2.5 px-4 py-2.5 bg-transparent border border-white/20 rounded-[12px] text-white font-mona-sans text-sm font-medium hover:border-white/40 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                className=" items-center justify-center gap-2.5 px-4 py-2.5 bg-transparent border border-white/20 rounded-[12px] text-white font-mona-sans text-sm font-medium hover:border-white/40 transition-colors disabled:opacity-60 disabled:cursor-not-allowed hidden"
               >
                 <LinkedInSVG />
-                {socialLoading === "linkedin" ? "Connecting..." : "Sign In with LinkedIn"}
+                {socialLoading === "linkedin"
+                  ? "Connecting..."
+                  : "Sign In with LinkedIn"}
               </button>
             </div>
 
