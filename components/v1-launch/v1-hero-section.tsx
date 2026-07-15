@@ -72,7 +72,7 @@ export default function V1HeroSection() {
   const images = ["/homepage/1.png", "/homepage/2.png"];
 
   return (
-    <section className="relative min-h-screen pt-20 lg:pt-40 pb-16">
+    <section className="relative min-h-screen pt-24 lg:pt-40 pb-16">
       <div className="max-w-[1400px] mx-auto px-3 lg:px-6">
         {/* Testimonials Header */}
         <motion.div
@@ -84,7 +84,7 @@ export default function V1HeroSection() {
           <img
             src="/Testimonials_header.png"
             alt="5-star testimonials"
-            className="h-12 object-contain"
+            className="h-10 lg:h-12 object-contain"
           />
         </motion.div>
 
@@ -93,9 +93,9 @@ export default function V1HeroSection() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
-          className="text-center mb-12"
+          className="text-center mb-5 lg:mb-12"
         >
-          <h1 className="text-4xl lg:text-7xl font-mona-sans font-bold leading-tight">
+          <h1 className="text-[22px] lg:text-7xl font-mona-sans font-bold leading-tight">
             <span className="text-white">
               You Don't Need More Applications.
             </span>
@@ -110,9 +110,9 @@ export default function V1HeroSection() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
-          className="max-w-2xl mx-auto text-center mb-12"
+          className="max-w-2xl mx-auto text-center mb-5 lg:mb-12"
         >
-          <span className="text-lg lg:text-xl font-mona-sans text-center text-white leading-tight">
+          <span className="text-base lg:text-xl font-mona-sans text-center text-white leading-tight">
             The global job market is competitive. TalentLoop helps you compete
             strategically with optimized materials, expert guidance, and managed
             career support tuned for the UK, US, and Canada.
@@ -124,7 +124,7 @@ export default function V1HeroSection() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.4 }}
-          className="flex flex-col sm:flex-row justify-center gap-4 mb-16"
+          className="flex flex-col lg:flex-row justify-center gap-4 mb-10 lg:mb-16"
         >
           <button
             onClick={() =>
@@ -132,7 +132,7 @@ export default function V1HeroSection() {
                 .getElementById("pricing")
                 ?.scrollIntoView({ behavior: "smooth" })
             }
-            className="px-8 py-4 text-center rounded-[30px] text-[#090B0E] font-mona-sans text-base font-semibold hover:opacity-90 transition-opacity"
+            className="px-3 lg:px-8 py-4 text-center rounded-[30px] text-[#090B0E] font-mona-sans text-[11px] lg:text-base font-semibold hover:opacity-90 transition-opacity"
             style={{
               background:
                 "linear-gradient(88.9deg, #A2CE3A 24.91%, #52681D 92.25%)",
@@ -142,7 +142,7 @@ export default function V1HeroSection() {
           </button>
           <Link
             href="/clarity-session"
-            className="px-8 py-4 text-center rounded-[30px] text-white font-mona-sans text-base font-semibold hover:opacity-90 transition-opacity"
+            className="px-3 lg:px-8 py-4 text-center rounded-[30px] text-white font-mona-sans text-[11px] lg:text-base font-semibold hover:opacity-90 transition-opacity"
             style={{
               background: "linear-gradient(180deg, #0E0912 0%, #22162B 100%)",
             }}
@@ -287,7 +287,7 @@ export default function V1HeroSection() {
                   </p>
                 </span>
               </div>
-              <div className="text-4xl font-bold text-white mb-2">98</div>
+              <div className="text-[22px] font-bold text-white mb-2">98 / 100</div>
               <div className="w-full bg-white/10 rounded-full h-2">
                 <div
                   className="bg-[#A2CE3A] h-2 rounded-full"
@@ -441,7 +441,7 @@ export default function V1HeroSection() {
               </p>
               <Link
                 href="/clarity-session"
-                className="px-12 py-4 w-fit text-center rounded-[30px] text-white font-mona-sans text-base font-semibold hover:opacity-90 transition-opacity"
+                className="px-7 lg:px-12 py-4 w-fit text-center rounded-[30px] text-white font-mona-sans text-[12px] lg:text-base font-semibold hover:opacity-90 transition-opacity"
                 style={{
                   background:
                     "linear-gradient(180deg, #0E0912 0%, #22162B 100%)",

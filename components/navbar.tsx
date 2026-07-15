@@ -107,7 +107,7 @@ export function Navbar({ v1Launch }: { v1Launch?: boolean }) {
 
   return (
     <div className="fixed top-0 inset-x-0 z-50">
-      <div className="relative w-full">
+    <div className="relative w-full">
         <div
           className={`absolute inset-0 bg-[url('/homepage/bg1.svg')] bg-cover bg-center shadow-lg transition-opacity duration-700 ease-in-out ${
             isScrolled ? "opacity-100" : "opacity-0"
@@ -115,7 +115,15 @@ export function Navbar({ v1Launch }: { v1Launch?: boolean }) {
         />
 
         <div className="relative mx-auto flex w-full max-w-[1400px] shadow-lg border-b border-[#FFFFFF0F] items-center justify-between gap-4 px-6 py-6">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center justify-between lg:justify-start gap-3 lg:w-auto w-full">
+            <a href="/">
+              <img
+                src="/logo.svg"
+                alt="Talentloop logo"
+                className="h-12 w-auto object-contain"
+              />
+            </a>
+
             <button
               onClick={() => setShowMobileSidebar(true)}
               className="lg:hidden text-white p-2 hover:bg-white/10 rounded-lg transition-colors"
@@ -137,13 +145,6 @@ export function Navbar({ v1Launch }: { v1Launch?: boolean }) {
                 />
               </svg>
             </button>
-            <a href="/">
-              <img
-                src="/logo.svg"
-                alt="Talentloop logo"
-                className="h-12 w-auto object-contain"
-              />
-            </a>
           </div>
 
           {v1Launch ? (
@@ -182,7 +183,7 @@ export function Navbar({ v1Launch }: { v1Launch?: boolean }) {
 
           {session ? (
             <>
-              <div className="flex items-center gap-3">
+              <div className="lg:flex hidden items-center gap-3">
                 {v1Launch ? (
                   <div
                     onClick={() => {
@@ -257,21 +258,6 @@ export function Navbar({ v1Launch }: { v1Launch?: boolean }) {
                     {/* User Info */}
                     <div className="flex flex-col justify-center flex-1 min-w-0">
                       <p className="text-white font-mona-sans text-xs font-semibold truncate">
-                        {/* {(() => {
-                          // Use profile first name from user.profile if available
-                          const firstName = userData?.user?.profile?.first_name;
-                          if (firstName) {
-                            return firstName;
-                          }
-
-                          // Fallback to name from user object
-                          const name =
-                            userData?.user?.name ||
-                            session.user?.name ||
-                            "User";
-                          const nameParts = name.split(" ");
-                          return nameParts[0] || "User";
-                        })()} */}
                         Dashboard
                       </p>
                       <p className="text-[#FFFFFF99] font-mona-sans text-[10px] font-normal">
@@ -431,19 +417,16 @@ export function Navbar({ v1Launch }: { v1Launch?: boolean }) {
             </nav>
 
             {session ? (
-              <div className="px-4 pb-6 border-t border-white/10 pt-4">
-                {v1Launch ? (
+              <div className="px-4 pb-6 border-t border-white/10 pt-4 w-full">
+                <div className="flex items-center gap-3 w-full">
                   <div
                     onClick={() => {
                       // Check if user has stripe_customer_id
                       if (userData?.user?.stripe_customer_id) {
                         // User has a plan, redirect to dashboard
                         router.push(
-                          session.user?.role === "coach"
-                            ? "#"
-                            : "/dashboard",
+                          session.user?.role === "coach" ? "#" : "/dashboard",
                         );
-                        setShowMobileSidebar(false);
                       } else {
                         // User doesn't have a plan, show toast and scroll to pricing
                         toast({
@@ -453,8 +436,7 @@ export function Navbar({ v1Launch }: { v1Launch?: boolean }) {
                             "Please choose an acceleration tier to access your dashboard.",
                         });
 
-                        // Close sidebar and scroll to pricing section
-                        setShowMobileSidebar(false);
+                        // Scroll to pricing section
                         const pricingSection =
                           document.querySelector("#pricing");
                         if (pricingSection) {
@@ -465,59 +447,58 @@ export function Navbar({ v1Launch }: { v1Launch?: boolean }) {
                         }
                       }
                     }}
-                    className="flex items-center gap-3 p-4 rounded-lg bg-white/5 hover:bg-white/10 transition-all cursor-pointer"
+                    className="flex items-center gap-3 px-4 h-[52px] w-full rounded-[31.11px] cursor-pointer transition-all hover:opacity-90"
+                    style={{
+                      background:
+                        "linear-gradient(94.02deg, #222126 0%, #111116 100%)",
+                      border: "0.78px solid #FFFFFF1A",
+                    }}
                   >
-                    <div className="w-12 h-12 rounded-full bg-white/20 overflow-hidden">
-                      <img
-                        src={
-                          userData?.user?.photo ||
-                          session.user?.image ||
-                          "/coaches/coach1.jpg"
-                        }
-                        alt="User avatar"
-                        className="w-full h-full object-cover"
-                      />
+                    {/* User Initials Icon */}
+                    <div className="h-[30px] w-[30px] rounded-full bg-[#3FB185] flex items-center justify-center flex-shrink-0">
+                      <span className="text-white font-mona-sans text-xs font-semibold">
+                        {(() => {
+                          // Use profile data from user.profile if available
+                          const firstName = userData?.user?.profile?.first_name;
+                          const lastName = userData?.user?.profile?.last_name;
+
+                          if (firstName && lastName) {
+                            return (
+                              (firstName[0]?.toUpperCase() || "") +
+                              (lastName[0]?.toUpperCase() || "")
+                            );
+                          }
+
+                          // Fallback to name from user object
+                          const name =
+                            userData?.user?.name ||
+                            session.user?.name ||
+                            "User";
+                          const nameParts = name.split(" ");
+                          const firstInitial =
+                            nameParts[0]?.[0]?.toUpperCase() || "U";
+                          const lastInitial =
+                            nameParts[
+                              nameParts.length - 1
+                            ]?.[0]?.toUpperCase() || "";
+                          return firstInitial + lastInitial;
+                        })()}
+                      </span>
                     </div>
-                    <div className="flex-1">
-                      <p className="text-white font-mona-sans text-sm font-semibold">
-                        {userData?.user?.name || session.user?.name || "User"}
+
+                    {/* User Info */}
+                    <div className="flex flex-col justify-center flex-1 min-w-0 w-full">
+                      <p className="text-white font-mona-sans text-xs font-semibold truncate">
+                        Dashboard
                       </p>
-                      <p className="text-white/60 font-mona-sans text-xs">
-                        View Dashboard
+                      <p className="text-[#FFFFFF99] font-mona-sans text-[10px] font-normal">
+                        {userData?.user?.stripe_customer_id
+                          ? "Premium Account"
+                          : "No active plan"}
                       </p>
                     </div>
                   </div>
-                ) : (
-                  <Link
-                    href={
-                      session.user?.role === "coach"
-                        ? "/dashboard?us=coach"
-                        : "/dashboard"
-                    }
-                    className="flex items-center gap-3 p-4 rounded-lg bg-white/5 hover:bg-white/10 transition-all"
-                    onClick={() => setShowMobileSidebar(false)}
-                  >
-                    <div className="w-12 h-12 rounded-full bg-white/20 overflow-hidden">
-                      <img
-                        src={
-                          userData?.user?.photo ||
-                          session.user?.image ||
-                          "/coaches/coach1.jpg"
-                        }
-                        alt="User avatar"
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-white font-mona-sans text-sm font-semibold">
-                        {userData?.user?.name || session.user?.name || "User"}
-                      </p>
-                      <p className="text-white/60 font-mona-sans text-xs">
-                        View Dashboard
-                      </p>
-                    </div>
-                  </Link>
-                )}
+                </div>
 
                 {/* Logout Button */}
                 <button

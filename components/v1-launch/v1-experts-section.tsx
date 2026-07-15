@@ -248,16 +248,16 @@ export default function V1ExpertsSection() {
   );
 
   return (
-    <section className="relative py-14 lg:py-20">
+    <section className="relative pb-10 lg:py-20">
       <div className="max-w-[1400px] mx-auto px-3 lg:px-6">
         {/* Section Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-center mb-12">
+        <div className="flex flex-col sm:flex-row justify-between items-center mb-5 lg:mb-12">
           <motion.h2
             initial={{ opacity: 0, x: -20 }}
             whileInView={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8 }}
             viewport={{ once: true }}
-            className="text-4xl lg:text-6xl font-mona-sans font-bold mb-6 sm:mb-0"
+            className="text-[22px] lg:text-6xl font-mona-sans font-bold mb-6 sm:mb-0"
             style={{
               background:
                 "linear-gradient(188.62deg, #FFFFFF 6.55%, #A2CE3A 82.18%)",

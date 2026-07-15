@@ -61,7 +61,7 @@ export default function V1TestimonialsSection() {
   const currentTestimonial = testimonials && testimonials.length > 0 ? testimonials[currentIndex] : null;
 
   return (
-    <section className="relative py-14 lg:py-20" style={{ background: "#01090BB2" }}>
+    <section className="relative py-10 lg:py-20" style={{ background: "#01090BB2" }}>
       <div className="max-w-[1400px] mx-auto px-3 lg:px-6">
         {/* Profile Info Badge */}
         {!isLoading && testimonials && testimonials.length > 0 && (
@@ -84,7 +84,7 @@ export default function V1TestimonialsSection() {
           viewport={{ once: true }}
           className="text-center mb-16"
         >
-          <h2 className="text-4xl lg:text-5xl text-white font-mona-sans font-semibold mb-4">
+          <h2 className="text-[22px] lg:text-5xl text-white font-mona-sans font-semibold mb-4">
             Real Moves, By Real Professionals.
           </h2>
           <p className="text-white/60 font-jakarta-sans text-base">
@@ -117,10 +117,10 @@ export default function V1TestimonialsSection() {
         {!isLoading && !isError && testimonials && testimonials.length > 0 && currentTestimonial && (
           <>
             <div className="relative max-w-4xl mx-auto">
-              {/* Left Arrow */}
+              {/* Left Arrow - Desktop and Mobile */}
               <button
                 onClick={handlePrevious}
-                className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-16 z-10 hover:opacity-80 transition-opacity hidden lg:block"
+                className="absolute left-0 top-1/2 -translate-y-1/2 lg:-translate-x-16 z-10 hover:opacity-80 transition-opacity"
                 aria-label="Previous testimonial"
               >
                 <ArrowLeftIcon />
@@ -134,24 +134,40 @@ export default function V1TestimonialsSection() {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -100 }}
                   transition={{ duration: 0.5 }}
-                  className="rounded-[20px] border-2 border-[#A2CE3A] overflow-hidden"
+                  className="rounded-[20px] border-2 border-[#A2CE3A] overflow-hidden relative"
                 >
                     <img src={currentTestimonial!.file_url || ""} alt={currentTestimonial!.title || "Testimonial"} className="h-full w-full object-cover" />
+                    
+                    {/* Mobile Pagination Dots - Positioned at bottom middle */}
+                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex justify-center gap-2 lg:hidden">
+                      {testimonials.map((_, index) => (
+                        <button
+                          key={index}
+                          onClick={() => setCurrentIndex(index)}
+                          className={`h-2 rounded-full transition-all ${
+                            index === currentIndex
+                              ? "w-8 bg-[#A2CE3A]"
+                              : "w-2 bg-white/20 hover:bg-white/40"
+                          }`}
+                          aria-label={`Go to testimonial ${index + 1}`}
+                        />
+                      ))}
+                    </div>
                 </motion.div>
               </AnimatePresence>
 
-              {/* Right Arrow */}
+              {/* Right Arrow - Desktop and Mobile */}
               <button
                 onClick={handleNext}
-                className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-16 z-10 hover:opacity-80 transition-opacity hidden lg:block"
+                className="absolute right-0 top-1/2 -translate-y-1/2 lg:translate-x-16 z-10 hover:opacity-80 transition-opacity"
                 aria-label="Next testimonial"
               >
                 <ArrowRightIcon />
               </button>
             </div>
 
-            {/* Pagination Dots */}
-            <div className="flex justify-center gap-2 mt-12">
+            {/* Desktop Pagination Dots */}
+            <div className="hidden lg:flex justify-center gap-2 mt-12">
               {testimonials.map((_, index) => (
                 <button
                   key={index}
@@ -167,24 +183,6 @@ export default function V1TestimonialsSection() {
             </div>
           </>
         )}
-
-        {/* Mobile Navigation */}
-        <div className="flex justify-center gap-4 mt-8 lg:hidden">
-          <button
-            onClick={handlePrevious}
-            className="hover:opacity-80 transition-opacity"
-            aria-label="Previous testimonial"
-          >
-            <ArrowLeftIcon />
-          </button>
-          <button
-            onClick={handleNext}
-            className="hover:opacity-80 transition-opacity"
-            aria-label="Next testimonial"
-          >
-            <ArrowRightIcon />
-          </button>
-        </div>
       </div>
     </section>
   );

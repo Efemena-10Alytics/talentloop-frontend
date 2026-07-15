@@ -61,7 +61,7 @@ const columnImages = [
 
 export default function V1WhoIsForSection() {
   return (
-    <section className="relative py-14 lg:py-20 overflow-hidden">
+    <section className="relative py-10 lg:py-20 overflow-hidden">
       <div className="max-w-[1400px] mx-auto px-3 lg:px-6">
         <div className="flex flex-col lg:flex-row gap-12 items-start">
           {/* Left Side - Checkmark List */}
@@ -70,7 +70,7 @@ export default function V1WhoIsForSection() {
             whileInView={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8 }}
             viewport={{ once: true }}
-            className="lg:w-[50%] space-y-6"
+            className="lg:w-[50%] space-y-3 lg:space-y-6"
           >
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -79,7 +79,7 @@ export default function V1WhoIsForSection() {
               viewport={{ once: true }}
               className="mb-5 lg:mb-16"
             >
-              <h2 className="text-4xl lg:text-5xl font-mona-sans font-semibold text-white mb-4">
+              <h2 className="text-[22px] lg:text-5xl font-mona-sans font-semibold text-white mb-4">
                 Who
                 <span className="text-[#A2CE3A] font-mona-sans mx-2">
                   TalentLoop

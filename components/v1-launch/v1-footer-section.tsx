@@ -5,7 +5,7 @@ import Link from "next/link";
 
 export default function V1FooterSection() {
   return (
-    <footer className="relative py-12 lg:py-16 border-t border-white/10">
+    <footer className="relative py-10 lg:py-16 border-t border-white/10">
       <div className="max-w-[1400px] mx-auto px-3 lg:px-6">
         <div className="flex flex-col lg:flex-row justify-between items-start gap-8">
           {/* Left Side - Logo and Tagline */}

@@ -134,7 +134,7 @@ export default function V1PricingSection({ onStartNow }: V1PricingSectionProps) 
   };
 
   return (
-    <section className="relative py-14 lg:py-20">
+    <section className="relative py-10 lg:py-20">
       <div className="max-w-[1400px] mx-auto px-3 lg:px-6">
         {/* Section Heading */}
         <motion.div
@@ -145,11 +145,11 @@ export default function V1PricingSection({ onStartNow }: V1PricingSectionProps) 
           className="text-center mb-6"
         >
           
-          <h2 className="text-4xl lg:text-5xl  font-semibold leading-tight mb-4">
+          <h2 className="text-[22px] lg:text-5xl  font-semibold leading-tight mb-4">
             <span className="text-white font-mona-sans">Choose Your </span>
             <span className="text-[#A2CE3A] font-mona-sans">Acceleration Tier.</span>
           </h2>
-          <p className="text-[#CCCCCC] font-sora text-sm">
+          <p className="text-[#CCCCCC] font-sora text-[12px] lg:text-sm">
             Transparent pricing. No fake guarantees. Every package is built around the outcome you actually need.
           </p>
         </motion.div>
@@ -182,8 +182,7 @@ export default function V1PricingSection({ onStartNow }: V1PricingSectionProps) 
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
           viewport={{ once: true }}
-          className="rounded-[24px] p-6 lg:p-10"
-          style={{ background: "#1E1F2180" }}
+          className="lg:rounded-[24px] lg:p-10 bg-transparent lg:bg-[]"
         >
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Left Side - Pricing Cards */}
@@ -198,7 +197,7 @@ export default function V1PricingSection({ onStartNow }: V1PricingSectionProps) 
                   onClick={() => setSelectedPlan(plan.id)}
                   onMouseEnter={() => setHoveredPlan(plan.id)}
                   onMouseLeave={() => setHoveredPlan(null)}
-                  className="rounded-[28px] p-2 lg:p-6 cursor-pointer transition-all duration-500 ease-in-out relative"
+                  className="rounded-[28px] p-4 lg:p-6 cursor-pointer transition-all duration-500 ease-in-out relative"
                   style={{
                     background: selectedPlan === plan.id || hoveredPlan === plan.id
                       ? "linear-gradient(135deg, rgba(162, 206, 58, 0.2) 0%, rgba(21, 99, 116, 0.2) 100%)"
@@ -239,7 +238,7 @@ export default function V1PricingSection({ onStartNow }: V1PricingSectionProps) 
                         >
                           {selectedPlan === plan.id && (
                             <div 
-                              className="w-8 h-8 rounded-full transition-all duration-300"
+                              className="w-3 lg:w-8 h-3 lg:h-8 rounded-full transition-all duration-300"
                               style={{ background: "#A2CE3A" }}
                             />
                           )}
@@ -264,10 +263,10 @@ export default function V1PricingSection({ onStartNow }: V1PricingSectionProps) 
               }}
             >
               <div className="mb-6">
-                <h3 className="text-white font-mona-sans text-2xl font-bold mb-2">
+                <h3 className="text-white font-mona-sans text-xl font-bold mb-2">
                   {activePlan.name}
                 </h3>
-                <p className="text-4xl font-mona-sans font-bold text-white mb-4">
+                <p className="text-[22px] font-mona-sans font-bold text-white mb-4">
                   {activePlan.price}
                 </p>
               </div>

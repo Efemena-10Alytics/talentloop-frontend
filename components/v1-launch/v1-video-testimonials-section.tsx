@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import ReactPlayer from "react-player";
 import { useVisibleVideoTestimonials } from "@/lib/hooks/useTestimonials";
@@ -11,9 +11,21 @@ export default function V1VideoTestimonialSection() {
     isLoading,
     isError,
   } = useVisibleVideoTestimonials();
+  
+  const [playerHeight, setPlayerHeight] = useState("420px");
+
+  useEffect(() => {
+    const handleResize = () => {
+      setPlayerHeight(window.innerWidth < 1024 ? "240px" : "420px");
+    };
+
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   return (
-    <section className="relative py-14 lg:py-20">
+    <section className="relative py-10 lg:py-20">
       <div className="max-w-[1400px] mx-auto px-3 lg:px-6">
         {/* Section Header */}
         <motion.div
@@ -23,7 +35,7 @@ export default function V1VideoTestimonialSection() {
           viewport={{ once: true }}
           className="text-center mb-6"
         >
-          <h2 className="text-4xl lg:text-5xl text-white font-mona-sans font-semibold leading-tight mb-4">
+          <h2 className="text-[22px] lg:text-5xl text-white font-mona-sans font-semibold leading-tight mb-4">
             <span className="text-white font-mona-sans"> Listen To What </span>
             <span className="text-[#A2CE3A] font-mona-sans mr-x">
               Our Clients
@@ -87,7 +99,7 @@ export default function V1VideoTestimonialSection() {
                     <ReactPlayer
                       src={video.file_url}
                       width="100%"
-                      height="420px"
+                      height={playerHeight}
                       controls
                     />
                   </div>

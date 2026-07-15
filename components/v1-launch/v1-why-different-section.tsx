@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 
 export default function V1WhyDifferentSection() {
   return (
-    <section className="relative py-14 lg:py-20">
+    <section className="relative py-10 lg:py-20">
       <div className="max-w-[1400px] mx-auto px-3 lg:px-6">
         {/* Section Heading */}
         <motion.div
@@ -14,7 +14,7 @@ export default function V1WhyDifferentSection() {
           viewport={{ once: true }}
           className="text-center mb-16"
         >
-          <h2 className="text-4xl lg:text-5xl font-mona-sans font-semibold mb-4">
+          <h2 className="text-[22px] lg:text-5xl font-mona-sans font-semibold mb-4">
             <span className="text-white font-mona-sans">Why </span>
             <span className="text-[#A2CE3A] font-mona-sans">TalentLoop</span>
             <span className="text-white font-mona-sans"> Is Different</span>

@@ -48,7 +48,7 @@ const steps = [
 
 export default function V1CareerSection() {
   return (
-    <section className="relative py-14 lg:py-20">
+    <section className="relative py-10 lg:py-20">
       <div className="max-w-[1400px] mx-auto px-3 lg:px-6">
         {/* Section Heading */}
         <motion.div
@@ -56,14 +56,14 @@ export default function V1CareerSection() {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
           viewport={{ once: true }}
-          className="text-center space-y-5 mb-10"
+          className="text-center space-y-5 mb-5 lg:mb-10"
         >
-          <h2 className="text-4xl lg:text-5xl font-semibold leading-tight mb-5">
+          <h2 className="text-[22px] lg:text-5xl font-semibold leading-tight mb-5">
             <span className="text-white font-mona-sans">An Operating System For </span>
             <br />
             <span className="text-[#A2CE3A] font-mona-sans">Your Career.</span>
           </h2>
- <span className="text-lg font-mona-sans text-center text-white leading-tight">
+ <span className="text-sm lg:text-lg font-mona-sans text-white leading-tight">
           Four deliberate steps that take you from generic applicant to strategically 
           <br/>
           positioned candidate.
@@ -97,10 +97,10 @@ export default function V1CareerSection() {
                     Phase {step.number}
                   </span>
                 </div>
-                <h3 className="text-2xl lg:text-3xl font-mona-sans font-bold text-[#F3F4F6] mb-1">
+                <h3 className="text-lg lg:text-3xl font-mona-sans font-bold text-[#F3F4F6] mb-1">
                   {step.title}
                 </h3>
-                <p className="text-[#9CA3AF] font-jakarta-sans text-base leading-relaxed">
+                <p className="text-[#9CA3AF] font-jakarta-sans text-sm lg:text-base leading-relaxed">
                   {step.description}
                 </p>
               </div>
