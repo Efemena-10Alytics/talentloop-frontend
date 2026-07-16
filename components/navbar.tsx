@@ -129,21 +129,11 @@ export function Navbar({ v1Launch }: { v1Launch?: boolean }) {
               className="lg:hidden text-white p-2 hover:bg-white/10 rounded-lg transition-colors"
               aria-label="Open menu"
             >
-              <svg
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M3 12H21M3 6H21M3 18H21"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M6.66634 10.667C5.92996 10.667 5.33301 11.2639 5.33301 12.0003C5.33301 12.7367 5.92996 13.3337 6.66634 13.3337H25.333C26.0694 13.3337 26.6663 12.7367 26.6663 12.0003C26.6663 11.2639 26.0694 10.667 25.333 10.667H6.66634Z" fill="#FCFCFD"/>
+<path d="M6.66634 18.667C5.92996 18.667 5.33301 19.2639 5.33301 20.0003C5.33301 20.7367 5.92996 21.3337 6.66634 21.3337H25.333C26.0694 21.3337 26.6663 20.7367 26.6663 20.0003C26.6663 19.2639 26.0694 18.667 25.333 18.667H6.66634Z" fill="#FCFCFD"/>
+</svg>
+
             </button>
           </div>
 
@@ -330,7 +320,7 @@ export function Navbar({ v1Launch }: { v1Launch?: boolean }) {
           ) : (
             <Link
               href="/signin"
-              className="px-8 py-3.5 rounded-[30px] text-white font-mona-sans text-sm font-semibold hover:opacity-90 transition-opacity inline-block"
+              className="lg:inline-block hidden px-8 py-3.5 rounded-[30px] text-white font-mona-sans text-sm font-semibold hover:opacity-90 transition-opacity"
               style={{
                 background: "linear-gradient(90deg, #071522 25%, #A2CE3A 100%)",
                 boxShadow: "0px -6px 4px 0px #FFFFFF4D inset",

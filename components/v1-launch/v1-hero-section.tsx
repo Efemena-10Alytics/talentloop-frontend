@@ -84,7 +84,13 @@ export default function V1HeroSection() {
           <img
             src="/Testimonials_header.png"
             alt="5-star testimonials"
-            className="h-10 lg:h-12 object-contain"
+            className="lg:block hidden h-10 lg:h-12 object-contain"
+          />
+
+               <img
+            src="/Testimonials_Mobile.png"
+            alt="5-star testimonials"
+            className="block lg:hidden object-contain"
           />
         </motion.div>
 
@@ -156,7 +162,7 @@ export default function V1HeroSection() {
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.6 }}
-          className="relative p-6 lg:p-10 rounded-[30px] border overflow-hidden"
+          className="relative p-3 lg:p-10 rounded-[30px] border overflow-hidden"
           style={{
             background: "#1563741A",
             borderColor: "#FFFFFF1A",
