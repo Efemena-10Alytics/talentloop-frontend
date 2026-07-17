@@ -1,7 +1,11 @@
 "use client";
 
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { signOut } from "next-auth/react";
 import { useAvatar } from "@/context/AvatarContext";
 import { useAuthMe } from "@/hooks/useUserData";
+import { clearAuthStorage } from "@/lib/auth";
 
 interface DashboardNavbarProps {
   pageTitle: string;
@@ -33,6 +37,22 @@ const DropdownArrow = () => (
 export default function DashboardNavbar({ pageTitle, pageIcon, actionSlot }: DashboardNavbarProps) {
   const { avatarUrl } = useAvatar();
   const { data: authData } = useAuthMe();
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    try {
+      setIsLoggingOut(true);
+      clearAuthStorage();
+      await signOut({ callbackUrl: "/" });
+    } catch {
+      router.push("/signin");
+    } finally {
+      setIsLoggingOut(false);
+      setIsDropdownOpen(false);
+    }
+  };
 
   const profile = (authData as any)?.user?.profile;
   const firstName: string = profile?.first_name ?? authData?.user?.name?.split(" ")[0] ?? "";
@@ -74,24 +94,51 @@ export default function DashboardNavbar({ pageTitle, pageIcon, actionSlot }: Das
           </button>
 
           {/* Profile Dropdown */}
-          <button className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-            <div className="w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-[#A2CE3A] to-[#156374] flex items-center justify-center flex-shrink-0">
-              {avatarUrl ? (
-                <img
-                  src={avatarUrl}
-                  alt="Profile"
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <span className="text-white font-mona-sans font-bold text-sm">
-                  {initials}
-                </span>
-              )}
-            </div>
-            <div className="hidden lg:block">
-              <DropdownArrow />
-            </div>
-          </button>
+          <div className="relative">
+            <button
+              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+            >
+              <div className="w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-[#A2CE3A] to-[#156374] flex items-center justify-center flex-shrink-0">
+                {avatarUrl ? (
+                  <img
+                    src={avatarUrl}
+                    alt="Profile"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-white font-mona-sans font-bold text-sm">
+                    {initials}
+                  </span>
+                )}
+              </div>
+              <div className="hidden lg:block">
+                <DropdownArrow />
+              </div>
+            </button>
+
+            {/* Dropdown Menu */}
+            {isDropdownOpen && (
+              <div
+                className="absolute right-0 mt-2 w-48 rounded-lg shadow-lg z-50"
+                style={{
+                  background: "#1563741A",
+                  border: "0.5px solid #FFFFFF1A",
+                }}
+              >
+                <button
+                  onClick={handleLogout}
+                  disabled={isLoggingOut}
+                  className="w-full px-4 py-3 text-left text-sm font-medium text-red-400 hover:bg-white/5 transition-colors disabled:opacity-50 rounded-lg flex items-center gap-2"
+                >
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M6 14H3C2.44772 14 2 13.5523 2 13V3C2 2.44772 2.44772 2 3 2H6M11 11L14 8M14 8L11 5M14 8H6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  {isLoggingOut ? "Logging out..." : "Logout"}
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </nav>

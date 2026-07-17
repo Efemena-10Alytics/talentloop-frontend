@@ -250,8 +250,30 @@ export default function V1DashboardLayout({
             </div>
           )}
 
+          {/* Logout Button */}
+          <div className="lg:hidden px-4 py-4 border-t border-white/10">
+            <button
+              onClick={() => {
+                import("@/lib/auth").then(({ clearAuthStorage }) => {
+                  clearAuthStorage();
+                });
+                import("next-auth/react").then(({ signOut }) => {
+                  signOut({ callbackUrl: "/" });
+                });
+              }}
+              className="w-full mt-3 flex items-center justify-center gap-2 p-4 rounded-lg bg-red-500/10 hover:bg-red-500/20 transition-all border border-red-500/30"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M9 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H9" stroke="#EF4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M16 17L21 12L16 7" stroke="#EF4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M21 12H9" stroke="#EF4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              {!isCollapsed && <span className="text-red-400 font-mona-sans text-sm font-semibold">Logout</span>}
+            </button>
+          </div>
+
           {/* Collapse Button */}
-          <div className="absolute top-20 -right-4 px-4 pb-6">
+          <div className="hidden lg:block absolute top-20 -right-4 px-4 pb-6">
             <button
               onClick={() => setIsCollapsed(!isCollapsed)}
               className={`transition-transform duration-300 ${
