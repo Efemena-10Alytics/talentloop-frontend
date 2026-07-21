@@ -30,8 +30,10 @@ export function Navbar({ v1Launch }: { v1Launch?: boolean }) {
   const [showSignUpDropdown, setShowSignUpDropdown] = useState(false);
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
   const [activeSection, setActiveSection] = useState<string>("");
+  const [showMoreDropdown, setShowMoreDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const mobileSidebarRef = useRef<HTMLDivElement>(null);
+  const moreDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -156,6 +158,51 @@ export function Navbar({ v1Launch }: { v1Launch?: boolean }) {
                   </a>
                 );
               })}
+
+              {/* More dropdown */}
+              <div className="relative" ref={moreDropdownRef}>
+                <button
+                  onClick={() => setShowMoreDropdown((o) => !o)}
+                  className="flex items-center gap-1.5 text-sm font-normal px-5 py-2 font-mona-sans text-[#B9B7BA] hover:text-white hover:bg-[#FFFFFF0F] hover:rounded-[30px] transition-colors rounded-[30px]"
+                >
+                  More
+                  <svg width="12" height="8" viewBox="0 0 12 8" fill="none" xmlns="http://www.w3.org/2000/svg" className={`transition-transform ${showMoreDropdown ? "rotate-180" : ""}`}>
+                    <path d="M1 1.5L6 6.5L11 1.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </button>
+                {showMoreDropdown && (
+                  <div
+                    className="absolute top-full left-0 mt-2 w-52 rounded-[12px] py-2 z-50"
+                    style={{ background: "#1A1C1F", border: "1px solid rgba(255,255,255,0.1)" }}
+                    onMouseLeave={() => setShowMoreDropdown(false)}
+                  >
+                    <Link
+                      href="/contact"
+                      onClick={() => setShowMoreDropdown(false)}
+                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-white/80 hover:text-white hover:bg-white/5 transition-colors font-mona-sans"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 6.47715 6.47715 2 12 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                        <path d="M8 12H8.01M12 12H12.01M16 12H16.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                        <path d="M2 12C2 17.5228 6.47715 22 12 22" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                      </svg>
+                      Contact Us
+                    </Link>
+                    <Link
+                      href="/terms"
+                      onClick={() => setShowMoreDropdown(false)}
+                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-white/80 hover:text-white hover:bg-white/5 transition-colors font-mona-sans"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2L3 7L12 12L21 7L12 2Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M3 17L12 22L21 17" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M3 12L12 17L21 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                      Terms &amp; Conditions
+                    </Link>
+                  </div>
+                )}
+              </div>
             </nav>
           ) : (
             <nav className="hidden items-center gap-3 lg:flex">

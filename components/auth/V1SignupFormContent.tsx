@@ -524,14 +524,14 @@ export default function V1SignupFormContent({
                 <GoogleSVG />
                 {socialLoading === "google" ? "Connecting..." : "Signup with Google"}
               </button>
-              <button
+              {/* <button
                 onClick={handleLinkedInSignUp}
                 disabled={socialLoading === "linkedin"}
                 className="flex items-center justify-center gap-2.5 px-4 py-2.5 bg-transparent border border-white/20 rounded-[12px] text-white font-mona-sans text-sm font-medium hover:border-white/40 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 <LinkedInSVG />
                 {socialLoading === "linkedin" ? "Connecting..." : "Signup with LinkedIn"}
-              </button>
+              </button> */}
             </div>
 
             {/* Divider */}

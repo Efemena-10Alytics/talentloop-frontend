@@ -45,13 +45,10 @@ const InactiveSVG = ({ number }: { number: string }) => (
 
 const degrees = [
   "High School Diploma",
-  "Associate Degree",
   "Bachelor's Degree",
   "Master's Degree",
-  "Doctorate (PhD)",
-  "Professional Certification",
-  "Bootcamp Certificate",
-  "Online Course Certificate",
+  "Ph.D.",
+  "Certification (e.g., Scrum Master, Data Analytics)",
   "Other",
 ];
 

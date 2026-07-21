@@ -238,14 +238,14 @@ export default function V1DashboardLayout({
                   Having trouble in?<br />
                   Please contact us
                 </p>
-                <button
+                <Link href="/contact"
                   className="w-full bg-[#A2CE3A] text-white font-mona-sans text-xs font-semibold py-2.5 px-4 rounded-[20px] hover:bg-[#92BE2A] transition-colors"
                   style={{
                     boxShadow: "0px 0px 16px 0px rgba(29, 57, 196, 0.2)",
                   }}
                 >
                   Contact us Now
-                </button>
+                </Link>
               </div>
             </div>
           )}

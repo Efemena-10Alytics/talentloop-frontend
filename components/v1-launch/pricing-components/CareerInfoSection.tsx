@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
 import * as Select from "@radix-ui/react-select";
 import { useToast } from "@/components/ui/use-toast";
@@ -14,7 +14,7 @@ interface CareerInfoSectionProps {
 
 export interface CareerFormData {
   careerPath: string;
-  preferredIndustries: string;
+  preferredIndustries: string[];
   preferredJobTitles: string;
   currentJobTitle: string;
   currentCompanyName: string;
@@ -47,37 +47,64 @@ const InactiveSVG = ({ number }: { number: string }) => (
 );
 
 const careerPaths = [
-  "Software Development",
-  "Data Science",
-  "Product Management",
-  "UX/UI Design",
-  "Marketing",
-  "Sales",
-  "Business Analysis",
-  "Project Management",
-  "DevOps",
-  "Cybersecurity",
+  "Data & Analytics",
+  "Project & Delivery Management",
+  "Cybersecurity & GRC",
+  "Healthcare & Support",
+  "Lecturing & Research",
+  "Design & Creative",
+  "Engineering",
+  "Others",
 ];
 
 const industries = [
-  "Technology",
-  "Finance",
-  "Healthcare",
+  "Information Technology (IT)",
+  "Data Science and Analytics",
+  "Finance and Banking",
+  "Healthcare and Pharmaceuticals",
   "E-commerce",
-  "Education",
-  "Manufacturing",
+  "Education and EdTech",
+  "Engineering and Manufacturing",
+  "Marketing and Advertising",
+  "Media and Entertainment",
   "Consulting",
-  "Media & Entertainment",
   "Telecommunications",
-  "Retail",
+  "Retail and Consumer Goods",
+  "Logistics and Supply Chain",
+  "Energy and Utilities",
+  "Construction and Real Estate",
+  "Legal Services",
+  "Oil and Gas",
+  "Venture Capital and Private Equity",
+  "Architecture and Design",
+  "Fintech",
+  "Arts and Culture",
+  "Blockchain and Cryptocurrency",
+  "Retail Banking and Financial Services",
+  "Supply Chain and Procurement",
+  "Space Technology",
+  "Renewable Energy and Green Technology",
+  "Non-Profit and NGOs",
+  "Human Resources and Recruitment",
+  "Automotive and Transportation",
+  "Aerospace and Defense",
+  "Agriculture and Agribusiness",
+  "Hospitality and Tourism",
+  "Fashion and Apparel",
+  "Food and Beverage",
+  "Insurance",
+  "Cybersecurity",
+  "Biotechnology",
+  "Sports and Recreation",
+  "Environmental and Sustainability",
+  "Government and Public Sector",
 ];
 
 const experienceLevels = [
-  "0-1 years",
-  "1-3 years",
-  "3-5 years",
-  "5-7 years",
-  "7-10 years",
+  "Less than 1 year",
+  "1–3 years",
+  "4–6 years",
+  "7–9 years",
   "10+ years",
 ];
 
@@ -90,20 +117,41 @@ export default function CareerInfoSection({
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<CareerFormData>({
     careerPath: initialData?.career_path || "",
-    preferredIndustries: initialData?.preferred_industries ? initialData.preferred_industries.join(", ") : "",
+    preferredIndustries: initialData?.preferred_industries ?? [],
     preferredJobTitles: initialData?.preferred_job_titles ? initialData.preferred_job_titles.join(", ") : "",
     currentJobTitle: initialData?.current_job_title || "",
     currentCompanyName: initialData?.current_company || "",
     yearsOfExperience: initialData?.years_of_experience || "",
   });
+  const [industryDropdownOpen, setIndustryDropdownOpen] = useState(false);
+  const industryDropdownRef = useRef<HTMLDivElement>(null);
   const seeded = useRef(false);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (industryDropdownRef.current && !industryDropdownRef.current.contains(e.target as Node)) {
+        setIndustryDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const toggleIndustry = useCallback((industry: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      preferredIndustries: prev.preferredIndustries.includes(industry)
+        ? prev.preferredIndustries.filter((i) => i !== industry)
+        : [...prev.preferredIndustries, industry],
+    }));
+  }, []);
 
   useEffect(() => {
     if (initialData && !seeded.current) {
       seeded.current = true;
       setFormData({
         careerPath: initialData.career_path || "",
-        preferredIndustries: initialData.preferred_industries ? initialData.preferred_industries.join(", ") : "",
+        preferredIndustries: initialData.preferred_industries ?? [],
         preferredJobTitles: initialData.preferred_job_titles ? initialData.preferred_job_titles.join(", ") : "",
         currentJobTitle: initialData.current_job_title || "",
         currentCompanyName: initialData.current_company || "",
@@ -131,8 +179,8 @@ export default function CareerInfoSection({
           current_job_title: formData.currentJobTitle,
           current_company: formData.currentCompanyName,
           years_of_experience: formData.yearsOfExperience,
-          preferred_industries: formData.preferredIndustries ? formData.preferredIndustries.split(",").map(i => i.trim()) : [],
-          preferred_job_titles: formData.preferredJobTitles ? formData.preferredJobTitles.split(",").map(t => t.trim()) : [],
+          preferred_industries: formData.preferredIndustries,
+          preferred_job_titles: formData.preferredJobTitles ? formData.preferredJobTitles.split(",").map(t => t.trim()).filter(Boolean) : [],
         }),
       });
 
@@ -321,61 +369,81 @@ export default function CareerInfoSection({
                     </Select.Root>
                   </div>
 
-                  {/* Preferred Industries */}
-                  <div className="space-y-3">
+                  {/* Preferred Industries - Multiselect */}
+                  <div className="space-y-3" ref={industryDropdownRef}>
                     <label className="block text-sm font-plus-jakarta font-medium" style={{ color: "#E8EFF1" }}>
                       Preferred Industries
                     </label>
-                    <Select.Root value={formData.preferredIndustries} onValueChange={(value) => setFormData({ ...formData, preferredIndustries: value })}>
-                      <Select.Trigger
-                        className="w-full rounded-[40px] px-4 h-[56px] font-sora text-sm text-white outline-none transition-all flex items-center justify-between"
-                        style={{
-                          background: "transparent",
-                          border: "1px solid #FFFFFF1A",
-                        }}
+                    <div className="relative">
+                      {/* Trigger — tag pills display */}
+                      <div
+                        onClick={() => setIndustryDropdownOpen((o) => !o)}
+                        className="w-full min-h-[56px] rounded-[16px] px-4 py-2 font-sora text-sm text-white cursor-pointer flex flex-wrap items-center gap-2"
+                        style={{ background: "transparent", border: "1px solid #FFFFFF1A" }}
                       >
-                        <Select.Value placeholder="Select" />
-                        <Select.Icon>
-                          <svg width="12" height="8" viewBox="0 0 12 8" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M1 1.5L6 6.5L11 1.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
-                        </Select.Icon>
-                      </Select.Trigger>
-                      <Select.Portal>
-                        <Select.Content
-                          className="overflow-hidden rounded-[12px] shadow-lg z-[9999]"
-                          style={{
-                            background: "#0F1416",
-                            border: "1px solid #FFFFFF1A",
-                            maxHeight: "300px",
-                          }}
-                          position="popper"
-                          sideOffset={5}
-                        >
-                          <Select.ScrollUpButton className="flex items-center justify-center h-6 bg-white/5 text-white cursor-default">
-                            <svg width="12" height="8" viewBox="0 0 12 8" fill="none" xmlns="http://www.w3.org/2000/svg">
-                              <path d="M11 6.5L6 1.5L1 6.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                            </svg>
-                          </Select.ScrollUpButton>
-                          <Select.Viewport className="p-1">
-                            {industries.map((industry) => (
-                              <Select.Item
-                                key={industry}
-                                value={industry}
-                                className="relative flex items-center px-4 py-2 text-sm text-white rounded-[8px] outline-none cursor-pointer hover:bg-white/10 data-[highlighted]:bg-white/10 data-[state=checked]:bg-white/20"
+                        {formData.preferredIndustries.length === 0 ? (
+                          <span className="text-white/40 flex-1">Select</span>
+                        ) : (
+                          <div className="flex flex-wrap gap-2 flex-1">
+                            {formData.preferredIndustries.map((ind) => (
+                              <span
+                                key={ind}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-sora"
+                                style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)" }}
                               >
-                                <Select.ItemText>{industry}</Select.ItemText>
-                              </Select.Item>
+                                {ind}
+                                <button
+                                  type="button"
+                                  onClick={(e) => { e.stopPropagation(); toggleIndustry(ind); }}
+                                  className="text-white/50 hover:text-white transition-colors leading-none"
+                                >
+                                  ×
+                                </button>
+                              </span>
                             ))}
-                          </Select.Viewport>
-                          <Select.ScrollDownButton className="flex items-center justify-center h-6 bg-white/5 text-white cursor-default">
-                            <svg width="12" height="8" viewBox="0 0 12 8" fill="none" xmlns="http://www.w3.org/2000/svg">
-                              <path d="M1 1.5L6 6.5L11 1.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                            </svg>
-                          </Select.ScrollDownButton>
-                        </Select.Content>
-                      </Select.Portal>
-                    </Select.Root>
+                          </div>
+                        )}
+                        <svg width="12" height="8" viewBox="0 0 12 8" fill="none" xmlns="http://www.w3.org/2000/svg" className={`flex-shrink-0 ml-auto transition-transform ${industryDropdownOpen ? "rotate-180" : ""}`}>
+                          <path d="M1 1.5L6 6.5L11 1.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </div>
+
+                      {/* Dropdown */}
+                      {industryDropdownOpen && (
+                        <div
+                          className="absolute left-0 right-0 mt-2 rounded-[12px] shadow-lg z-[9999] overflow-y-auto max-h-[280px]"
+                          style={{ background: "#0F1416", border: "1px solid #FFFFFF1A" }}
+                        >
+                          {industries.map((industry) => {
+                            const selected = formData.preferredIndustries.includes(industry);
+                            return (
+                              <button
+                                key={industry}
+                                type="button"
+                                onClick={() => toggleIndustry(industry)}
+                                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-white hover:bg-white/10 transition-colors"
+                              >
+                                {/* Square checkbox */}
+                                <span
+                                  className="flex-shrink-0 w-4 h-4 rounded-[4px] flex items-center justify-center"
+                                  style={{
+                                    background: selected ? "#A2CE3A" : "transparent",
+                                    border: selected ? "none" : "1.5px solid rgba(255,255,255,0.3)",
+                                  }}
+                                >
+                                  {selected && (
+                                    <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                                      <path d="M1 4L3.5 6.5L9 1" stroke="#0B0D0F" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                    </svg>
+                                  )}
+                                </span>
+                                <span>{industry}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   {/* Preferred Job titles */}
@@ -386,6 +454,7 @@ export default function CareerInfoSection({
                     <input
                       type="text"
                       value={formData.preferredJobTitles}
+                      placeholder="Enter multiple titles but separate with comma."
                       onChange={(e) => setFormData({ ...formData, preferredJobTitles: e.target.value })}
                       className="w-full rounded-[40px] px-4 h-[56px] font-sora text-sm text-white outline-none transition-all"
                       style={{

@@ -84,6 +84,32 @@ body {
   font-feature-settings: "rlig" 1, "calt" 1;
 }
 
+/* Global Scrollbar Styles */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #A2CE3A transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+  background: transparent;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: #A2CE3A;
+  border-radius: 9999px;
+  min-height: 40px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: #b8e048;
+}
+
 @keyframes marquee {
   from {
     transform: translateX(0);
