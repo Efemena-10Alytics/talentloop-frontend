@@ -8,16 +8,16 @@ import { getApiUrl } from "@/lib/api";
 
 const LiveChatIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 6.47715 6.47715 2 12 2" stroke="#A2CE3A" strokeWidth="1.5" strokeLinecap="round"/>
-    <path d="M8 12H8.01M12 12H12.01M16 12H16.01" stroke="#A2CE3A" strokeWidth="2" strokeLinecap="round"/>
-    <path d="M2 12C2 17.5228 6.47715 22 12 22" stroke="#A2CE3A" strokeWidth="1.5" strokeLinecap="round"/>
+    <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 6.47715 6.47715 2 12 2" stroke="#FFFFFF" strokeWidth="1.5" strokeLinecap="round"/>
+    <path d="M8 12H8.01M12 12H12.01M16 12H16.01" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round"/>
+    <path d="M2 12C2 17.5228 6.47715 22 12 22" stroke="#FFFFFF" strokeWidth="1.5" strokeLinecap="round"/>
   </svg>
 );
 
 const CallCenterIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M6.5 2C4.01472 2 2 4.01472 2 6.5V17.5C2 19.9853 4.01472 22 6.5 22H17.5C19.9853 22 22 19.9853 22 17.5V6.5C22 4.01472 19.9853 2 17.5 2H6.5Z" stroke="#A2CE3A" strokeWidth="1.5"/>
-    <path d="M9 10.5C9 9.11929 10.1193 8 11.5 8H12.5C13.8807 8 15 9.11929 15 10.5V10.5C15 11.8807 13.8807 13 12.5 13H11.5C10.1193 13 9 13 9 14.5V16H15" stroke="#A2CE3A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M6.5 2C4.01472 2 2 4.01472 2 6.5V17.5C2 19.9853 4.01472 22 6.5 22H17.5C19.9853 22 22 19.9853 22 17.5V6.5C22 4.01472 19.9853 2 17.5 2H6.5Z" stroke="#FFFFFF" strokeWidth="1.5"/>
+    <path d="M9 10.5C9 9.11929 10.1193 8 11.5 8H12.5C13.8807 8 15 9.11929 15 10.5V10.5C15 11.8807 13.8807 13 12.5 13H11.5C10.1193 13 9 13 9 14.5V16H15" stroke="#FFFFFF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
   </svg>
 );
 
@@ -41,7 +41,7 @@ export default function ContactPage() {
     try {
       const res = await fetch(`${getApiUrl()}/api/v1/contact`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
         body: JSON.stringify({
           first_name: formData.firstName,
           last_name: formData.lastName,
@@ -49,11 +49,12 @@ export default function ContactPage() {
           message: formData.message,
         }),
       });
-      if (!res.ok) throw new Error("Failed to send");
-      toast({ variant: "success", title: "Message sent!", description: "We'll get back to you shortly." });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.message || "Failed to send");
+      toast({ variant: "success", title: "Message sent!", description: data.message || "We'll get back to you shortly." });
       setFormData({ firstName: "", lastName: "", email: "", message: "" });
-    } catch {
-      toast({ variant: "error", title: "Failed to send message.", description: "Please try again later." });
+    } catch (err) {
+      toast({ variant: "error", title: "Failed to send message.", description: err instanceof Error ? err.message : "Please try again later." });
     } finally {
       setLoading(false);
     }
@@ -70,7 +71,7 @@ export default function ContactPage() {
     <div className="min-h-screen bg-[#01090B] flex flex-col">
       <Navbar />
 
-      <main className="flex-1 flex items-center justify-center py-16 px-4">
+      <main className="flex-1 flex items-center justify-center py-16 lg:pt-36 px-4">
         <div
           className="w-full max-w-[870px] rounded-[24px] p-8 lg:p-14"
           style={{
@@ -96,12 +97,10 @@ export default function ContactPage() {
                 </p>
               </div>
 
-              <div className="flex flex-col gap-5 mt-4">
+              {/* Info list — plain text blocks, divider between them, no card backgrounds */}
+              <div className="flex flex-col mt-4">
                 {/* Live Chat */}
-                <div
-                  className="rounded-[16px] p-5"
-                  style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
-                >
+                <div className="pb-6" style={{ borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
                   <div className="flex items-center gap-2 mb-2">
                     <LiveChatIcon />
                     <span className="text-white font-mona-sans font-semibold text-sm">Live Chat</span>
@@ -112,10 +111,7 @@ export default function ContactPage() {
                 </div>
 
                 {/* Call Center */}
-                <div
-                  className="rounded-[16px] p-5"
-                  style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
-                >
+                <div className="pt-6">
                   <div className="flex items-center gap-2 mb-2">
                     <CallCenterIcon />
                     <span className="text-white font-mona-sans font-semibold text-sm">Call Center</span>
