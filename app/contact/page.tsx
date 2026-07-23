@@ -69,17 +69,21 @@ export default function ContactPage() {
 
   return (
     <div className="min-h-screen bg-[#01090B] flex flex-col">
-      <Navbar />
+      <div className="p-3">
+        <Navbar v1Launch />
 
       <main className="flex-1 flex items-center justify-center py-16 lg:pt-36 px-4">
-        <div
-          className="w-full max-w-[870px] rounded-[24px] p-8 lg:p-14"
+         <div
+          className="w-full max-w-[1400px] rounded-[24px] p-8 lg:p-14"
           style={{
-            background: "linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.08) 100%)",
+            background: "#101014",
             border: "1px solid rgba(255,255,255,0.08)",
           }}
         >
-          <div className="flex flex-col lg:flex-row gap-10 lg:gap-16">
+        <div
+          className="w-full max-w-[1000px] mx-auto"
+        >
+          <div className="flex flex-col lg:flex-row gap-10 lg:gap-36">
             {/* Left */}
             <div className="lg:w-[38%] flex flex-col gap-6">
               <div>
@@ -124,7 +128,7 @@ export default function ContactPage() {
             </div>
 
             {/* Right — Form */}
-            <form onSubmit={handleSubmit} className="lg:w-[62%] flex flex-col gap-5">
+            <form onSubmit={handleSubmit} className="lg:w-[62%] flex flex-col gap-5 lg:gap-8">
               {/* Name row */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-2">
@@ -191,9 +195,11 @@ export default function ContactPage() {
             </form>
           </div>
         </div>
+        </div>
       </main>
 
       <V1FooterSection />
+        </div>
     </div>
   );
 }

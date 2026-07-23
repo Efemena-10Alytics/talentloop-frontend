@@ -34,18 +34,18 @@ export default function TermsConditionsModal({
             transition={{ duration: 0.3 }}
             className="relative z-10 w-full max-w-[700px] max-h-[80vh] rounded-[24px] overflow-hidden"
             style={{
-              background: "linear-gradient(180deg, #0A3A3F 0%, #051E21 100%)",
+              background: "#072329",
             }}
           >
             {/* Header */}
-            <div className="p-6 lg:p-8 border-b border-white/10">
-              <h2 className="text-2xl lg:text-3xl font-mona-sans font-bold" style={{ color: "#A2CE3A" }}>
+            <div className="py-3 px-4 lg:px-8 border-b border-white/10">
+              <h2 className="text-2xl font-mona-sans font-bold" style={{ color: "#A2CE3A" }}>
                 Terms & Conditions
               </h2>
             </div>
 
             {/* Scrollable Content */}
-            <div className="p-6 lg:p-8 overflow-y-auto max-h-[50vh] scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+            <div className="pt-3 pb-7 px-4 lg:px-8 overflow-y-auto max-h-[50vh] scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
               <div className="space-y-6 text-white/80 font-plus-jakarta text-sm leading-relaxed">
                 <p>
                   Hello and welcome to TALENTLOOP! We help you land interviews and offers by managing
@@ -204,24 +204,23 @@ export default function TermsConditionsModal({
             </div>
 
             {/* Footer Buttons */}
-            <div className="p-6 lg:p-8 border-t border-white/10 flex gap-4">
+            <div className="p-6 lg:p-0 border-t border-white/10 flex gap-4 lg:gap-0">
               <button
                 onClick={onClose}
-                className="flex-1 h-12 px-6 rounded-[12px] font-mona-sans text-sm font-semibold transition-opacity hover:opacity-80"
+                className="flex-1 h-12 lg:h-[70px] px-6 rounded-[12px] lg:rounded-r-[0px] font-mona-sans text-sm font-semibold transition-opacity hover:opacity-80"
                 style={{
-                  background: "transparent",
+                  background: "#E8EFF1",
                   border: "1px solid #FFFFFF33",
-                  color: "#FFFFFF",
+                  color: "#64748B",
                 }}
               >
                 Decline
               </button>
               <button
                 onClick={onAgree}
-                className="flex-1 h-12 px-6 rounded-[12px] font-mona-sans text-sm font-semibold transition-opacity hover:opacity-90"
+                className="flex-1 h-12 lg:h-[70px] px-6 rounded-[12px] lg:rounded-l-[0px] font-mona-sans text-sm font-semibold transition-opacity hover:opacity-90"
                 style={{
-                  background: "#00A896",
-                  border: "1px solid #FFFFFF1A",
+                  background: "#156374",
                   color: "#FFFFFF",
                 }}
               >
