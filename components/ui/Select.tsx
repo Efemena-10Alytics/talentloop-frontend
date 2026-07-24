@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useLayoutEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 
 /* ─── SVG Icons ─── */
 
@@ -54,6 +55,7 @@ interface SelectProps {
   onChange: (value: string) => void;
   options: SelectOption[];
   className?: string;
+  disabled?: boolean;
 }
 
 /* ─── Select Component ─── */
@@ -65,25 +67,50 @@ export function Select({
   onChange,
   options,
   className = "",
+  disabled = false,
 }: SelectProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   const selectedOption = options.find((opt) => opt.value === value);
 
+  const updateCoords = useCallback(() => {
+    const rect = triggerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    setCoords({ top: rect.bottom + 4, left: rect.left, width: rect.width });
+  }, []);
+
+  useLayoutEffect(() => {
+    if (isOpen) updateCoords();
+  }, [isOpen, updateCoords]);
+
   useEffect(() => {
+    if (!isOpen) return;
+
     const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node;
       if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
+        triggerRef.current &&
+        !triggerRef.current.contains(target) &&
+        panelRef.current &&
+        !panelRef.current.contains(target)
       ) {
         setIsOpen(false);
       }
     };
+    const handleReposition = () => updateCoords();
 
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+    window.addEventListener("scroll", handleReposition, true);
+    window.addEventListener("resize", handleReposition);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      window.removeEventListener("scroll", handleReposition, true);
+      window.removeEventListener("resize", handleReposition);
+    };
+  }, [isOpen, updateCoords]);
 
   const handleSelect = (optionValue: string) => {
     onChange(optionValue);
@@ -97,20 +124,27 @@ export function Select({
           {label}
         </label>
       )}
-      <div className="relative" ref={dropdownRef}>
-        <button
-          type="button"
-          onClick={() => setIsOpen(!isOpen)}
-          className="w-full px-4 py-3 rounded-[10px] border border-white/10 bg-[#FFFFFF0D] text-white font-mona-sans text-sm outline-none focus:border-[#A2CE3A] transition-colors flex items-center justify-between"
-        >
-          <span className={selectedOption ? "text-white" : "text-white/50"}>
-            {selectedOption ? selectedOption.label : placeholder}
-          </span>
-          <ChevronDownSVG />
-        </button>
+      <button
+        ref={triggerRef}
+        type="button"
+        disabled={disabled}
+        onClick={() => setIsOpen((prev) => !prev)}
+        className="w-full px-4 py-3 rounded-[10px] border border-white/10 bg-[#FFFFFF0D] text-white font-mona-sans text-sm outline-none focus:border-[#A2CE3A] transition-colors flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        <span className={selectedOption ? "text-white" : "text-white/50"}>
+          {selectedOption ? selectedOption.label : placeholder}
+        </span>
+        <ChevronDownSVG />
+      </button>
 
-        {isOpen && (
-          <div className="absolute z-50 w-full mt-2 bg-[#1E1F21] border border-white/10 rounded-[10px] shadow-lg max-h-[240px] overflow-y-auto">
+      {isOpen &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            ref={panelRef}
+            className="fixed z-[9999] bg-[#1E1F21] border border-white/10 rounded-[10px] shadow-lg max-h-[240px] overflow-y-auto"
+            style={{ top: coords.top, left: coords.left, width: coords.width }}
+          >
             {options.map((option) => (
               <button
                 key={option.value}
@@ -119,14 +153,12 @@ export function Select({
                 className="w-full px-4 py-2.5 text-left text-white font-mona-sans text-sm hover:bg-white/5 transition-colors flex items-center justify-between"
               >
                 <span>{option.label}</span>
-                {value === option.value && (
-                  <CheckSVG />
-                )}
+                {value === option.value && <CheckSVG />}
               </button>
             ))}
-          </div>
+          </div>,
+          document.body,
         )}
-      </div>
     </div>
   );
 }

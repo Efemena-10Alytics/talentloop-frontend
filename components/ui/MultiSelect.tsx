@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useLayoutEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 
 /* ─── SVG Icons ─── */
 
@@ -92,23 +93,47 @@ export function MultiSelect({
   className = "",
 }: MultiSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   const selectedOptions = options.filter((opt) => value.includes(opt.value));
 
+  const updateCoords = useCallback(() => {
+    const rect = triggerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    setCoords({ top: rect.bottom + 4, left: rect.left, width: rect.width });
+  }, []);
+
+  useLayoutEffect(() => {
+    if (isOpen) updateCoords();
+  }, [isOpen, updateCoords]);
+
   useEffect(() => {
+    if (!isOpen) return;
+
     const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node;
       if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
+        triggerRef.current &&
+        !triggerRef.current.contains(target) &&
+        panelRef.current &&
+        !panelRef.current.contains(target)
       ) {
         setIsOpen(false);
       }
     };
+    const handleReposition = () => updateCoords();
 
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+    window.addEventListener("scroll", handleReposition, true);
+    window.addEventListener("resize", handleReposition);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      window.removeEventListener("scroll", handleReposition, true);
+      window.removeEventListener("resize", handleReposition);
+    };
+  }, [isOpen, updateCoords]);
 
   const handleToggle = (optionValue: string) => {
     if (value.includes(optionValue)) {
@@ -130,38 +155,44 @@ export function MultiSelect({
           {label}
         </label>
       )}
-      <div className="relative" ref={dropdownRef}>
-        <button
-          type="button"
-          onClick={() => setIsOpen(!isOpen)}
-          className="w-full min-h-[48px] px-4 py-2 rounded-[10px] border border-white/10 bg-[#FFFFFF0D] text-white font-mona-sans text-sm outline-none focus:border-[#A2CE3A] transition-colors flex items-center justify-between gap-2"
-        >
-          <div className="flex-1 flex items-center gap-2 flex-wrap">
-            {selectedOptions.length > 0 ? (
-              selectedOptions.map((option) => (
-                <span
-                  key={option.value}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#A2CE3A]/15 text-[#A2CE3A] rounded-[6px] text-xs font-medium"
+      <button
+        ref={triggerRef}
+        type="button"
+        onClick={() => setIsOpen((prev) => !prev)}
+        className="w-full min-h-[48px] px-4 py-2 rounded-[10px] border border-white/10 bg-[#FFFFFF0D] text-white font-mona-sans text-sm outline-none focus:border-[#A2CE3A] transition-colors flex items-center justify-between gap-2"
+      >
+        <div className="flex-1 flex items-center gap-2 flex-wrap">
+          {selectedOptions.length > 0 ? (
+            selectedOptions.map((option) => (
+              <span
+                key={option.value}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#A2CE3A]/15 text-[#A2CE3A] rounded-[6px] text-xs font-medium"
+              >
+                {option.label}
+                <button
+                  type="button"
+                  onClick={(e) => handleRemove(option.value, e)}
+                  className="hover:text-[#A2CE3A]/80 transition-colors"
                 >
-                  {option.label}
-                  <button
-                    type="button"
-                    onClick={(e) => handleRemove(option.value, e)}
-                    className="hover:text-[#A2CE3A]/80 transition-colors"
-                  >
-                    <XCircleSVG />
-                  </button>
-                </span>
-              ))
-            ) : (
-              <span className="text-white/50">{placeholder}</span>
-            )}
-          </div>
-          <ChevronDownSVG />
-        </button>
+                  <XCircleSVG />
+                </button>
+              </span>
+            ))
+          ) : (
+            <span className="text-white/50">{placeholder}</span>
+          )}
+        </div>
+        <ChevronDownSVG />
+      </button>
 
-        {isOpen && (
-          <div className="absolute z-50 w-full mt-2 bg-[#1E1F21] border border-white/10 rounded-[10px] shadow-lg max-h-[240px] overflow-y-auto">
+      {isOpen &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            ref={panelRef}
+            className="fixed z-[9999] bg-[#1E1F21] border border-white/10 rounded-[10px] shadow-lg max-h-[240px] overflow-y-auto"
+            style={{ top: coords.top, left: coords.left, width: coords.width }}
+          >
             {options.map((option) => {
               const isSelected = value.includes(option.value);
               return (
@@ -180,9 +211,9 @@ export function MultiSelect({
                 </button>
               );
             })}
-          </div>
+          </div>,
+          document.body,
         )}
-      </div>
     </div>
   );
 }

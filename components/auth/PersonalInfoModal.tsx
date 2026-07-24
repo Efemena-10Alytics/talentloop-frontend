@@ -7,8 +7,7 @@ import { getApiUrl, getAuthHeaders } from "@/lib/api";
 import PhoneInput from "react-phone-number-input";
 import "react-phone-number-input/style.css";
 import "@/styles/phone-input.css";
-import * as Select from "@radix-ui/react-select";
-import { ChevronDown, Check } from "lucide-react";
+import { Select } from "@/components/ui/Select";
 import { countries } from "@/app/_hooks/countries";
 
 interface PersonalInfoModalProps {
@@ -25,21 +24,6 @@ const referralSources = [
   "Job Board",
   "Other",
 ];
-
-// SelectItem component for Radix UI Select
-const SelectItem = ({ children, value }: { children: React.ReactNode; value: string }) => {
-  return (
-    <Select.Item
-      value={value}
-      className="relative flex items-center px-8 py-2 text-sm text-white font-sora rounded-[8px] hover:bg-[#A2CE3A]/10 focus:bg-[#A2CE3A]/10 outline-none cursor-pointer"
-    >
-      <Select.ItemIndicator className="absolute left-2 inline-flex items-center">
-        <Check className="w-4 h-4 text-[#A2CE3A]" />
-      </Select.ItemIndicator>
-      <Select.ItemText>{children}</Select.ItemText>
-    </Select.Item>
-  );
-};
 
 export default function PersonalInfoModal({ isOpen, onComplete }: PersonalInfoModalProps) {
   const { toast } = useToast();
@@ -189,32 +173,12 @@ export default function PersonalInfoModal({ isOpen, onComplete }: PersonalInfoMo
                 <label className="block text-white/80 font-mona-sans text-sm mb-2">
                   Location (Country)
                 </label>
-                <Select.Root
+                <Select
                   value={formData.country}
-                  onValueChange={(value) => handleInputChange("country", value)}
-                >
-                  <Select.Trigger className="w-full px-4 py-3 rounded-[30px] bg-[#1A1A1D] border border-white/10 text-white font-sora text-sm focus:outline-none focus:border-[#A2CE3A] transition-colors flex items-center justify-between">
-                    <Select.Value placeholder="Select" />
-                    <Select.Icon>
-                      <ChevronDown className="w-4 h-4 text-white/60" />
-                    </Select.Icon>
-                  </Select.Trigger>
-                  <Select.Portal>
-                    <Select.Content 
-                      className="overflow-hidden bg-[#1E1F21] border border-[#FFFFFF1A] rounded-[12px] shadow-lg z-[9999] max-h-[300px]"
-                      position="popper"
-                      sideOffset={5}
-                    >
-                      <Select.Viewport className="p-1">
-                        {countries.map((country) => (
-                          <SelectItem key={country.code} value={country.name}>
-                            {country.name}
-                          </SelectItem>
-                        ))}
-                      </Select.Viewport>
-                    </Select.Content>
-                  </Select.Portal>
-                </Select.Root>
+                  onChange={(value) => handleInputChange("country", value)}
+                  placeholder="Select"
+                  options={countries.map((country) => ({ value: country.name, label: country.name }))}
+                />
               </div>
 
               {/* Phone Contact */}
@@ -239,9 +203,9 @@ export default function PersonalInfoModal({ isOpen, onComplete }: PersonalInfoMo
                 <label className="block text-white/80 font-mona-sans text-sm mb-2">
                   How did you find out about TalentLoop?
                 </label>
-                <Select.Root
+                <Select
                   value={formData.referralSource}
-                  onValueChange={(value) => {
+                  onChange={(value) => {
                     handleInputChange("referralSource", value);
                     // Auto-check the 10Alytics/Amdari checkbox if selected
                     if (value === "10Alytics" || value === "Amdari") {
@@ -250,29 +214,9 @@ export default function PersonalInfoModal({ isOpen, onComplete }: PersonalInfoMo
                       handleInputChange("is10AlyticsOrAmdari", false);
                     }
                   }}
-                >
-                  <Select.Trigger className="w-full px-4 py-3 rounded-[30px] bg-[#1A1A1D] border border-white/10 text-white font-sora text-sm focus:outline-none focus:border-[#A2CE3A] transition-colors flex items-center justify-between">
-                    <Select.Value placeholder="Select" />
-                    <Select.Icon>
-                      <ChevronDown className="w-4 h-4 text-white/60" />
-                    </Select.Icon>
-                  </Select.Trigger>
-                  <Select.Portal>
-                    <Select.Content 
-                      className="overflow-hidden bg-[#1E1F21] border border-[#FFFFFF1A] rounded-[12px] shadow-lg z-[9999]"
-                      position="popper"
-                      sideOffset={5}
-                    >
-                      <Select.Viewport className="p-1">
-                        {referralSources.map((source) => (
-                          <SelectItem key={source} value={source}>
-                            {source}
-                          </SelectItem>
-                        ))}
-                      </Select.Viewport>
-                    </Select.Content>
-                  </Select.Portal>
-                </Select.Root>
+                  placeholder="Select"
+                  options={referralSources.map((source) => ({ value: source, label: source }))}
+                />
               </div>
 
               {/* Proceed Button */}

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import ApplicationCard from "./ApplicationCard";
 import { useEnrollmentApplications, useEnrollmentStats, StatsPeriod } from "@/hooks/useEnrollmentData";
+import { Select } from "@/components/ui/Select";
 
 const PERIOD_OPTIONS: { label: string; value: StatsPeriod }[] = [
   { label: "Today", value: "today" },
@@ -68,25 +69,12 @@ export default function ApplicationPipeline() {
         </div>
 
         {/* Period Filter */}
-        <select
+        <Select
           value={period}
-          onChange={(e) => setPeriod(e.target.value as StatsPeriod)}
-          className="px-4 py-2 rounded-lg font-mona-sans text-sm text-white transition-colors cursor-pointer appearance-none"
-          style={{
-            background: "rgba(21, 99, 116, 0.1)",
-            border: "0.5px solid rgba(255, 255, 255, 0.1)",
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L6 6L11 1' stroke='%2395ACCB' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")`,
-            backgroundRepeat: "no-repeat",
-            backgroundPosition: "right 1rem center",
-            paddingRight: "2.5rem",
-          }}
-        >
-          {PERIOD_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value} className="bg-[#0B0D0F] text-white">
-              {opt.label}
-            </option>
-          ))}
-        </select>
+          onChange={(value) => setPeriod(value as StatsPeriod)}
+          options={PERIOD_OPTIONS}
+          className="w-40"
+        />
       </div>
 
       {appsLoading ? (

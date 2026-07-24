@@ -23,6 +23,7 @@ const config: Config = {
         "mona-sans": ["var(--font-mona-sans)", "sans-serif"],
         sora: ["var(--font-sora)", "sans-serif"],
         "jakarta-sans": ["var(--font-jakarta-sans)", "sans-serif"],
+        "plus-jakarta": ["'Plus Jakarta Sans Variable'", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",

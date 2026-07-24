@@ -7,8 +7,7 @@ import { useToast } from "@/components/ui/use-toast";
 import PhoneInput from "react-phone-number-input";
 import "react-phone-number-input/style.css";
 import "@/styles/phone-input.css";
-import * as Select from "@radix-ui/react-select";
-import { ChevronDown, Check } from "lucide-react";
+import { Select } from "@/components/ui/Select";
 
 interface ClaritySessionModalProps {
   isOpen: boolean;
@@ -23,21 +22,6 @@ const referralOptions = [
   "Amdari",
   "10alytics",
 ];
-
-// SelectItem component for Radix UI Select
-const SelectItem = ({ children, value }: { children: React.ReactNode; value: string }) => {
-  return (
-    <Select.Item
-      value={value}
-      className="relative flex items-center px-8 py-2 text-sm text-white font-sora rounded-[8px] hover:bg-[#A2CE3A]/10 focus:bg-[#A2CE3A]/10 outline-none cursor-pointer"
-    >
-      <Select.ItemIndicator className="absolute left-2 inline-flex items-center">
-        <Check className="w-4 h-4 text-[#A2CE3A]" />
-      </Select.ItemIndicator>
-      <Select.ItemText>{children}</Select.ItemText>
-    </Select.Item>
-  );
-};
 
 export default function ClaritySessionModal({
   isOpen,
@@ -266,32 +250,12 @@ export default function ClaritySessionModal({
                   <label className="block text-white/60 font-sora text-sm mb-2">
                     How did you hear about us?
                   </label>
-                  <Select.Root
+                  <Select
                     value={formData.referral_source}
-                    onValueChange={(value) => setFormData({ ...formData, referral_source: value })}
-                  >
-                    <Select.Trigger className="w-full px-4 py-3 rounded-[12px] bg-[#FFFFFF0D] border border-[#FFFFFF1A] text-white font-sora text-sm focus:outline-none focus:border-[#A2CE3A] transition-colors flex items-center justify-between">
-                      <Select.Value placeholder="Select an option" />
-                      <Select.Icon>
-                        <ChevronDown className="w-4 h-4" />
-                      </Select.Icon>
-                    </Select.Trigger>
-                    <Select.Portal>
-                      <Select.Content 
-                        className="overflow-hidden bg-[#1E1F21] border border-[#FFFFFF1A] rounded-[12px] shadow-lg z-[9999]"
-                        position="popper"
-                        sideOffset={5}
-                      >
-                        <Select.Viewport className="p-1">
-                          {referralOptions.map((option) => (
-                            <SelectItem key={option} value={option}>
-                              {option}
-                            </SelectItem>
-                          ))}
-                        </Select.Viewport>
-                      </Select.Content>
-                    </Select.Portal>
-                  </Select.Root>
+                    onChange={(value) => setFormData({ ...formData, referral_source: value })}
+                    placeholder="Select an option"
+                    options={referralOptions.map((option) => ({ value: option, label: option }))}
+                  />
                 </div>
               </div>
 

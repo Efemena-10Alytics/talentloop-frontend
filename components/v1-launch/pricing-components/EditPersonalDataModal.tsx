@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import PhoneInput from "react-phone-number-input";
 import "react-phone-number-input/style.css";
 import { countries } from "@/app/_hooks/countries";
-import * as Select from "@radix-ui/react-select";
+import { Select } from "@/components/ui/Select";
 import { useToast } from "@/components/ui/use-toast";
 import { getApiUrl, getAuthHeaders } from "@/lib/api";
 
@@ -244,61 +244,12 @@ export default function EditPersonalDataModal({
                 <label className="block text-white font-mona-sans text-sm font-medium mb-2">
                   Location
                 </label>
-                <Select.Root value={formData.location} onValueChange={(value) => handleChange("location", value)}>
-                  <Select.Trigger
-                    className="w-full rounded-[40px] px-4 h-[56px] font-sora text-sm text-white outline-none transition-all flex items-center justify-between"
-                    style={{
-                      background: "transparent",
-                      border: "1px solid #FFFFFF1A",
-                    }}
-                  >
-                    <Select.Value placeholder="Select a country" />
-                    <Select.Icon>
-                      <svg width="12" height="8" viewBox="0 0 12 8" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M1 1.5L6 6.5L11 1.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                    </Select.Icon>
-                  </Select.Trigger>
-                  <Select.Portal>
-                    <Select.Content
-                      className="overflow-hidden rounded-[12px] shadow-lg z-[9999]"
-                      style={{
-                        background: "#0F1416",
-                        border: "1px solid #FFFFFF1A",
-                        maxHeight: "300px",
-                      }}
-                      position="popper"
-                      sideOffset={5}
-                    >
-                      <Select.ScrollUpButton className="flex items-center justify-center h-6 bg-white/5 text-white cursor-default">
-                        <svg width="12" height="8" viewBox="0 0 12 8" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M11 6.5L6 1.5L1 6.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                      </Select.ScrollUpButton>
-                      <Select.Viewport className="p-1">
-                        {countries.map((country) => (
-                          <Select.Item
-                            key={country.code}
-                            value={country.name}
-                            className="relative flex items-center px-4 py-2 text-sm text-white rounded-[8px] outline-none cursor-pointer hover:bg-white/10 data-[highlighted]:bg-white/10 data-[state=checked]:bg-white/20"
-                          >
-                            <Select.ItemText>{country.name}</Select.ItemText>
-                            <Select.ItemIndicator className="absolute left-0 w-6 inline-flex items-center justify-center">
-                              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M10 3L4.5 8.5L2 6" stroke="#A2CE3A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                              </svg>
-                            </Select.ItemIndicator>
-                          </Select.Item>
-                        ))}
-                      </Select.Viewport>
-                      <Select.ScrollDownButton className="flex items-center justify-center h-6 bg-white/5 text-white cursor-default">
-                        <svg width="12" height="8" viewBox="0 0 12 8" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M1 1.5L6 6.5L11 1.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                      </Select.ScrollDownButton>
-                    </Select.Content>
-                  </Select.Portal>
-                </Select.Root>
+                <Select
+                  value={formData.location}
+                  onChange={(value) => handleChange("location", value)}
+                  placeholder="Select a country"
+                  options={countries.map((country) => ({ value: country.name, label: country.name }))}
+                />
               </div>
 
               {/* Action Buttons */}

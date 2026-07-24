@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import * as Select from "@radix-ui/react-select";
+import { Select } from "@/components/ui/Select";
+import { MultiSelect } from "@/components/ui/MultiSelect";
 import { useToast } from "@/components/ui/use-toast";
 import { getApiUrl, getAuthHeaders } from "@/lib/api";
 
@@ -123,28 +124,7 @@ export default function CareerInfoSection({
     currentCompanyName: initialData?.current_company || "",
     yearsOfExperience: initialData?.years_of_experience || "",
   });
-  const [industryDropdownOpen, setIndustryDropdownOpen] = useState(false);
-  const industryDropdownRef = useRef<HTMLDivElement>(null);
   const seeded = useRef(false);
-
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (industryDropdownRef.current && !industryDropdownRef.current.contains(e.target as Node)) {
-        setIndustryDropdownOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  const toggleIndustry = useCallback((industry: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      preferredIndustries: prev.preferredIndustries.includes(industry)
-        ? prev.preferredIndustries.filter((i) => i !== industry)
-        : [...prev.preferredIndustries, industry],
-    }));
-  }, []);
 
   useEffect(() => {
     if (initialData && !seeded.current) {
@@ -317,133 +297,25 @@ export default function CareerInfoSection({
                     <label className="block text-sm font-plus-jakarta font-medium" style={{ color: "#E8EFF1" }}>
                       Career Path of Interest
                     </label>
-                    <Select.Root value={formData.careerPath} onValueChange={(value) => setFormData({ ...formData, careerPath: value })}>
-                      <Select.Trigger
-                        className="w-full rounded-[40px] px-4 h-[56px] font-sora text-sm text-white outline-none transition-all flex items-center justify-between"
-                        style={{
-                          background: "transparent",
-                          border: "1px solid #FFFFFF1A",
-                        }}
-                      >
-                        <Select.Value placeholder="Select" />
-                        <Select.Icon>
-                          <svg width="12" height="8" viewBox="0 0 12 8" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M1 1.5L6 6.5L11 1.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
-                        </Select.Icon>
-                      </Select.Trigger>
-                      <Select.Portal>
-                        <Select.Content
-                          className="overflow-hidden rounded-[12px] shadow-lg z-[9999]"
-                          style={{
-                            background: "#0F1416",
-                            border: "1px solid #FFFFFF1A",
-                            maxHeight: "300px",
-                          }}
-                          position="popper"
-                          sideOffset={5}
-                        >
-                          <Select.ScrollUpButton className="flex items-center justify-center h-6 bg-white/5 text-white cursor-default">
-                            <svg width="12" height="8" viewBox="0 0 12 8" fill="none" xmlns="http://www.w3.org/2000/svg">
-                              <path d="M11 6.5L6 1.5L1 6.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                            </svg>
-                          </Select.ScrollUpButton>
-                          <Select.Viewport className="p-1">
-                            {careerPaths.map((path) => (
-                              <Select.Item
-                                key={path}
-                                value={path}
-                                className="relative flex items-center px-4 py-2 text-sm text-white rounded-[8px] outline-none cursor-pointer hover:bg-white/10 data-[highlighted]:bg-white/10 data-[state=checked]:bg-white/20"
-                              >
-                                <Select.ItemText>{path}</Select.ItemText>
-                              </Select.Item>
-                            ))}
-                          </Select.Viewport>
-                          <Select.ScrollDownButton className="flex items-center justify-center h-6 bg-white/5 text-white cursor-default">
-                            <svg width="12" height="8" viewBox="0 0 12 8" fill="none" xmlns="http://www.w3.org/2000/svg">
-                              <path d="M1 1.5L6 6.5L11 1.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                            </svg>
-                          </Select.ScrollDownButton>
-                        </Select.Content>
-                      </Select.Portal>
-                    </Select.Root>
+                    <Select
+                      value={formData.careerPath}
+                      onChange={(value) => setFormData({ ...formData, careerPath: value })}
+                      placeholder="Select"
+                      options={careerPaths.map((path) => ({ value: path, label: path }))}
+                    />
                   </div>
 
                   {/* Preferred Industries - Multiselect */}
-                  <div className="space-y-3" ref={industryDropdownRef}>
+                  <div className="space-y-3">
                     <label className="block text-sm font-plus-jakarta font-medium" style={{ color: "#E8EFF1" }}>
                       Preferred Industries
                     </label>
-                    <div className="relative">
-                      {/* Trigger — tag pills display */}
-                      <div
-                        onClick={() => setIndustryDropdownOpen((o) => !o)}
-                        className="w-full min-h-[56px] rounded-[16px] px-4 py-2 font-sora text-sm text-white cursor-pointer flex flex-wrap items-center gap-2"
-                        style={{ background: "transparent", border: "1px solid #FFFFFF1A" }}
-                      >
-                        {formData.preferredIndustries.length === 0 ? (
-                          <span className="text-white/40 flex-1">Select</span>
-                        ) : (
-                          <div className="flex flex-wrap gap-2 flex-1">
-                            {formData.preferredIndustries.map((ind) => (
-                              <span
-                                key={ind}
-                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-sora"
-                                style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)" }}
-                              >
-                                {ind}
-                                <button
-                                  type="button"
-                                  onClick={(e) => { e.stopPropagation(); toggleIndustry(ind); }}
-                                  className="text-white/50 hover:text-white transition-colors leading-none"
-                                >
-                                  ×
-                                </button>
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                        <svg width="12" height="8" viewBox="0 0 12 8" fill="none" xmlns="http://www.w3.org/2000/svg" className={`flex-shrink-0 ml-auto transition-transform ${industryDropdownOpen ? "rotate-180" : ""}`}>
-                          <path d="M1 1.5L6 6.5L11 1.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                      </div>
-
-                      {/* Dropdown */}
-                      {industryDropdownOpen && (
-                        <div
-                          className="absolute left-0 right-0 mt-2 rounded-[12px] shadow-lg z-[9999] overflow-y-auto max-h-[280px]"
-                          style={{ background: "#0F1416", border: "1px solid #FFFFFF1A" }}
-                        >
-                          {industries.map((industry) => {
-                            const selected = formData.preferredIndustries.includes(industry);
-                            return (
-                              <button
-                                key={industry}
-                                type="button"
-                                onClick={() => toggleIndustry(industry)}
-                                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-white hover:bg-white/10 transition-colors"
-                              >
-                                {/* Square checkbox */}
-                                <span
-                                  className="flex-shrink-0 w-4 h-4 rounded-[4px] flex items-center justify-center"
-                                  style={{
-                                    background: selected ? "#A2CE3A" : "transparent",
-                                    border: selected ? "none" : "1.5px solid rgba(255,255,255,0.3)",
-                                  }}
-                                >
-                                  {selected && (
-                                    <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
-                                      <path d="M1 4L3.5 6.5L9 1" stroke="#0B0D0F" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                                    </svg>
-                                  )}
-                                </span>
-                                <span>{industry}</span>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
+                    <MultiSelect
+                      value={formData.preferredIndustries}
+                      onChange={(value) => setFormData({ ...formData, preferredIndustries: value })}
+                      placeholder="Select"
+                      options={industries.map((industry) => ({ value: industry, label: industry }))}
+                    />
                   </div>
 
                   {/* Preferred Job titles */}
@@ -503,46 +375,12 @@ export default function CareerInfoSection({
                     <label className="block text-sm font-plus-jakarta font-medium" style={{ color: "#E8EFF1" }}>
                       Years of Experience in Desired Field
                     </label>
-                    <Select.Root value={formData.yearsOfExperience} onValueChange={(value) => setFormData({ ...formData, yearsOfExperience: value })}>
-                      <Select.Trigger
-                        className="w-full rounded-[40px] px-4 h-[56px] font-sora text-sm text-white outline-none transition-all flex items-center justify-between"
-                        style={{
-                          background: "transparent",
-                          border: "1px solid #FFFFFF1A",
-                        }}
-                      >
-                        <Select.Value placeholder="Select" />
-                        <Select.Icon>
-                          <svg width="12" height="8" viewBox="0 0 12 8" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M1 1.5L6 6.5L11 1.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
-                        </Select.Icon>
-                      </Select.Trigger>
-                      <Select.Portal>
-                        <Select.Content
-                          className="overflow-hidden rounded-[12px] shadow-lg z-[9999]"
-                          style={{
-                            background: "#0F1416",
-                            border: "1px solid #FFFFFF1A",
-                            maxHeight: "300px",
-                          }}
-                          position="popper"
-                          sideOffset={5}
-                        >
-                          <Select.Viewport className="p-1">
-                            {experienceLevels.map((level) => (
-                              <Select.Item
-                                key={level}
-                                value={level}
-                                className="relative flex items-center px-4 py-2 text-sm text-white rounded-[8px] outline-none cursor-pointer hover:bg-white/10 data-[highlighted]:bg-white/10 data-[state=checked]:bg-white/20"
-                              >
-                                <Select.ItemText>{level}</Select.ItemText>
-                              </Select.Item>
-                            ))}
-                          </Select.Viewport>
-                        </Select.Content>
-                      </Select.Portal>
-                    </Select.Root>
+                    <Select
+                      value={formData.yearsOfExperience}
+                      onChange={(value) => setFormData({ ...formData, yearsOfExperience: value })}
+                      placeholder="Select"
+                      options={experienceLevels.map((level) => ({ value: level, label: level }))}
+                    />
                   </div>
                 </div>
               </div>

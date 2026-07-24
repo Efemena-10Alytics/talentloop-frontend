@@ -3,6 +3,7 @@
 import { useState } from "react";
 import PhoneInput from "react-phone-number-input";
 import "react-phone-number-input/style.css";
+import { Select } from "@/components/ui/Select";
 
 interface BookingDetailsFormProps {
   selectedDate: Date | null;
@@ -46,6 +47,7 @@ export default function BookingDetailsForm({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formData.howDidYouFind) return;
     onSubmit(formData);
   };
 
@@ -173,31 +175,17 @@ export default function BookingDetailsForm({
               <label className="block text-white/60 font-sora text-sm mb-2">
                 How did you find out about TalentLoop?
               </label>
-              <select
+              <Select
                 value={formData.howDidYouFind}
-                onChange={(e) =>
-                  setFormData({ ...formData, howDidYouFind: e.target.value })
+                onChange={(value) =>
+                  setFormData({ ...formData, howDidYouFind: value })
                 }
-                className="w-full h-12 rounded-[40px] px-4 h-[56px] font-sora text-sm text-white outline-none transition-all appearance-none cursor-pointer"
-                style={{
-                  background: "transparent",
-                  border: "1px solid #FFFFFF1A",
-                  backgroundImage: `url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%23A8A8A8' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")`,
-                  backgroundRepeat: "no-repeat",
-                  backgroundPosition: "right 1rem center",
-                }}
-                required
-              >
-                <option value="" disabled>
-                  Select
-                </option>
-                {referralOptions.map((option) => (
-                  <option key={option} value={option} className="bg-[#1D242D] text-white">
-                    {option}
-                  </option>
-                ))}
-              </select>
-            
+                placeholder="Select"
+                options={referralOptions.map((option) => ({
+                  value: option,
+                  label: option,
+                }))}
+              />
             </div>
 
             {/* Action Buttons */}

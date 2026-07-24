@@ -59,12 +59,19 @@ export default function YourManager({
         )}
       </div>
 
-
-  
       {/* Manager Info */}
-        {name ? (
-      <div className="relative text-center">
-          <>
+      {name ? (
+        <div className="relative flex flex-col gap-1">
+                      <div
+              className="w-fit px-3 py-1 rounded-full"
+              style={{
+                background: "#E7FFAE",
+              }}
+            >
+              <p className="text-[#0B0D0F] text-[9px] 2xl:text-xs font-sora font-medium">
+                {title}
+              </p>
+            </div>
             <div className="flex items-center gap-2">
               <h4 className="text-white font-mona-sans font-semibold text-sm 2xl:text-base mb-2">
                 {name}
@@ -78,34 +85,22 @@ export default function YourManager({
                 </div>
               )}
             </div>
-            <div
-              className="absolute lg:-top-20 right-5 2xl:right-10 w-fit px-4 py-1.5 rounded-full"
-              style={{
-                background: "#E7FFAE",
-              }}
-            >
-              <p className="text-[#0B0D0F] text-[9px] 2xl:text-xs font-sora font-medium">
-                {title}
-              </p>
-            </div>
-          </>
-      </div>
-        ) : (
-          <></>
-        )}
-
-{!name && (
-<div  className="flex flex-col items-center gap-5">
-
-            <span className="text-[#A2CE3A] font-jakarta-sans text-base font-semibold">
-              You’ve not been assigned a manager yet
-            </span>
-            <span className="text-[#5C6777] font-jakarta-sans text-base font-semibold">
-              This will be done within 24hrs
-            </span>
           
-</div>
-)}
+        </div>
+      ) : (
+        <></>
+      )}
+
+      {!name && (
+        <div className="flex flex-col items-center gap-5">
+          <span className="text-[#A2CE3A] font-jakarta-sans text-base font-semibold">
+            You’ve not been assigned a manager yet
+          </span>
+          <span className="text-[#5C6777] font-jakarta-sans text-base font-semibold">
+            This will be done within 24hrs
+          </span>
+        </div>
+      )}
 
       {/* Join Session Button */}
       {meetingLink ? (
@@ -122,8 +117,7 @@ export default function YourManager({
           Join Session
         </a>
       ) : (
-        <>
-        </>
+        <></>
         // <button
         //   disabled
         //   className="w-full py-3 rounded-[10px] font-sora font-semibold text-sm opacity-40 cursor-not-allowed"

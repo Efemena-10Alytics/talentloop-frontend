@@ -135,7 +135,7 @@ export default function ContactPage() {
                   <label className="text-white/70 font-plus-jakarta text-sm">First Name</label>
                   <input
                     type="text"
-                    placeholder="Ricky"
+                    placeholder=""
                     value={formData.firstName}
                     onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
                     className={inputClass}
@@ -146,7 +146,7 @@ export default function ContactPage() {
                   <label className="text-white/70 font-plus-jakarta text-sm">Last Name</label>
                   <input
                     type="text"
-                    placeholder="Samson"
+                    placeholder=""
                     value={formData.lastName}
                     onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
                     className={inputClass}
@@ -160,7 +160,7 @@ export default function ContactPage() {
                 <label className="text-white/70 font-plus-jakarta text-sm">Email Address</label>
                 <input
                   type="email"
-                  placeholder="helloshivani2025@gmail.com"
+                  placeholder=""
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   className={inputClass}
@@ -172,7 +172,7 @@ export default function ContactPage() {
               <div className="flex flex-col gap-2">
                 <label className="text-white/70 font-plus-jakarta text-sm">How can we help?</label>
                 <textarea
-                  placeholder="Your Message"
+                  placeholder=""
                   rows={5}
                   value={formData.message}
                   onChange={(e) => setFormData({ ...formData, message: e.target.value })}

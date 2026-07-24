@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import * as Select from "@radix-ui/react-select";
+import { Select } from "@/components/ui/Select";
 import { useToast } from "@/components/ui/use-toast";
 import { getApiUrl, getAuthHeaders } from "@/lib/api";
 
@@ -361,48 +361,15 @@ export default function CredentialsUploadSection({
                     <label className="block text-sm font-plus-jakarta font-medium" style={{ color: "#E8EFF1" }}>
                       Do You Need Visa Sponsorship?
                     </label>
-                  <Select.Root 
-                    value={formData.needsVisaSponsorship === null ? "" : formData.needsVisaSponsorship.toString()} 
-                    onValueChange={(value) => setFormData({ ...formData, needsVisaSponsorship: value === "true" })}
-                  >
-                    <Select.Trigger
-                      className="w-full rounded-[40px] px-4 h-[56px] font-sora text-sm text-white outline-none transition-all flex items-center justify-between"
-                      style={{
-                        background: "transparent",
-                        border: "1px solid #FFFFFF1A",
-                      }}
-                    >
-                      <Select.Value placeholder="Select" />
-                      <Select.Icon>
-                        <svg width="12" height="8" viewBox="0 0 12 8" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M1 1.5L6 6.5L11 1.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                      </Select.Icon>
-                    </Select.Trigger>
-                    <Select.Portal>
-                      <Select.Content
-                        className="overflow-hidden rounded-[12px] shadow-lg z-[9999]"
-                        style={{
-                          background: "#0F1416",
-                          border: "1px solid #FFFFFF1A",
-                        }}
-                        position="popper"
-                        sideOffset={5}
-                      >
-                        <Select.Viewport className="p-1">
-                          {visaSponsorshipOptions.map((option) => (
-                            <Select.Item
-                              key={option}
-                              value={option === "Yes" ? "true" : "false"}
-                              className="relative flex items-center px-4 py-2 text-sm text-white rounded-[8px] outline-none cursor-pointer hover:bg-white/10 data-[highlighted]:bg-white/10 data-[state=checked]:bg-white/20"
-                            >
-                              <Select.ItemText>{option}</Select.ItemText>
-                            </Select.Item>
-                          ))}
-                        </Select.Viewport>
-                      </Select.Content>
-                    </Select.Portal>
-                  </Select.Root>
+                  <Select
+                    value={formData.needsVisaSponsorship === null ? "" : formData.needsVisaSponsorship.toString()}
+                    onChange={(value) => setFormData({ ...formData, needsVisaSponsorship: value === "true" })}
+                    placeholder="Select"
+                    options={visaSponsorshipOptions.map((option) => ({
+                      value: option === "Yes" ? "true" : "false",
+                      label: option,
+                    }))}
+                  />
                   </div>
                 </div>
               </div>

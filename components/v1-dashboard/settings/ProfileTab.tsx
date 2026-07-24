@@ -7,6 +7,7 @@ import { countries } from "@/app/_hooks/countries";
 import { useAvatar } from "@/context/AvatarContext";
 import { useAuthMe } from "@/hooks/useUserData";
 import { useToast } from "@/components/ui/use-toast";
+import { Select } from "@/components/ui/Select";
 
 const UploadIcon = () => (
   <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -174,23 +175,15 @@ export default function ProfileTab() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-white text-sm font-mona-sans mb-2">Location (Country)</label>
-                <select
+                <Select
                   value={selectedCountry}
-                  onChange={(e) => setSelectedCountry(e.target.value)}
-                  className="w-full h-14 rounded-[40px] border border-[#FFFFFF1A] bg-transparent px-4 text-white font-jakarta-sans focus:outline-none focus:border-[#A2CE3A] transition-colors appearance-none cursor-pointer"
-                  style={{
-                    backgroundImage: `url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L6 6L11 1' stroke='%23FFFFFF' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")`,
-                    backgroundRepeat: "no-repeat",
-                    backgroundPosition: "right 1rem center",
-                  }}
-                >
-                  <option value="" disabled className="bg-[#0B0D0F] text-white">Select</option>
-                  {countries.map((country) => (
-                    <option key={country.code} value={country.code} className="bg-[#0B0D0F] text-white">
-                      {country.name}
-                    </option>
-                  ))}
-                </select>
+                  onChange={setSelectedCountry}
+                  placeholder="Select"
+                  options={countries.map((country) => ({
+                    value: country.code,
+                    label: country.name,
+                  }))}
+                />
               </div>
               <div>
                 <label className="block text-white text-sm font-mona-sans mb-2">Phone Contact (Preferably WhatsApp)</label>
@@ -209,23 +202,18 @@ export default function ProfileTab() {
             {/* How did you find out */}
             <div>
               <label className="block text-white text-sm font-mona-sans mb-2">How did you find out about TalentLoop?</label>
-              <select
+              <Select
                 value={selectedSource}
-                onChange={(e) => setSelectedSource(e.target.value)}
-                className="w-full h-14 rounded-[40px] border border-[#FFFFFF1A] bg-transparent px-4 text-white font-jakarta-sans focus:outline-none focus:border-[#A2CE3A] transition-colors appearance-none cursor-pointer"
-                style={{
-                  backgroundImage: `url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L6 6L11 1' stroke='%23FFFFFF' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")`,
-                  backgroundRepeat: "no-repeat",
-                  backgroundPosition: "right 1rem center",
-                }}
-              >
-                <option value="" disabled className="bg-[#0B0D0F] text-white">Select</option>
-                <option value="social" className="bg-[#0B0D0F] text-white">Social Media</option>
-                <option value="friend" className="bg-[#0B0D0F] text-white">Friend/Referral</option>
-                <option value="search" className="bg-[#0B0D0F] text-white">Search Engine</option>
-                <option value="ad" className="bg-[#0B0D0F] text-white">Advertisement</option>
-                <option value="other" className="bg-[#0B0D0F] text-white">Other</option>
-              </select>
+                onChange={setSelectedSource}
+                placeholder="Select"
+                options={[
+                  { value: "social", label: "Social Media" },
+                  { value: "friend", label: "Friend/Referral" },
+                  { value: "search", label: "Search Engine" },
+                  { value: "ad", label: "Advertisement" },
+                  { value: "other", label: "Other" },
+                ]}
+              />
             </div>
 
             {/* Action Buttons */}
