@@ -528,11 +528,6 @@ export function Navbar({ v1Launch }: { v1Launch?: boolean }) {
                       <p className="text-white font-mona-sans text-xs font-semibold truncate">
                         Dashboard
                       </p>
-                      <p className="text-[#FFFFFF99] font-mona-sans text-[10px] font-normal">
-                        {userData?.user?.stripe_customer_id
-                          ? "Premium Account"
-                          : "No active plan"}
-                      </p>
                     </div>
                   </div>
                 </div>

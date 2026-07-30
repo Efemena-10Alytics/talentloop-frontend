@@ -231,7 +231,6 @@ export default function EnrollmentConfirmation({
                       Location
                     </span>
                     <div className="flex items-center gap-2">
-                      <span className="text-xl">🇳🇬</span>
                       <span className="font-plus-jakarta text-sm font-medium" style={{ color: "#CCCCCC" }}>
                         {personalData.location}
                       </span>

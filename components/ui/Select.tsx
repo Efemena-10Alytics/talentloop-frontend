@@ -129,7 +129,7 @@ export function Select({
         type="button"
         disabled={disabled}
         onClick={() => setIsOpen((prev) => !prev)}
-        className="w-full px-4 py-3 rounded-[10px] border border-white/10 bg-[#FFFFFF0D] text-white font-mona-sans text-sm outline-none focus:border-[#A2CE3A] transition-colors flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full px-4 py-3 rounded-[40px] border border-white/10 bg-[#FFFFFF0D] text-white font-mona-sans text-sm outline-none focus:border-[#A2CE3A] transition-colors flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <span className={selectedOption ? "text-white" : "text-white/50"}>
           {selectedOption ? selectedOption.label : placeholder}
