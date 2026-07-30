@@ -215,6 +215,7 @@ export default function EditPersonalDataModal({
                   type="email"
                   value={formData.email}
                   onChange={(e) => handleChange("email", e.target.value)}
+                  disabled
                   className="w-full rounded-[40px] px-4 h-[56px] font-sora text-sm text-white outline-none transition-all"
                   style={{
                     background: "transparent",
