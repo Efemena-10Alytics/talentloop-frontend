@@ -4,6 +4,7 @@ import DashboardNavbar from "@/components/v1-dashboard/DashboardNavbar";
 import StatCard from "@/components/v1-dashboard/StatCard";
 import ApplicationPipeline from "@/components/v1-dashboard/ApplicationPipeline";
 import { useEnrollmentStats } from "@/hooks/useEnrollmentData";
+import { useMinLoadingTime } from "@/hooks/useMinLoadingTime";
 
 const ApplicationTrackerIcon = () => (
   <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -13,7 +14,8 @@ const ApplicationTrackerIcon = () => (
 );
 
 export default function ApplicationTrackerPage() {
-  const { data: stats, isLoading } = useEnrollmentStats("all");
+  const { data: stats, isLoading: isStatsLoading } = useEnrollmentStats("all");
+  const isLoading = useMinLoadingTime(isStatsLoading, 3000);
 
   const breakdown = stats?.status_breakdown ?? {};
   const deltas = stats?.deltas ?? {};
@@ -44,26 +46,31 @@ export default function ApplicationTrackerPage() {
           title="TOTAL APPLIED"
           value={isLoading ? "—" : (stats?.total_applications ?? "0")}
           trend={getDelta("applied")}
+          isLoading={isLoading}
         />
         <StatCard
           title="INTERVIEWS SECURED"
           value={isLoading ? "—" : (stats?.interviews_secured ?? "0")}
           trend={getDelta("interview")}
+          isLoading={isLoading}
         />
         <StatCard
           title="ASSESSMENTS"
           value={isLoading ? "—" : getCount("assessment")}
           trend={getDelta("assessment")}
+          isLoading={isLoading}
         />
         <StatCard
           title="REJECTED"
           value={isLoading ? "—" : getCount("reject")}
           trend={getDelta("reject")}
+          isLoading={isLoading}
         />
         <StatCard
           title="OFFER"
           value={isLoading ? "—" : getCount("offer")}
           trend={getDelta("offer")}
+          isLoading={isLoading}
         />
       </div>
 

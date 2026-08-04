@@ -1,3 +1,4 @@
+import { signIn } from "next-auth/react";
 import { getApiUrl } from "@/lib/api";
 
 const API_BASE = getApiUrl();
@@ -47,6 +48,26 @@ export async function socialLogin(
   }
 
   return data as SocialAuthResponse;
+}
+
+/**
+ * Establishes a NextAuth session/cookie from an already-verified backend
+ * social login response, so `useSession()` reflects "authenticated" and
+ * authenticated requests (via the NextAuth-backed backendToken) work.
+ */
+export async function establishSocialSession(result: SocialAuthResponse): Promise<void> {
+  const signInResult = await signIn("social-token", {
+    id: result.data.user.id.toString(),
+    email: result.data.user.email,
+    name: result.data.user.name,
+    role: result.data.user.role,
+    token: result.data.token,
+    redirect: false,
+  });
+
+  if (signInResult?.error) {
+    throw new Error(signInResult.error || "Failed to establish session");
+  }
 }
 
 export function openLinkedInOAuth(clientId: string, redirectUri: string): Promise<string> {

@@ -4,7 +4,9 @@ import { useState, useEffect } from "react";
 import DashboardNavbar from "@/components/v1-dashboard/DashboardNavbar";
 import FileUploadSection from "@/components/v1-dashboard/FileUploadSection";
 import FileCard from "@/components/v1-dashboard/FileCard";
+import Skeleton from "@/components/ui/Skeleton";
 import { useEnrollmentDocuments, EnrollmentDocument } from "@/hooks/useEnrollmentData";
+import { useMinLoadingTime } from "@/hooks/useMinLoadingTime";
 
 const DocumentIcon = () => (
   <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -17,7 +19,8 @@ const DocumentIcon = () => (
 );
 
 export default function DocumentsPage() {
-  const { data: fetchedDocs = [], isLoading } = useEnrollmentDocuments();
+  const { data: fetchedDocs = [], isLoading: isDocsLoading } = useEnrollmentDocuments();
+  const isLoading = useMinLoadingTime(isDocsLoading, 3000);
   const [documents, setDocuments] = useState<EnrollmentDocument[]>([]);
 
   useEffect(() => {
@@ -51,7 +54,25 @@ export default function DocumentsPage() {
         </div>
 
         {isLoading ? (
-          <p className="text-[#95ACCB] font-mona-sans text-sm">Loading documents...</p>
+          <div className="space-y-4">
+            {[0, 1, 2].map((i) => (
+              <div
+                key={i}
+                className="p-4 sm:p-6 rounded-2xl"
+                style={{ background: "rgba(21, 99, 116, 0.2)", border: "0.5px solid rgba(255, 255, 255, 0.1)" }}
+              >
+                <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                  <Skeleton className="h-12 w-12 rounded-lg flex-shrink-0" />
+                  <div className="flex-1 min-w-0 space-y-2">
+                    <Skeleton className="h-4 w-48" />
+                    <Skeleton className="h-3 w-32" />
+                  </div>
+                  <Skeleton className="h-9 w-24 rounded-lg" />
+                  <Skeleton className="h-9 w-24 rounded-lg" />
+                </div>
+              </div>
+            ))}
+          </div>
         ) : documents.length === 0 ? (
           <p className="text-[#657997] font-mona-sans text-sm">No documents uploaded yet.</p>
         ) : (

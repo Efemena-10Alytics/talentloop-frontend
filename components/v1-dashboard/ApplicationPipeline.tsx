@@ -4,6 +4,8 @@ import { useState } from "react";
 import ApplicationCard from "./ApplicationCard";
 import { useEnrollmentApplications, useEnrollmentStats, StatsPeriod } from "@/hooks/useEnrollmentData";
 import { Select } from "@/components/ui/Select";
+import Skeleton from "@/components/ui/Skeleton";
+import { useMinLoadingTime } from "@/hooks/useMinLoadingTime";
 
 const PERIOD_OPTIONS: { label: string; value: StatsPeriod }[] = [
   { label: "Today", value: "today" },
@@ -25,8 +27,9 @@ const STAGE_LABELS: Record<string, string> = {
 export default function ApplicationPipeline() {
   const [period, setPeriod] = useState<StatsPeriod>("today");
 
-  const { data: applications = [], isLoading: appsLoading } = useEnrollmentApplications();
+  const { data: applications = [], isLoading: isAppsLoading } = useEnrollmentApplications();
   const { data: stats } = useEnrollmentStats(period);
+  const appsLoading = useMinLoadingTime(isAppsLoading, 3000);
 
   const getApplicationsByStage = (stage: string) =>
     applications.filter((app) => app.status?.toLowerCase().includes(stage));
@@ -78,8 +81,34 @@ export default function ApplicationPipeline() {
       </div>
 
       {appsLoading ? (
-        <div className="flex items-center justify-center py-12">
-          <p className="text-[#95ACCB] font-mona-sans text-sm">Loading applications...</p>
+        <div className="grid grid-cols-1 lg:grid-cols-4 2xl:grid-cols-5 gap-5">
+          {STAGES.map((stage) => (
+            <div
+              key={stage}
+              className="rounded-2xl p-3"
+              style={{
+                background: "rgba(21, 99, 116, 0.1)",
+                border: "0.5px solid rgba(255, 255, 255, 0.1)",
+              }}
+            >
+              <div
+                className="rounded-lg p-3 mb-3"
+                style={{
+                  background: "rgba(21, 99, 116, 0.1)",
+                  borderTop: "0.5px solid rgba(255, 255, 255, 0.1)",
+                }}
+              >
+                <div className="flex items-center justify-between">
+                  <Skeleton className="h-3 w-20" />
+                  <Skeleton className="h-4 w-6" />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Skeleton className="h-16 w-full" />
+                <Skeleton className="h-16 w-full" />
+              </div>
+            </div>
+          ))}
         </div>
       ) : (
         /* Pipeline Grid */

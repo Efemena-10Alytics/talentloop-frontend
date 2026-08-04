@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { AvatarProvider } from "@/context/AvatarContext";
 import { useAuthMe } from "@/hooks/useUserData";
 
@@ -88,8 +89,15 @@ export default function V1DashboardLayout({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
+  const { status: sessionStatus } = useSession();
   const { data: authData, isLoading: authLoading } = useAuthMe();
   const initialAvatar = (authData as any)?.user?.profile?.avatar ?? null;
+
+  useEffect(() => {
+    if (sessionStatus === "unauthenticated") {
+      router.replace(`/signin?callbackUrl=${encodeURIComponent(pathname)}`);
+    }
+  }, [sessionStatus, pathname, router]);
 
   useEffect(() => {
     if (authLoading) return;
@@ -98,7 +106,7 @@ export default function V1DashboardLayout({
     }
   }, [authData, authLoading, router]);
 
-  if (authLoading) {
+  if (sessionStatus !== "authenticated" || authLoading) {
     return <div className="min-h-screen bg-[#01090B]" />;
   }
 

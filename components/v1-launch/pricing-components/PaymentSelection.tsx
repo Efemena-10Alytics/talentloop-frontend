@@ -130,8 +130,8 @@ export default function PaymentSelection({
   }, [pendingPaymentAfterSignup, status]);
 
   return (
-    <div className="min-h-screen bg-[#01090B] py-20">
-      <div className="max-w-[1200px] mx-auto px-6">
+    <div className="min-h-screen bg-[#01090B] py-12 lg:py-20">
+      <div className="max-w-[1200px] mx-auto px-4 lg:px-6">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -154,17 +154,17 @@ export default function PaymentSelection({
           )}
           
           <div className="text-center">
-            <h1 className="text-4xl lg:text-6xl font-mona-sans font-bold text-white mb-4">
+            <h1 className="text-2xl lg:text-6xl font-mona-sans font-bold text-white mb-4">
               Confirm Your Enrollment
             </h1>
-            <p className="text-white/40 font-sora text-sm">
+            <p className="text-white/40 font-sora text-[12px] lg:text-sm">
               Please choose a payment plan that works for you to proceed.
             </p>
           </div>
         </motion.div>
 
         {/* Payment Container */}
-        <div className="w-full flex flex-col lg:flex-row gap-8 bg-[#1E1F2180] rounded-[24px] p-4 lg:p-6">
+        <div className="w-full flex flex-col lg:flex-row gap-8 bg-[#1E1F2180] rounded-[12px] lg:rounded-[24px] px-3 py-5 lg:p-6">
           {/* Left Side - Payment Options */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
@@ -172,7 +172,7 @@ export default function PaymentSelection({
             transition={{ duration: 0.6, delay: 0.2 }}
             className="lg:w-[65%]"
           >
-            <h2 className="text-white font-mona-sans font-bold text-2xl mb-6">
+            <h2 className="text-white font-mona-sans font-bold text-xl lg:text-2xl mb-6">
               Payment Options
             </h2>
 
@@ -180,7 +180,7 @@ export default function PaymentSelection({
               {/* Full Payment Option */}
               <button
                 onClick={() => handlePaymentChange("full")}
-                className="w-full rounded-[24px] p-6 transition-all duration-300"
+                className="w-full rounded-[12px] lg:rounded-[24px] p-4 lg:p-6 transition-all duration-300"
                 style={{
                   background: selectedPayment === "full" 
                     ? "linear-gradient(135deg, #2D3A2E 0%, #1A2420 100%)"
@@ -190,28 +190,28 @@ export default function PaymentSelection({
                     : "1px solid #FFFFFF1A",
                 }}
               >
-                <div className="flex items-center justify-between">
-                  <div className="text-left">
-                    <h3 className="text-white font-mona-sans font-bold text-xl mb-1">
+                <div className="flex items-center gap-3 lg:justify-between">
+                  <div className="text-left w-[60%] lg:w-full">
+                    <h3 className="text-white font-mona-sans font-bold text-base lg:text-xl lg:mb-1">
                       Full Payment
                     </h3>
-                    <p className="text-white/50 font-sora text-sm">
+                    <p className="text-white/50 font-sora text-[12px] lg:text-sm">
                       Make one time payment now
                     </p>
                   </div>
-                  <div className="flex items-center gap-4">
-                    <span className="text-white font-mona-sans font-bold text-3xl">
+                  <div className="flex items-center gap-2 lg:gap-4 w-[40%] lg:w-full">
+                    <span className="text-white font-mona-sans font-bold text-lg lg:text-3xl">
                       {planDetails.fullAmount}
                     </span>
                     <div
-                      className="w-6 h-6 rounded-full border-2 flex items-center justify-center"
+                      className="w-4 lg:w-6 h-4 lg:h-6 rounded-full border-2 flex items-center justify-center"
                       style={{
                         borderColor: selectedPayment === "full" ? "#A2CE3A" : "#FFFFFF4D",
                         background: selectedPayment === "full" ? "#A2CE3A" : "transparent",
                       }}
                     >
                       {selectedPayment === "full" && (
-                        <div className="w-3 h-3 rounded-full bg-white" />
+                        <div className="w-2 lg:w-3 h-2 lg:h-3 rounded-full bg-white" />
                       )}
                     </div>
                   </div>
@@ -222,7 +222,7 @@ export default function PaymentSelection({
               {"installment1" in planDetails && "installment2" in planDetails && (
               <button
                 onClick={() => handlePaymentChange("installments")}
-                className="w-full rounded-[24px] p-6 transition-all duration-300"
+                className="w-full rounded-[12px] lg:rounded-[24px] p-4 lg:p-6 transition-all duration-300"
                 style={{
                   background: selectedPayment === "installments" 
                     ? "linear-gradient(135deg, #2D3A2E 0%, #1A2420 100%)"
@@ -232,28 +232,28 @@ export default function PaymentSelection({
                     : "1px solid #FFFFFF1A",
                 }}
               >
-                <div className="flex items-center justify-between">
-                  <div className="text-left">
-                    <h3 className="text-white font-mona-sans font-bold text-xl mb-1">
+                <div className="flex items-center gap-3 lg:justify-between">
+                  <div className="text-left w-[60%] lg:w-full">
+                    <h3 className="text-white font-mona-sans font-bold text-base lg:text-xl lg:mb-1">
                       2 Installments
                     </h3>
-                    <p className="text-white/50 font-sora text-sm">
+                    <p className="text-white/50 font-sora text-[12px] lg:text-sm">
                       Pay in two installments
                     </p>
                   </div>
-                  <div className="flex items-center gap-4">
-                    <span className="text-white font-mona-sans font-bold text-3xl">
+                  <div className="flex items-center gap-2 lg:gap-4 w-[40%] lg:w-full">
+                    <span className="text-white font-mona-sans font-bold text-lg lg:text-3xl">
                       {planDetails.fullAmount}
                     </span>
                     <div
-                      className="w-6 h-6 rounded-full border-2 flex items-center justify-center"
+                      className="w-4 lg:w-6 h-4 lg:h-6 rounded-full border-2 flex items-center justify-center"
                       style={{
                         borderColor: selectedPayment === "installments" ? "#A2CE3A" : "#FFFFFF4D",
                         background: selectedPayment === "installments" ? "#A2CE3A" : "transparent",
                       }}
                     >
                       {selectedPayment === "installments" && (
-                        <div className="w-3 h-3 rounded-full bg-white" />
+                        <div className="w-2 lg:w-3 h-2 lg:h-3 rounded-full bg-white" />
                       )}
                     </div>
                   </div>
@@ -268,7 +268,7 @@ export default function PaymentSelection({
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6, delay: 0.3 }}
-            className="lg:w-[35%] rounded-[32px] p-8"
+            className="lg:w-[35%] rounded-[24px] lg:rounded-[32px] p-4 lg:p-8"
          style={{
                 background: "linear-gradient(135deg, #FFFFFF0F, #FFFFFF1A 100%)"
               }}
@@ -295,13 +295,13 @@ export default function PaymentSelection({
               )}
             </div>
 
-            <p className="text-white/60 font-sora text-sm mb-6">
+            <p className="text-white/60 font-sora text-[12px] lg:text-sm mb-6">
               {pricingPlanData?.description || "For professionals tired of applying blindly."}
             </p>
 
             {/* Price Display */}
             <div className="mb-6">
-              <div className="text-white font-mona-sans font-bold text-5xl mb-2">
+              <div className="text-white font-mona-sans font-bold text-4xl lg:text-5xl mb-2">
                 {planDetails.price}
               </div>
             </div>
@@ -315,11 +315,11 @@ export default function PaymentSelection({
                   border: "1px solid #FFFFFF1A",
                 }}
               >
-                <div className="flex items-center justify-between font-sora text-sm" style={{ color: "#CCCCCC" }}>
+                <div className="flex items-center justify-between font-sora text-[12px] lg:text-sm" style={{ color: "#CCCCCC" }}>
                   <span>First installment-</span>
                   <span className="font-semibold">{'installment1' in planDetails ? String(planDetails.installment1) : ''}</span>
                 </div>
-                <div className="flex items-center justify-between font-sora text-sm" style={{ color: "#CCCCCC" }}>
+                <div className="flex items-center justify-between font-sora text-[12px] lg:text-sm" style={{ color: "#CCCCCC" }}>
                   <span>Second installment-</span>
                   <span className="font-semibold">{'installment2' in planDetails ? String(planDetails.installment2) : ''}</span>
                 </div>

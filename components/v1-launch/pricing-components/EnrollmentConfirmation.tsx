@@ -118,7 +118,7 @@ export default function EnrollmentConfirmation({
           transition={{ duration: 0.6 }}
           className="text-center mb-12"
         >
-          <h1 className="text-4xl lg:text-5xl font-clash-display font-bold text-white mb-4">
+          <h1 className="text-2xl lg:text-5xl font-clash-display font-bold text-white mb-4">
             Confirm Your Enrollment
           </h1>
           <p className="text-white/60 font-plus-jakarta text-lg">

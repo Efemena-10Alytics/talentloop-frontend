@@ -6,8 +6,10 @@ import WelcomeCard from "@/components/v1-dashboard/WelcomeCard";
 import RecentActivities from "@/components/v1-dashboard/RecentActivities";
 import YourProgress from "@/components/v1-dashboard/YourProgress";
 import YourManager from "@/components/v1-dashboard/YourManager";
+import Skeleton from "@/components/ui/Skeleton";
 import { useDashboard } from "@/hooks/useEnrollmentData";
 import { useAuthMe } from "@/hooks/useUserData";
+import { useMinLoadingTime } from "@/hooks/useMinLoadingTime";
 
 const DashboardIcon = () => (
   <svg width="17" height="17" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -23,8 +25,9 @@ function formatDeliveryDate(iso: string | null | undefined): string | null {
 }
 
 export default function V1DashboardPage() {
-  const { data: dashboard, isLoading } = useDashboard();
+  const { data: dashboard, isLoading: isDashboardLoading } = useDashboard();
   const { data: authData } = useAuthMe();
+  const isLoading = useMinLoadingTime(isDashboardLoading, 3000);
 
   const profile = (authData as any)?.user?.profile;
   const firstName: string =
@@ -45,14 +48,17 @@ export default function V1DashboardPage() {
         <StatCard 
           title="Applications Sent" 
           value={isLoading ? "—" : String(dashboard?.applications_sent ?? 0)}
+          isLoading={isLoading}
         />
         <StatCard 
           title="Interviews Secured" 
           value={isLoading ? "—" : String(dashboard?.interviews_secured ?? 0)}
+          isLoading={isLoading}
         />
         <StatCard 
           title="Days Active" 
           value={isLoading ? "—" : `${dashboard?.days_active ?? 0} Days`}
+          isLoading={isLoading}
         />
       </div>
 
@@ -73,18 +79,35 @@ export default function V1DashboardPage() {
       <div className="flex flex-col lg:flex-row gap-5">
         {/* Left: Your Progress (75% width - 3 columns) */}
         <div className="lg:w-[70%]">
-          <YourProgress nextMeeting={dashboard?.next_meeting ?? null} />
+          {isLoading ? (
+            <div className="rounded-[20px] p-6" style={{ background: "rgba(21, 99, 116, 0.1)", borderTop: "0.5px solid rgba(255, 255, 255, 0.1)" }}>
+              <Skeleton className="h-5 w-32 mb-6" />
+              <Skeleton className="h-10 w-full mb-6" />
+              <Skeleton className="h-20 w-full rounded-2xl" />
+            </div>
+          ) : (
+            <YourProgress nextMeeting={dashboard?.next_meeting ?? null} />
+          )}
         </div>
 
         {/* Right: Your Manager (25% width - 1 column) */}
         <div className="lg:w-[30%]">
-          <YourManager 
-            name={dashboard?.manager?.name ?? ""}
-            rating={dashboard?.manager?.rating}
-            title={dashboard?.manager?.title ?? ""}
-            imageUrl={dashboard?.manager?.avatar}
-            meetingLink={dashboard?.next_meeting?.meeting_link}
-          />
+          {isLoading ? (
+            <div className="rounded-[20px] p-6" style={{ background: "#1563741A" }}>
+              <Skeleton className="h-5 w-28 mb-6" />
+              <Skeleton className="h-[120px] w-full rounded-[10px] mb-6" />
+              <Skeleton className="h-4 w-24 mb-2" />
+              <Skeleton className="h-5 w-32" />
+            </div>
+          ) : (
+            <YourManager 
+              name={dashboard?.manager?.name ?? ""}
+              rating={dashboard?.manager?.rating}
+              title={dashboard?.manager?.title ?? ""}
+              imageUrl={dashboard?.manager?.avatar}
+              meetingLink={dashboard?.next_meeting?.meeting_link}
+            />
+          )}
         </div>
       </div>
     </div>

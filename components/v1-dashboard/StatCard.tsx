@@ -1,3 +1,5 @@
+import Skeleton from "@/components/ui/Skeleton";
+
 interface StatCardProps {
   title: string;
   value: string | number;
@@ -5,6 +7,7 @@ interface StatCardProps {
     value: string;
     isPositive: boolean;
   };
+  isLoading?: boolean;
 }
 
 const TrendUpIcon = () => (
@@ -13,7 +16,16 @@ const TrendUpIcon = () => (
   </svg>
 );
 
-export default function StatCard({ title, value, trend }: StatCardProps) {
+export default function StatCard({ title, value, trend, isLoading }: StatCardProps) {
+  if (isLoading) {
+    return (
+      <div className="bg-[#1563741A] border border-[#FFFFFF1A] rounded-2xl p-6">
+        <Skeleton className="h-3 w-24 mb-4" />
+        <Skeleton className="h-8 w-16" />
+      </div>
+    );
+  }
+
   return (
     <div
       className="bg-[#1563741A] border border-[#FFFFFF1A] rounded-2xl p-6"

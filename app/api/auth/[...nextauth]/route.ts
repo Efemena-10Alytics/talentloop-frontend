@@ -28,6 +28,34 @@ export const authOptions: NextAuthOptions = {
       },
     }),
     CredentialsProvider({
+      id: "social-token",
+      name: "Social Token",
+      credentials: {
+        id: { label: "Id", type: "text" },
+        email: { label: "Email", type: "text" },
+        name: { label: "Name", type: "text" },
+        role: { label: "Role", type: "text" },
+        token: { label: "Token", type: "text" },
+      },
+      async authorize(credentials) {
+        // The client has already exchanged the OAuth access token for a
+        // backend token via /api/v1/auth/social/{provider}. We trust that
+        // result here purely to establish a NextAuth session/cookie.
+        if (!credentials?.token || !credentials?.email) {
+          throw new Error("Missing social login credentials");
+        }
+
+        return {
+          id: credentials.id,
+          email: credentials.email,
+          name: credentials.name || credentials.email,
+          role: credentials.role || "user",
+          status: "active",
+          token: credentials.token,
+        };
+      },
+    }),
+    CredentialsProvider({
       name: "Credentials",
       credentials: {
         email: { label: "Email", type: "email" },

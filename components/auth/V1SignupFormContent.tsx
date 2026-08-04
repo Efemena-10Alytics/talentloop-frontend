@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import { getApiUrl, getHeaders } from "@/lib/api";
 import { useToast } from "@/components/ui/use-toast";
 import EmailVerification from "@/components/EmailVerification";
-import { socialLogin, openLinkedInOAuth } from "@/lib/social-auth";
+import { socialLogin, openLinkedInOAuth, establishSocialSession } from "@/lib/social-auth";
 
 /* ─── SVGs ─── */
 
@@ -202,6 +202,7 @@ export default function V1SignupFormContent({
     try {
       const result = await socialLogin(provider, access_token);
       localStorage.setItem("auth_token", result.data.token);
+      await establishSocialSession(result);
       toast({
         variant: "success",
         title: result.message || `${provider} sign up successful`,
