@@ -22,10 +22,14 @@ const referralSources = [
   "10Alytics",
   "Amdari",
   "Job Board",
+  "Facebook Ads",
   "Other",
 ];
 
-export default function PersonalInfoModal({ isOpen, onComplete }: PersonalInfoModalProps) {
+export default function PersonalInfoModal({
+  isOpen,
+  onComplete,
+}: PersonalInfoModalProps) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -43,7 +47,12 @@ export default function PersonalInfoModal({ isOpen, onComplete }: PersonalInfoMo
 
   const handleSubmit = async () => {
     // Validation
-    if (!formData.firstName || !formData.lastName || !formData.country || !formData.referralSource) {
+    if (
+      !formData.firstName ||
+      !formData.lastName ||
+      !formData.country ||
+      !formData.referralSource
+    ) {
       toast({
         variant: "error",
         title: "Missing fields",
@@ -56,18 +65,21 @@ export default function PersonalInfoModal({ isOpen, onComplete }: PersonalInfoMo
 
     try {
       const headers = await getAuthHeaders();
-      const response = await fetch(`${getApiUrl()}/api/v1/profile/personal-info`, {
-        method: "POST",
-        headers,
-        body: JSON.stringify({
-          first_name: formData.firstName,
-          last_name: formData.lastName,
-          country: formData.country,
-          phone: formData.phone,
-          referral_source: formData.referralSource,
-          is_10alytics_or_amdari: formData.is10AlyticsOrAmdari,
-        }),
-      });
+      const response = await fetch(
+        `${getApiUrl()}/api/v1/profile/personal-info`,
+        {
+          method: "POST",
+          headers,
+          body: JSON.stringify({
+            first_name: formData.firstName,
+            last_name: formData.lastName,
+            country: formData.country,
+            phone: formData.phone,
+            referral_source: formData.referralSource,
+            is_10alytics_or_amdari: formData.is10AlyticsOrAmdari,
+          }),
+        },
+      );
 
       const data = await response.json();
 
@@ -78,7 +90,8 @@ export default function PersonalInfoModal({ isOpen, onComplete }: PersonalInfoMo
           toast({
             variant: "error",
             title: "Failed to save personal info",
-            description: firstErrorMessage || data.message || "An error occurred",
+            description:
+              firstErrorMessage || data.message || "An error occurred",
           });
         } else {
           toast({
@@ -98,14 +111,15 @@ export default function PersonalInfoModal({ isOpen, onComplete }: PersonalInfoMo
       });
 
       // Dispatch event so Navbar and other components using useUserData refresh immediately
-      window.dispatchEvent(new Event('profile-updated'));
+      window.dispatchEvent(new Event("profile-updated"));
 
       onComplete();
     } catch (error: any) {
       toast({
         variant: "error",
         title: "Error",
-        description: error.message || "An error occurred while saving personal info",
+        description:
+          error.message || "An error occurred while saving personal info",
       });
       setLoading(false);
     }
@@ -148,7 +162,9 @@ export default function PersonalInfoModal({ isOpen, onComplete }: PersonalInfoMo
                 <input
                   type="text"
                   value={formData.firstName}
-                  onChange={(e) => handleInputChange("firstName", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("firstName", e.target.value)
+                  }
                   className="w-full px-4 py-3 rounded-[30px] bg-[#1A1A1D] border border-white/10 text-white font-sora text-sm placeholder:text-white/40 focus:outline-none focus:border-[#A2CE3A] transition-colors"
                   placeholder=""
                 />
@@ -162,7 +178,9 @@ export default function PersonalInfoModal({ isOpen, onComplete }: PersonalInfoMo
                 <input
                   type="text"
                   value={formData.lastName}
-                  onChange={(e) => handleInputChange("lastName", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("lastName", e.target.value)
+                  }
                   className="w-full px-4 py-3 rounded-[30px] bg-[#1A1A1D] border border-white/10 text-white font-sora text-sm placeholder:text-white/40 focus:outline-none focus:border-[#A2CE3A] transition-colors"
                   placeholder=""
                 />
@@ -177,7 +195,10 @@ export default function PersonalInfoModal({ isOpen, onComplete }: PersonalInfoMo
                   value={formData.country}
                   onChange={(value) => handleInputChange("country", value)}
                   placeholder="Select"
-                  options={countries.map((country) => ({ value: country.name, label: country.name }))}
+                  options={countries.map((country) => ({
+                    value: country.name,
+                    label: country.name,
+                  }))}
                 />
               </div>
 
@@ -193,7 +214,8 @@ export default function PersonalInfoModal({ isOpen, onComplete }: PersonalInfoMo
                   onChange={(value) => handleInputChange("phone", value || "")}
                   className="phone-input-custom"
                   numberInputProps={{
-                    className: "w-full px-4 py-3 rounded-[30px] bg-[#1A1A1D] border border-white/10 text-white font-sora text-sm focus:outline-none focus:border-[#A2CE3A] transition-colors"
+                    className:
+                      "w-full px-4 py-3 rounded-[30px] bg-[#1A1A1D] border border-white/10 text-white font-sora text-sm focus:outline-none focus:border-[#A2CE3A] transition-colors",
                   }}
                 />
               </div>
@@ -215,7 +237,10 @@ export default function PersonalInfoModal({ isOpen, onComplete }: PersonalInfoMo
                     }
                   }}
                   placeholder="Select"
-                  options={referralSources.map((source) => ({ value: source, label: source }))}
+                  options={referralSources.map((source) => ({
+                    value: source,
+                    label: source,
+                  }))}
                 />
               </div>
 
