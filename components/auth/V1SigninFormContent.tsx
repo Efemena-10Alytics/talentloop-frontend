@@ -7,7 +7,12 @@ import Link from "next/link";
 import { useToast } from "@/components/ui/use-toast";
 import { getApiUrl, getHeaders, getAuthHeaders } from "@/lib/api";
 import EmailVerification from "@/components/EmailVerification";
-import { socialSignIn, openLinkedInOAuth } from "@/lib/social-auth";
+import {
+  socialSignIn,
+  openGoogleOAuth,
+  openLinkedInOAuth,
+  linkedInRedirectUri,
+} from "@/lib/social-auth";
 
 /* ─── SVGs ─── */
 
@@ -252,11 +257,11 @@ export default function V1SigninFormContent({
 
   const handleSocialSuccess = async (
     provider: "google" | "linkedin",
-    access_token: string,
+    code: string,
   ) => {
     setSocialLoading(provider);
     try {
-      const result = await socialSignIn(provider, access_token);
+      const result = await socialSignIn(provider, code);
       localStorage.setItem("auth_token", result.token);
       toast({
         variant: "success",
@@ -275,7 +280,7 @@ export default function V1SigninFormContent({
     }
   };
 
-  const googleLogin = () => {
+  const googleLogin = async () => {
     const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
     if (!clientId) {
       toast({
@@ -285,23 +290,22 @@ export default function V1SigninFormContent({
       });
       return;
     }
-    const client = (window as any).google?.accounts?.oauth2?.initTokenClient({
-      client_id: clientId,
-      scope: "openid email profile",
-      callback: (tokenResponse: any) => {
-        if (tokenResponse?.access_token) {
-          handleSocialSuccess("google", tokenResponse.access_token);
-        }
-      },
-    });
-    client?.requestAccessToken();
+    try {
+      const code = await openGoogleOAuth(clientId);
+      await handleSocialSuccess("google", code);
+    } catch (err: any) {
+      toast({
+        variant: "error",
+        title: "Error",
+        description: err.message || "Google sign in failed",
+      });
+    }
   };
 
   const handleLinkedInSignIn = async () => {
     const clientId = process.env.NEXT_PUBLIC_LINKEDIN_CLIENT_ID ?? "";
-    const redirectUri = `${window.location.origin}/auth/linkedin/callback`;
     try {
-      const code = await openLinkedInOAuth(clientId, redirectUri);
+      const code = await openLinkedInOAuth(clientId, linkedInRedirectUri());
       await handleSocialSuccess("linkedin", code);
     } catch (err: any) {
       toast({

@@ -1,51 +1,32 @@
 import NextAuth, { NextAuthOptions } from "next-auth";
-import GoogleProvider from "next-auth/providers/google";
-import LinkedInProvider from "next-auth/providers/linkedin";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { getApiUrl } from "@/lib/api";
 
 export const authOptions: NextAuthOptions = {
   providers: [
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID || "",
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
-    }),
-    LinkedInProvider({
-      clientId: process.env.LINKEDIN_CLIENT_ID || "",
-      clientSecret: process.env.LINKEDIN_CLIENT_SECRET || "",
-      authorization: {
-        params: { scope: "openid profile email" },
-      },
-      issuer: "https://www.linkedin.com",
-      jwks_endpoint: "https://www.linkedin.com/oauth/openid/jwks",
-      profile(profile) {
-        return {
-          id: profile.sub,
-          name: profile.name,
-          email: profile.email,
-          image: profile.picture,
-        };
-      },
-    }),
+    // Social sign-in runs entirely through this provider. NextAuth's own
+    // Google/LinkedIn providers are deliberately absent: nothing called them,
+    // and they exposed a second /api/auth/signin/* entry point that handed the
+    // backend a raw access token — the credential the backend no longer trusts.
     CredentialsProvider({
       id: "social-token",
       name: "Social Token",
       credentials: {
         provider: { label: "Provider", type: "text" },
-        access_token: { label: "Access Token", type: "text" },
+        code: { label: "Authorization Code", type: "text" },
       },
       async authorize(credentials) {
-        // The provider access token is the ONLY thing accepted from the client.
-        // Identity (id, email, role) is read from the backend's response to the
-        // exchange — never from the request — so a caller cannot mint a session
-        // for an arbitrary email or role.
+        // A one-time authorization code is the ONLY thing accepted from the
+        // client. Identity (id, email, role) is read from the backend's response
+        // to the exchange — never from the request — so a caller cannot mint a
+        // session for an arbitrary email or role.
         const provider = credentials?.provider;
 
         if (provider !== "google" && provider !== "linkedin") {
           throw new Error("Unsupported sign in provider");
         }
 
-        if (!credentials?.access_token) {
+        if (!credentials?.code) {
           throw new Error("Missing social login credentials");
         }
 
@@ -55,16 +36,25 @@ export const authOptions: NextAuthOptions = {
             "Content-Type": "application/json",
             Accept: "application/json",
           },
-          body: JSON.stringify({ access_token: credentials.access_token }),
+          body: JSON.stringify({ code: credentials.code }),
         });
 
         const body = await res.json().catch(() => null);
 
         if (!res.ok || !body?.data?.token || !body?.data?.user) {
-          // Keep the backend's message server-side; it can carry provider
+          console.error(`${provider} social login failed`, res.status, body?.code, body?.message);
+
+          // Only refusals the backend marks as user-facing get their message
+          // forwarded. Anything else (a failed exchange, an unexpected status)
+          // is reported generically — those messages can carry provider
           // internals that shouldn't reach the browser.
-          console.error(`${provider} social login failed`, res.status, body?.message);
-          throw new Error(`${provider === "google" ? "Google" : "LinkedIn"} sign in failed`);
+          const explained = ["provider_email_unverified", "staff_account", "account_inactive"];
+
+          throw new Error(
+            explained.includes(body?.code) && body?.message
+              ? body.message
+              : `${provider === "google" ? "Google" : "LinkedIn"} sign in failed`
+          );
         }
 
         const { user, token, current_enrollment } = body.data;
@@ -145,50 +135,7 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async signIn({ user, account, profile }) {
-      // For OAuth providers (Google, LinkedIn)
-      if (account?.provider === "google" || account?.provider === "linkedin") {
-        try {
-          // Send OAuth access token to v1 backend
-          const endpoint = account.provider === "google" 
-            ? `${getApiUrl()}/api/v1/auth/social/google`
-            : `${getApiUrl()}/api/v1/auth/social/linkedin`;
-          
-          const response = await fetch(endpoint, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Accept": "application/json",
-            },
-            body: JSON.stringify({
-              access_token: account.access_token,
-            }),
-          });
-
-          const data = await response.json();
-
-          if (!response.ok) {
-            console.error("OAuth backend error:", data);
-            return false;
-          }
-
-          // v1 API response structure for OAuth
-          user.token = data.data.token;
-          user.role = data.data.user.role;
-          user.status = data.data.user.status || "active";
-          user.id = data.data.user.id.toString();
-          user.hasEnrollment = !!data.data.current_enrollment?.id;
-
-          return true;
-        } catch (error) {
-          console.error("OAuth sign in error:", error);
-          return false;
-        }
-      }
-
-      return true;
-    },
-    async jwt({ token, user, account }) {
+    async jwt({ token, user }) {
       // Initial sign in
       if (user) {
         token.id = user.id;

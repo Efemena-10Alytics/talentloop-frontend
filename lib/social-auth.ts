@@ -11,18 +11,19 @@ export interface SocialSignInResult {
 /**
  * Signs in with a social provider.
  *
- * The provider access token is handed to NextAuth, which exchanges it with the
- * backend server-side and derives the identity from that response. The browser
- * never asserts who it is — passing an email/role/token from here would let any
- * caller mint a session for an arbitrary account.
+ * `code` is a one-time OAuth authorization code. It is handed to NextAuth, which
+ * forwards it to the backend; the backend redeems it with the client secret and
+ * derives the identity from the provider's response. Two things follow: the
+ * browser never asserts who it is, and the credential is bound to our client_id,
+ * so a token minted for some other OAuth app cannot be replayed here.
  */
 export async function socialSignIn(
   provider: "google" | "linkedin",
-  access_token: string
+  code: string
 ): Promise<SocialSignInResult> {
   const result = await signIn("social-token", {
     provider,
-    access_token,
+    code,
     redirect: false,
   });
 
@@ -45,9 +46,76 @@ export async function socialSignIn(
   };
 }
 
+/**
+ * The redirect URI LinkedIn sends the code back to. The backend has to send the
+ * exact same value when it redeems the code, so it is configured rather than
+ * derived from the current origin.
+ */
+export function linkedInRedirectUri(): string {
+  return (
+    process.env.NEXT_PUBLIC_LINKEDIN_REDIRECT_URI ||
+    `${window.location.origin}/auth/linkedin/callback`
+  );
+}
+
+/** Cryptographically random CSRF state for the OAuth popup. */
+function randomState(): string {
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+/**
+ * Opens Google's popup consent flow and resolves with an authorization code.
+ *
+ * Uses `initCodeClient` rather than `initTokenClient`: the token client hands
+ * the browser an access token, which the backend cannot verify was issued to
+ * us. `ux_mode: "popup"` keeps our own styled button and makes Google treat
+ * `postmessage` as the redirect URI — the backend must match that on exchange.
+ */
+export function openGoogleOAuth(clientId: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const codeClient = (
+      window as unknown as {
+        google?: {
+          accounts?: {
+            oauth2?: {
+              initCodeClient: (config: Record<string, unknown>) => { requestCode: () => void };
+            };
+          };
+        };
+      }
+    ).google?.accounts?.oauth2?.initCodeClient({
+      client_id: clientId,
+      scope: "openid email profile",
+      ux_mode: "popup",
+      callback: (response: { code?: string; error?: string }) => {
+        if (response?.error) {
+          reject(new Error("Google sign in was cancelled"));
+          return;
+        }
+
+        if (!response?.code) {
+          reject(new Error("Invalid response from Google"));
+          return;
+        }
+
+        resolve(response.code);
+      },
+    });
+
+    if (!codeClient) {
+      reject(new Error("Google sign in is unavailable. Please reload and try again."));
+      return;
+    }
+
+    codeClient.requestCode();
+  });
+}
+
 export function openLinkedInOAuth(clientId: string, redirectUri: string): Promise<string> {
   return new Promise((resolve, reject) => {
-    const state = Math.random().toString(36).substring(2);
+    const state = randomState();
     const scope = "openid profile email";
     const authUrl =
       `https://www.linkedin.com/oauth/v2/authorization` +
