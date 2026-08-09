@@ -31,27 +31,52 @@ export const authOptions: NextAuthOptions = {
       id: "social-token",
       name: "Social Token",
       credentials: {
-        id: { label: "Id", type: "text" },
-        email: { label: "Email", type: "text" },
-        name: { label: "Name", type: "text" },
-        role: { label: "Role", type: "text" },
-        token: { label: "Token", type: "text" },
+        provider: { label: "Provider", type: "text" },
+        access_token: { label: "Access Token", type: "text" },
       },
       async authorize(credentials) {
-        // The client has already exchanged the OAuth access token for a
-        // backend token via /api/v1/auth/social/{provider}. We trust that
-        // result here purely to establish a NextAuth session/cookie.
-        if (!credentials?.token || !credentials?.email) {
+        // The provider access token is the ONLY thing accepted from the client.
+        // Identity (id, email, role) is read from the backend's response to the
+        // exchange — never from the request — so a caller cannot mint a session
+        // for an arbitrary email or role.
+        const provider = credentials?.provider;
+
+        if (provider !== "google" && provider !== "linkedin") {
+          throw new Error("Unsupported sign in provider");
+        }
+
+        if (!credentials?.access_token) {
           throw new Error("Missing social login credentials");
         }
 
+        const res = await fetch(`${getApiUrl()}/api/v1/auth/social/${provider}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify({ access_token: credentials.access_token }),
+        });
+
+        const body = await res.json().catch(() => null);
+
+        if (!res.ok || !body?.data?.token || !body?.data?.user) {
+          // Keep the backend's message server-side; it can carry provider
+          // internals that shouldn't reach the browser.
+          console.error(`${provider} social login failed`, res.status, body?.message);
+          throw new Error(`${provider === "google" ? "Google" : "LinkedIn"} sign in failed`);
+        }
+
+        const { user, token, current_enrollment } = body.data;
+
         return {
-          id: credentials.id,
-          email: credentials.email,
-          name: credentials.name || credentials.email,
-          role: credentials.role || "user",
-          status: "active",
-          token: credentials.token,
+          id: user.id.toString(),
+          email: user.email,
+          name: user.name || user.email,
+          role: user.role || "user",
+          status: user.status || "active",
+          token,
+          hasEnrollment: !!current_enrollment?.id,
         };
       },
     }),
@@ -152,6 +177,7 @@ export const authOptions: NextAuthOptions = {
           user.role = data.data.user.role;
           user.status = data.data.user.status || "active";
           user.id = data.data.user.id.toString();
+          user.hasEnrollment = !!data.data.current_enrollment?.id;
 
           return true;
         } catch (error) {
@@ -170,6 +196,7 @@ export const authOptions: NextAuthOptions = {
         token.role = user.role || "";
         token.status = user.status || "";
         token.backendToken = user.token || "";
+        token.hasEnrollment = user.hasEnrollment ?? false;
       }
 
       return token;
@@ -182,6 +209,7 @@ export const authOptions: NextAuthOptions = {
         session.user.role = token.role as string;
         session.user.status = token.status as string;
         session.backendToken = token.backendToken as string;
+        session.hasEnrollment = (token.hasEnrollment as boolean) ?? false;
       }
 
       return session;

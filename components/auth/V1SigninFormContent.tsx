@@ -7,7 +7,7 @@ import Link from "next/link";
 import { useToast } from "@/components/ui/use-toast";
 import { getApiUrl, getHeaders, getAuthHeaders } from "@/lib/api";
 import EmailVerification from "@/components/EmailVerification";
-import { socialLogin, openLinkedInOAuth, establishSocialSession } from "@/lib/social-auth";
+import { socialSignIn, openLinkedInOAuth } from "@/lib/social-auth";
 
 /* ─── SVGs ─── */
 
@@ -256,16 +256,14 @@ export default function V1SigninFormContent({
   ) => {
     setSocialLoading(provider);
     try {
-      const result = await socialLogin(provider, access_token);
-      localStorage.setItem("auth_token", result.data.token);
-      await establishSocialSession(result);
+      const result = await socialSignIn(provider, access_token);
+      localStorage.setItem("auth_token", result.token);
       toast({
         variant: "success",
-        title: result.message || "Welcome back!",
-        description: `Signed in as ${result.data.user.name || result.data.user.email}`,
+        title: "Welcome back!",
+        description: `Signed in as ${result.name}`,
       });
-      const hasEnrollment = !!result.data.current_enrollment?.id;
-      handleAuthenticated(hasEnrollment);
+      handleAuthenticated(result.hasEnrollment);
     } catch (err: any) {
       toast({
         variant: "error",

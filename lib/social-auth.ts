@@ -1,73 +1,48 @@
-import { signIn } from "next-auth/react";
-import { getApiUrl } from "@/lib/api";
+import { getSession, signIn } from "next-auth/react";
 
-const API_BASE = getApiUrl();
-
-export interface SocialAuthResponse {
-  status: string;
-  message: string;
-  data: {
-    user: {
-      id: number;
-      name: string;
-      email: string;
-      email_verified_at: string | null;
-      role: string;
-      provider: string;
-      provider_id: string;
-      stripe_customer_id: string | null;
-      created_at: string;
-      updated_at: string;
-    };
-    token: string;
-    token_type: string;
-    current_enrollment?: {
-      id: number;
-      status: string;
-    } | null;
-  };
-}
-
-export async function socialLogin(
-  provider: "google" | "linkedin",
-  access_token: string
-): Promise<SocialAuthResponse> {
-  const res = await fetch(`${API_BASE}/api/v1/auth/social/${provider}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-    body: JSON.stringify({ access_token }),
-  });
-
-  const data = await res.json();
-
-  if (!res.ok) {
-    throw new Error(data.message || `${provider} login failed`);
-  }
-
-  return data as SocialAuthResponse;
+export interface SocialSignInResult {
+  email: string;
+  name: string;
+  role: string;
+  token: string;
+  hasEnrollment: boolean;
 }
 
 /**
- * Establishes a NextAuth session/cookie from an already-verified backend
- * social login response, so `useSession()` reflects "authenticated" and
- * authenticated requests (via the NextAuth-backed backendToken) work.
+ * Signs in with a social provider.
+ *
+ * The provider access token is handed to NextAuth, which exchanges it with the
+ * backend server-side and derives the identity from that response. The browser
+ * never asserts who it is — passing an email/role/token from here would let any
+ * caller mint a session for an arbitrary account.
  */
-export async function establishSocialSession(result: SocialAuthResponse): Promise<void> {
-  const signInResult = await signIn("social-token", {
-    id: result.data.user.id.toString(),
-    email: result.data.user.email,
-    name: result.data.user.name,
-    role: result.data.user.role,
-    token: result.data.token,
+export async function socialSignIn(
+  provider: "google" | "linkedin",
+  access_token: string
+): Promise<SocialSignInResult> {
+  const result = await signIn("social-token", {
+    provider,
+    access_token,
     redirect: false,
   });
 
-  if (signInResult?.error) {
-    throw new Error(signInResult.error || "Failed to establish session");
+  if (!result?.ok || result.error) {
+    throw new Error(result?.error || `${provider} sign in failed`);
   }
+
+  const session = await getSession();
+
+  if (!session?.backendToken) {
+    throw new Error("Failed to establish session");
+  }
+
+  return {
+    email: session.user.email,
+    name: session.user.name || session.user.email,
+    role: session.user.role,
+    token: session.backendToken,
+    hasEnrollment: session.hasEnrollment,
+  };
 }
 
 export function openLinkedInOAuth(clientId: string, redirectUri: string): Promise<string> {

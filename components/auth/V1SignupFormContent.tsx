@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import { getApiUrl, getHeaders } from "@/lib/api";
 import { useToast } from "@/components/ui/use-toast";
 import EmailVerification from "@/components/EmailVerification";
-import { socialLogin, openLinkedInOAuth, establishSocialSession } from "@/lib/social-auth";
+import { socialSignIn, openLinkedInOAuth } from "@/lib/social-auth";
 
 /* ─── SVGs ─── */
 
@@ -200,20 +200,15 @@ export default function V1SignupFormContent({
   const handleSocialSuccess = async (provider: "google" | "linkedin", access_token: string) => {
     setSocialLoading(provider);
     try {
-      const result = await socialLogin(provider, access_token);
-      localStorage.setItem("auth_token", result.data.token);
-      await establishSocialSession(result);
+      const result = await socialSignIn(provider, access_token);
+      localStorage.setItem("auth_token", result.token);
       toast({
         variant: "success",
-        title: result.message || `${provider} sign up successful`,
-        description: `Welcome, ${result.data.user.name || result.data.user.email}!`,
+        title: `${provider} sign up successful`,
+        description: `Welcome, ${result.name}!`,
       });
       if (!isModal) {
-        if (result.data.user?.stripe_customer_id) {
-          router.push("/dashboard");
-        } else {
-          router.push("/dashboard");
-        }
+        router.push("/dashboard");
       }
     } catch (err: any) {
       toast({

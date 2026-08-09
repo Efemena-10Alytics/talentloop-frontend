@@ -10,6 +10,7 @@ declare module "next-auth" {
       status: string;
     } & DefaultSession["user"];
     backendToken: string;
+    hasEnrollment: boolean;
   }
 
   interface User {
@@ -18,6 +19,7 @@ declare module "next-auth" {
     role?: string;
     status?: string;
     token?: string;
+    hasEnrollment?: boolean;
   }
 }
 
@@ -28,5 +30,6 @@ declare module "next-auth/jwt" {
     role: string;
     status: string;
     backendToken: string;
+    hasEnrollment: boolean;
   }
 }
