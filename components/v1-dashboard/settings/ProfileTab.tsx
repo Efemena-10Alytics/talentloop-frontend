@@ -214,6 +214,7 @@ export default function ProfileTab() {
                   { value: "friend", label: "Friend/Referral" },
                   { value: "search", label: "Search Engine" },
                   { value: "ad", label: "Advertisement" },
+                  { value: "facebook_ads", label: "Facebook Ads" },
                   { value: "other", label: "Other" },
                 ]}
               />

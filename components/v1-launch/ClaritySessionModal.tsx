@@ -17,6 +17,7 @@ interface ClaritySessionModalProps {
 
 const referralOptions = [
   "Talentloop Facebook/Instagram",
+  "Facebook Ads",
   "Adeiza Suleman",
   "Friends & Family",
   "Kolade-iam_kriyl",
