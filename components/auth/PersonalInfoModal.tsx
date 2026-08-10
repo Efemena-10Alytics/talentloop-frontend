@@ -1,14 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "@/components/ui/use-toast";
 import { getApiUrl, getAuthHeaders } from "@/lib/api";
-import PhoneInput from "react-phone-number-input";
+import PhoneInput, { type Country } from "react-phone-number-input";
 import "react-phone-number-input/style.css";
 import "@/styles/phone-input.css";
 import { Select } from "@/components/ui/Select";
-import { countries } from "@/app/_hooks/countries";
+import { COUNTRY_OPTIONS, countryCodeOf, countryNameOf } from "@/lib/countries";
+import { useGeoCountry } from "@/lib/hooks/useGeoCountry";
+import { useProfile } from "@/hooks/useUserData";
 
 interface PersonalInfoModalProps {
   isOpen: boolean;
@@ -32,6 +34,9 @@ export default function PersonalInfoModal({
 }: PersonalInfoModalProps) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const { data: profile } = useProfile();
+  const geoCountry = useGeoCountry();
+
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -40,6 +45,45 @@ export default function PersonalInfoModal({
     referralSource: "",
     is10AlyticsOrAmdari: false,
   });
+
+  const prefilled = useRef(false);
+
+  // Prefill from whatever is already saved. The profile may be partial — that's
+  // the case this modal exists to complete.
+  useEffect(() => {
+    if (!isOpen || prefilled.current || !profile) return;
+
+    prefilled.current = true;
+
+    // Seeding a form from data that arrives asynchronously is what effects are
+    // for. The ref above keeps it to once per mount, so a background refetch
+    // can't overwrite what the user is currently typing.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setFormData((prev) => ({
+      ...prev,
+      firstName: profile.first_name || prev.firstName,
+      lastName: profile.last_name || prev.lastName,
+      country: countryNameOf(profile.country) || prev.country,
+      phone: profile.phone || prev.phone,
+      referralSource: profile.referral_source || prev.referralSource,
+    }));
+  }, [isOpen, profile]);
+
+  // Fall back to the country the edge detected, but only to fill a blank —
+  // never over a stored or user-chosen value.
+  useEffect(() => {
+    if (!isOpen || !geoCountry) return;
+
+    const detected = countryNameOf(geoCountry);
+    if (!detected) return;
+
+    // Same reasoning: the detected country arrives after mount, and the updater
+    // is a no-op unless the field is still blank.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setFormData((prev) => (prev.country ? prev : { ...prev, country: detected }));
+  }, [isOpen, geoCountry]);
+
+  const phoneCountry = countryCodeOf(formData.country) as Country | undefined;
 
   const handleInputChange = (field: string, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -65,10 +109,12 @@ export default function PersonalInfoModal({
 
     try {
       const headers = await getAuthHeaders();
+      // POST creates the profile and 409s if one already exists, so an existing
+      // (possibly partial) profile has to be topped up with PATCH instead.
       const response = await fetch(
         `${getApiUrl()}/api/v1/profile/personal-info`,
         {
-          method: "POST",
+          method: profile ? "PATCH" : "POST",
           headers,
           body: JSON.stringify({
             first_name: formData.firstName,
@@ -195,10 +241,9 @@ export default function PersonalInfoModal({
                   value={formData.country}
                   onChange={(value) => handleInputChange("country", value)}
                   placeholder="Select"
-                  options={countries.map((country) => ({
-                    value: country.name,
-                    label: country.name,
-                  }))}
+                  searchable
+                  searchPlaceholder="Search countries..."
+                  options={COUNTRY_OPTIONS}
                 />
               </div>
 
@@ -208,8 +253,12 @@ export default function PersonalInfoModal({
                   Phone Contact (Preferably WhatsApp)
                 </label>
                 <PhoneInput
+                  // PhoneInput re-selects on defaultCountry changes only while
+                  // the user hasn't picked a country or typed a number, so the
+                  // country dropdown and the geo guess can both steer it
+                  // without ever rewriting an entered number.
                   international
-                  defaultCountry="NG"
+                  defaultCountry={phoneCountry}
                   value={formData.phone}
                   onChange={(value) => handleInputChange("phone", value || "")}
                   className="phone-input-custom"

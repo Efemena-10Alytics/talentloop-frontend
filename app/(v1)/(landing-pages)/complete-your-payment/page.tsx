@@ -115,6 +115,7 @@ const CompleteYourPaymentContent = () => {
   const {
     data: profile,
     refetch: refetchProfile,
+    isSuccess: profileLoaded,
   } = useProfile();
 
   const { data: authMeData, refetch: refetchAuthMe } = useAuthMe();
@@ -183,12 +184,22 @@ const CompleteYourPaymentContent = () => {
     }
   }, [cancelParam]);
 
-  // Auto-show PersonalInfoModal when authenticated user has no profile data on step 1
+  // Auto-show PersonalInfoModal when an authenticated user has no profile data
+  // on step 1.
+  //
+  // This must wait for the profile query to actually resolve. `profile` is
+  // undefined while it's in flight, which reads as "nothing filled in" — that's
+  // why the modal used to appear for everyone. `initialLoading` doesn't help
+  // here: it deliberately tracks pricing only (see above). Gating on
+  // profileLoaded also means a failed request leaves the modal shut rather than
+  // prompting someone who has already filled this in.
   useEffect(() => {
-    if (!initialLoading && session && !hasProfileData && currentStep === 1) {
-      setShowPersonalInfoModal(true);
-    }
-  }, [initialLoading, session, hasProfileData, currentStep]);
+    if (!session || currentStep !== 1 || !profileLoaded) return;
+
+    // Reacting to an async query result is exactly the case effects exist for.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setShowPersonalInfoModal(!hasProfileData);
+  }, [session, currentStep, profileLoaded, hasProfileData]);
 
   // --- Step handlers ---
 

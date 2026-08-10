@@ -1,9 +1,9 @@
 "use client";
 
 import { useRef, useState } from "react";
-import PhoneInput from "react-phone-number-input";
+import PhoneInput, { type Country } from "react-phone-number-input";
 import "react-phone-number-input/style.css";
-import { countries } from "@/app/_hooks/countries";
+import { COUNTRY_OPTIONS, countryCodeOf, countryNameOf } from "@/lib/countries";
 import { useAvatar } from "@/context/AvatarContext";
 import { useAuthMe } from "@/hooks/useUserData";
 import { useToast } from "@/components/ui/use-toast";
@@ -27,7 +27,11 @@ export default function ProfileTab() {
   const [uploading, setUploading] = useState(false);
 
   const [phoneNumber, setPhoneNumber] = useState(apiProfile?.phone ?? "");
-  const [selectedCountry, setSelectedCountry] = useState(apiProfile?.country ?? "");
+  // Normalised on read: this tab used to store ISO codes while the payment
+  // modals stored names, so saved values come in both shapes.
+  const [selectedCountry, setSelectedCountry] = useState(
+    countryNameOf(apiProfile?.country),
+  );
   const [selectedSource, setSelectedSource] = useState(apiProfile?.referral_source ?? "");
 
   const displayAvatar = preview ?? avatarUrl ?? apiProfile?.avatar ?? null;
@@ -179,10 +183,9 @@ export default function ProfileTab() {
                   value={selectedCountry}
                   onChange={setSelectedCountry}
                   placeholder="Select"
-                  options={countries.map((country) => ({
-                    value: country.code,
-                    label: country.name,
-                  }))}
+                  searchable
+                  searchPlaceholder="Search countries..."
+                  options={COUNTRY_OPTIONS}
                 />
               </div>
               <div>
@@ -190,7 +193,7 @@ export default function ProfileTab() {
                 <div className="phone-input-wrapper">
                   <PhoneInput
                     international
-                    defaultCountry="US"
+                    defaultCountry={countryCodeOf(selectedCountry) as Country | undefined}
                     value={phoneNumber}
                     onChange={(value) => setPhoneNumber(value || "")}
                     className="w-full h-14 rounded-[40px] border border-[#FFFFFF1A] bg-transparent px-4 text-white font-jakarta-sans focus-within:border-[#A2CE3A] transition-colors"

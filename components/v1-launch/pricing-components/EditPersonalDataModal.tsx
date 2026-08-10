@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import PhoneInput from "react-phone-number-input";
+import PhoneInput, { type Country } from "react-phone-number-input";
 import "react-phone-number-input/style.css";
-import { countries } from "@/app/_hooks/countries";
+import { COUNTRY_OPTIONS, countryCodeOf } from "@/lib/countries";
 import { Select } from "@/components/ui/Select";
 import { useToast } from "@/components/ui/use-toast";
 import { getApiUrl, getAuthHeaders } from "@/lib/api";
@@ -232,7 +232,9 @@ export default function EditPersonalDataModal({
                 </label>
                 <PhoneInput
                   international
-                  defaultCountry="GB"
+                  defaultCountry={
+                    (countryCodeOf(formData.location) ?? "GB") as Country
+                  }
                   value={formData.phone}
                   onChange={(value) => handleChange("phone", value || "")}
                   className="phone-input-custom"
@@ -249,7 +251,9 @@ export default function EditPersonalDataModal({
                   value={formData.location}
                   onChange={(value) => handleChange("location", value)}
                   placeholder="Select a country"
-                  options={countries.map((country) => ({ value: country.name, label: country.name }))}
+                  searchable
+                  searchPlaceholder="Search countries..."
+                  options={COUNTRY_OPTIONS}
                 />
               </div>
 

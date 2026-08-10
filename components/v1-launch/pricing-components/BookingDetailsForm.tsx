@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import PhoneInput from "react-phone-number-input";
+import PhoneInput, { type Country } from "react-phone-number-input";
 import "react-phone-number-input/style.css";
 import { Select } from "@/components/ui/Select";
+import { useGeoCountry } from "@/lib/hooks/useGeoCountry";
 
 interface BookingDetailsFormProps {
   selectedDate: Date | null;
@@ -37,6 +38,7 @@ export default function BookingDetailsForm({
   onBack,
   onSubmit,
 }: BookingDetailsFormProps) {
+  const geoCountry = useGeoCountry();
   const [formData, setFormData] = useState<BookingFormData>({
     firstName: "",
     lastName: "",
@@ -160,8 +162,10 @@ export default function BookingDetailsForm({
             Phone Contact (Preferably WhatsApp)
           </label>
           <PhoneInput
+            // No country field on this form, so the detected country is the
+            // only signal available; GB stays the fallback.
             international
-            defaultCountry="GB"
+            defaultCountry={(geoCountry ?? "GB") as Country}
             value={formData.phone}
             onChange={(value) =>
               setFormData({ ...formData, phone: value || "" })

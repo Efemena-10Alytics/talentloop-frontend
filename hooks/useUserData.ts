@@ -68,7 +68,13 @@ async function fetchProfile(): Promise<ProfileData | null> {
   const res = await fetch("/api/user/profile", {
     method: "GET",
   });
-  if (!res.ok) return null;
+
+  // "No profile yet" comes back as 200 with data:null, so any non-ok response is
+  // a genuine failure and must surface as one. Callers decide whether to prompt
+  // the user for details from this value; a transient 500 previously arrived as
+  // null and was indistinguishable from "hasn't filled it in".
+  if (!res.ok) throw new Error(`Failed to fetch profile (${res.status})`);
+
   const json = await res.json();
   return json.data ?? null;
 }

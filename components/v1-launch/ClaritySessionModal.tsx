@@ -4,10 +4,11 @@ import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { getApiUrl } from "@/lib/api";
 import { useToast } from "@/components/ui/use-toast";
-import PhoneInput from "react-phone-number-input";
+import PhoneInput, { type Country } from "react-phone-number-input";
 import "react-phone-number-input/style.css";
 import "@/styles/phone-input.css";
 import { Select } from "@/components/ui/Select";
+import { useGeoCountry } from "@/lib/hooks/useGeoCountry";
 
 interface ClaritySessionModalProps {
   isOpen: boolean;
@@ -38,6 +39,7 @@ export default function ClaritySessionModal({
   });
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const geoCountry = useGeoCountry();
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -210,8 +212,10 @@ export default function ClaritySessionModal({
                     Phone
                   </label>
                   <PhoneInput
+                    // There's no country field here, so the detected country is
+                    // the only signal available; GB stays the fallback.
                     international
-                    defaultCountry="GB"
+                    defaultCountry={(geoCountry ?? "GB") as Country}
                     value={formData.phone}
                     onChange={(value) => setFormData({ ...formData, phone: value || "" })}
                     className="phone-input-custom"
