@@ -1,5 +1,21 @@
 import { getSession, signIn } from "next-auth/react";
 
+export type SocialProvider = "google" | "linkedin";
+
+export const SOCIAL_PROVIDER_LABELS: Record<SocialProvider, string> = {
+  google: "Google",
+  linkedin: "LinkedIn",
+};
+
+/** Survives the round trip to the provider and back; cleared on the way out. */
+const PENDING_KEY = "social_oauth_pending";
+
+interface PendingSocialAuth {
+  provider: SocialProvider;
+  state: string;
+  returnTo?: string;
+}
+
 export interface SocialSignInResult {
   email: string;
   name: string;
@@ -9,16 +25,17 @@ export interface SocialSignInResult {
 }
 
 /**
- * Signs in with a social provider.
+ * Completes a social sign-in from the authorization code the provider handed
+ * back. Called by the callback page, never by a form.
  *
- * `code` is a one-time OAuth authorization code. It is handed to NextAuth, which
- * forwards it to the backend; the backend redeems it with the client secret and
- * derives the identity from the provider's response. Two things follow: the
- * browser never asserts who it is, and the credential is bound to our client_id,
- * so a token minted for some other OAuth app cannot be replayed here.
+ * The code goes to NextAuth, which forwards it to the backend; the backend
+ * redeems it with the client secret and derives the identity from the
+ * provider's response. So the browser never asserts who it is, and the
+ * credential is bound to our client_id — a token minted for some other OAuth
+ * app cannot be replayed here.
  */
 export async function socialSignIn(
-  provider: "google" | "linkedin",
+  provider: SocialProvider,
   code: string
 ): Promise<SocialSignInResult> {
   const result = await signIn("social-token", {
@@ -28,7 +45,7 @@ export async function socialSignIn(
   });
 
   if (!result?.ok || result.error) {
-    throw new Error(result?.error || `${provider} sign in failed`);
+    throw new Error(result?.error || `${SOCIAL_PROVIDER_LABELS[provider]} sign in failed`);
   }
 
   const session = await getSession();
@@ -47,18 +64,39 @@ export async function socialSignIn(
 }
 
 /**
- * The redirect URI LinkedIn sends the code back to. The backend has to send the
- * exact same value when it redeems the code, so it is configured rather than
- * derived from the current origin.
+ * The callback page the provider redirects back to. The backend replays this
+ * exact value when it redeems the code, so both sides read it from config
+ * rather than deriving it independently.
  */
-export function linkedInRedirectUri(): string {
-  return (
-    process.env.NEXT_PUBLIC_LINKEDIN_REDIRECT_URI ||
-    `${window.location.origin}/auth/linkedin/callback`
-  );
+function redirectUriFor(provider: SocialProvider): string {
+  const configured =
+    provider === "google"
+      ? process.env.NEXT_PUBLIC_GOOGLE_REDIRECT_URI
+      : process.env.NEXT_PUBLIC_LINKEDIN_REDIRECT_URI;
+
+  return configured || `${window.location.origin}/auth/${provider}/callback`;
 }
 
-/** Cryptographically random CSRF state for the OAuth popup. */
+function authorizeUrl(provider: SocialProvider, clientId: string, state: string): string {
+  const params = new URLSearchParams({
+    response_type: "code",
+    client_id: clientId,
+    redirect_uri: redirectUriFor(provider),
+    scope: provider === "google" ? "openid email profile" : "openid profile email",
+    state,
+  });
+
+  if (provider === "google") {
+    // Without this Google silently reuses whichever account is already signed
+    // in, which is surprising on a button the user pressed deliberately.
+    params.set("prompt", "select_account");
+    return `https://accounts.google.com/o/oauth2/v2/auth?${params}`;
+  }
+
+  return `https://www.linkedin.com/oauth/v2/authorization?${params}`;
+}
+
+/** Cryptographically random CSRF state for the OAuth round trip. */
 function randomState(): string {
   const bytes = new Uint8Array(16);
   crypto.getRandomValues(bytes);
@@ -66,114 +104,47 @@ function randomState(): string {
 }
 
 /**
- * Opens Google's popup consent flow and resolves with an authorization code.
+ * Sends the whole tab to the provider's consent screen.
  *
- * Uses `initCodeClient` rather than `initTokenClient`: the token client hands
- * the browser an access token, which the backend cannot verify was issued to
- * us. `ux_mode: "popup"` keeps our own styled button and makes Google treat
- * `postmessage` as the redirect URI — the backend must match that on exchange.
+ * A top-level redirect rather than a popup: popups are blocked by default in
+ * plenty of browsers and are unreliable inside mobile and in-app webviews,
+ * which is exactly where sign-in has to work.
+ *
+ * `returnTo` is where the callback page should land the user afterwards —
+ * normally the page they started from.
  */
-export function openGoogleOAuth(clientId: string): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const codeClient = (
-      window as unknown as {
-        google?: {
-          accounts?: {
-            oauth2?: {
-              initCodeClient: (config: Record<string, unknown>) => { requestCode: () => void };
-            };
-          };
-        };
-      }
-    ).google?.accounts?.oauth2?.initCodeClient({
-      client_id: clientId,
-      scope: "openid email profile",
-      ux_mode: "popup",
-      callback: (response: { code?: string; error?: string }) => {
-        if (response?.error) {
-          reject(new Error("Google sign in was cancelled"));
-          return;
-        }
+export function beginSocialRedirect(provider: SocialProvider, returnTo?: string): void {
+  const clientId =
+    provider === "google"
+      ? process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
+      : process.env.NEXT_PUBLIC_LINKEDIN_CLIENT_ID;
 
-        if (!response?.code) {
-          reject(new Error("Invalid response from Google"));
-          return;
-        }
+  if (!clientId) {
+    throw new Error(`${SOCIAL_PROVIDER_LABELS[provider]} sign in is not set up yet`);
+  }
 
-        resolve(response.code);
-      },
-    });
+  const state = randomState();
 
-    if (!codeClient) {
-      reject(new Error("Google sign in is unavailable. Please reload and try again."));
-      return;
-    }
+  const pending: PendingSocialAuth = { provider, state, returnTo };
+  sessionStorage.setItem(PENDING_KEY, JSON.stringify(pending));
 
-    codeClient.requestCode();
-  });
+  window.location.assign(authorizeUrl(provider, clientId, state));
 }
 
-export function openLinkedInOAuth(clientId: string, redirectUri: string): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const state = randomState();
-    const scope = "openid profile email";
-    const authUrl =
-      `https://www.linkedin.com/oauth/v2/authorization` +
-      `?response_type=code` +
-      `&client_id=${encodeURIComponent(clientId)}` +
-      `&redirect_uri=${encodeURIComponent(redirectUri)}` +
-      `&state=${state}` +
-      `&scope=${encodeURIComponent(scope)}`;
+/**
+ * Reads back what `beginSocialRedirect` stashed, clearing it either way so a
+ * stale record can't be replayed against a later callback.
+ */
+export function consumePendingSocialAuth(): PendingSocialAuth | null {
+  const raw = sessionStorage.getItem(PENDING_KEY);
+  sessionStorage.removeItem(PENDING_KEY);
 
-    const width = 600;
-    const height = 700;
-    const left = window.screenX + (window.outerWidth - width) / 2;
-    const top = window.screenY + (window.outerHeight - height) / 2;
+  if (!raw) return null;
 
-    const popup = window.open(
-      authUrl,
-      "linkedin-oauth",
-      `width=${width},height=${height},left=${left},top=${top}`
-    );
-
-    if (!popup) {
-      reject(new Error("Popup blocked. Please allow popups for this site."));
-      return;
-    }
-
-    const timer = setInterval(() => {
-      try {
-        if (popup.closed) {
-          clearInterval(timer);
-          reject(new Error("LinkedIn sign in was cancelled"));
-          return;
-        }
-
-        const url = popup.location.href;
-        if (url.includes(redirectUri)) {
-          clearInterval(timer);
-          popup.close();
-
-          const params = new URL(url).searchParams;
-          const code = params.get("code");
-          const returnedState = params.get("state");
-          const error = params.get("error");
-
-          if (error) {
-            reject(new Error(params.get("error_description") || "LinkedIn auth error"));
-            return;
-          }
-
-          if (!code || returnedState !== state) {
-            reject(new Error("Invalid response from LinkedIn"));
-            return;
-          }
-
-          resolve(code);
-        }
-      } catch {
-        // Cross-origin — popup hasn't redirected yet, keep polling
-      }
-    }, 500);
-  });
+  try {
+    const parsed = JSON.parse(raw) as PendingSocialAuth;
+    return parsed?.provider && parsed?.state ? parsed : null;
+  } catch {
+    return null;
+  }
 }

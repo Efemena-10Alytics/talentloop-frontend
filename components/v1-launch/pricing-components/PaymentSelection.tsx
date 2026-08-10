@@ -26,6 +26,19 @@ export interface PaymentOption {
   };
 }
 
+/**
+ * Social sign-in sends the whole tab to the provider, so this component's state
+ * is destroyed mid-checkout. The host pages derive the wizard step and the plan
+ * from the URL, so returning to the same URL restores those on its own — these
+ * two values are the only things that don't survive, so they ride in
+ * sessionStorage across the round trip.
+ */
+const RESUME_KEY = "payment_selection_resume";
+
+interface ResumeState {
+  selectedPayment: "full" | "installments";
+}
+
 // Fallback payment plans (used if API data not provided)
 const fallbackPaymentPlans = {
   basic: { price: "£70", fullAmount: "£70" },
@@ -96,10 +109,51 @@ export default function PaymentSelection({
 
   const handleSignupSuccess = () => {
     // Close auth modals and mark that we need to proceed with payment after session updates
+    sessionStorage.removeItem(RESUME_KEY);
     setShowSignupModal(false);
     setShowSigninModal(false);
     setPendingPaymentAfterSignup(true);
   };
+
+  // Dismissing the modal means the user isn't signing in — drop the resume
+  // state so a later visit doesn't auto-proceed out of nowhere.
+  const handleAuthModalClose = () => {
+    sessionStorage.removeItem(RESUME_KEY);
+    setShowSignupModal(false);
+    setShowSigninModal(false);
+  };
+
+  // Persist the resume state whenever an auth modal is open: from there the user
+  // may pick social sign-in, which navigates away without warning.
+  useEffect(() => {
+    if (!showSignupModal && !showSigninModal) return;
+
+    const resume: ResumeState = { selectedPayment };
+    sessionStorage.setItem(RESUME_KEY, JSON.stringify(resume));
+  }, [showSignupModal, showSigninModal, selectedPayment]);
+
+  // Coming back from a social sign-in: restore the choice and pick up where the
+  // user left off, so they don't have to re-select the plan they already chose.
+  // sessionStorage is browser-only, so this has to happen after mount — reading
+  // it during render would break SSR and desync hydration.
+  useEffect(() => {
+    const raw = sessionStorage.getItem(RESUME_KEY);
+    if (!raw) return;
+
+    sessionStorage.removeItem(RESUME_KEY);
+
+    try {
+      const resume = JSON.parse(raw) as ResumeState;
+      // Restoring from a browser-only store is only possible after mount.
+      if (resume?.selectedPayment) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setSelectedPayment(resume.selectedPayment);
+      }
+      setPendingPaymentAfterSignup(true);
+    } catch {
+      // Malformed entry — nothing to resume.
+    }
+  }, []);
 
   const handleSwitchToSignin = () => {
     setShowSignupModal(false);
@@ -344,7 +398,7 @@ export default function PaymentSelection({
       {/* Signup Modal for Unregistered Users */}
       <SignupModal
         isOpen={showSignupModal}
-        onClose={() => setShowSignupModal(false)}
+        onClose={handleAuthModalClose}
         onSuccess={handleSignupSuccess}
         onSwitchToSignin={handleSwitchToSignin}
       />
@@ -352,7 +406,7 @@ export default function PaymentSelection({
       {/* Signin Modal for Existing Users */}
       <SigninModal
         isOpen={showSigninModal}
-        onClose={() => setShowSigninModal(false)}
+        onClose={handleAuthModalClose}
         onSuccess={handleSignupSuccess}
         onSwitchToSignup={handleSwitchToSignup}
       />

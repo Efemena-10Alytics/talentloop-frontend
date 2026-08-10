@@ -1,10 +1,10 @@
 import { Suspense } from "react";
 import SocialCallback, { SocialCallbackScreen } from "@/components/auth/SocialCallback";
 
-export default function LinkedInCallbackPage() {
+export default function GoogleCallbackPage() {
   return (
     <Suspense fallback={<SocialCallbackScreen>Completing sign in...</SocialCallbackScreen>}>
-      <SocialCallback provider="linkedin" />
+      <SocialCallback provider="google" />
     </Suspense>
   );
 }

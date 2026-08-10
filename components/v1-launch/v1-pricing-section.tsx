@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { useActivePricingPlans } from "@/lib/hooks/usePricing";
 import type { PricingPlan } from "@/lib/services/pricing.service";
@@ -94,10 +94,11 @@ const mockPricingPlans = [
 ];
 
 export default function V1PricingSection({ onStartNow }: V1PricingSectionProps) {
-  const defaultPopular = mockPricingPlans.find((p) => p.isMostPopular)?.id ?? "premium";
-  const [selectedPlan, setSelectedPlan] = useState<number | string>(defaultPopular);
+  // null means "the user hasn't picked yet" — the default is derived below from
+  // whichever plans are actually on screen, so it can never name a plan that
+  // isn't in the list.
+  const [selectedPlan, setSelectedPlan] = useState<number | string | null>(null);
   const [hoveredPlan, setHoveredPlan] = useState<number | string | null>(null);
-  const hasAutoSelected = useRef(false);
 
   // Fetch pricing plans from API using Tanstack Query
   const { data: apiPlans, isLoading, isError } = useActivePricingPlans();
@@ -115,21 +116,18 @@ export default function V1PricingSection({ onStartNow }: V1PricingSectionProps) 
       }))
     : mockPricingPlans;
 
-  // Auto-select the most popular plan only once when API data first arrives
-  useEffect(() => {
-    if (hasAutoSelected.current || !apiPlans?.length) return;
-    const popular = pricingPlans.find((p) => p.isMostPopular);
-    if (popular) {
-      setSelectedPlan(popular.id);
-      hasAutoSelected.current = true;
-    }
-  }, [apiPlans]);
-
-  const activePlan = pricingPlans.find(plan => plan.id === selectedPlan) || pricingPlans[1];
+  // Resolve the selection against the plans actually on screen: the user's
+  // explicit pick if it still exists, else the popular one, else the first.
+  // Deriving this during render rather than syncing it in an effect means it
+  // can never lag a frame behind the data or point at a missing plan.
+  const activePlan =
+    pricingPlans.find((plan) => plan.id === selectedPlan) ??
+    pricingPlans.find((plan) => plan.isMostPopular) ??
+    pricingPlans[0];
 
   const handleStartNow = () => {
-    if (onStartNow) {
-      onStartNow(String(selectedPlan));
+    if (onStartNow && activePlan) {
+      onStartNow(String(activePlan.id));
     }
   };
 
@@ -176,7 +174,7 @@ export default function V1PricingSection({ onStartNow }: V1PricingSectionProps) 
         )}
 
         {/* Pricing Container */}
-        {!isLoading && !isError && (
+        {!isLoading && !isError && activePlan && (
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -199,7 +197,7 @@ export default function V1PricingSection({ onStartNow }: V1PricingSectionProps) 
                   onMouseLeave={() => setHoveredPlan(null)}
                   className="rounded-[28px] p-4 lg:p-6 cursor-pointer transition-all duration-500 ease-in-out relative"
                   style={{
-                    background: selectedPlan === plan.id || hoveredPlan === plan.id
+                    background: activePlan?.id === plan.id || hoveredPlan === plan.id
                       ? "linear-gradient(135deg, rgba(162, 206, 58, 0.2) 0%, rgba(21, 99, 116, 0.2) 100%)"
                       : "linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%)"
                   }}
@@ -236,7 +234,7 @@ export default function V1PricingSection({ onStartNow }: V1PricingSectionProps) 
                             borderWidth: "1px"
                           }}
                         >
-                          {selectedPlan === plan.id && (
+                          {activePlan?.id === plan.id && (
                             <div 
                               className="w-3 lg:w-8 h-3 lg:h-8 rounded-full transition-all duration-300"
                               style={{ background: "#A2CE3A" }}

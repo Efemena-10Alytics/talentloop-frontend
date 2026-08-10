@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import localFont from 'next/font/local'
-import Script from "next/script";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { SessionProvider } from "@/components/providers/SessionProvider";
@@ -132,7 +131,6 @@ export default function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
-        <Script src="https://accounts.google.com/gsi/client" strategy="beforeInteractive" />
         <SessionProvider>
           <QueryProvider>
             {children}

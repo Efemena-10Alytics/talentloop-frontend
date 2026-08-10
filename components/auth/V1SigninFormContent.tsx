@@ -7,12 +7,7 @@ import Link from "next/link";
 import { useToast } from "@/components/ui/use-toast";
 import { getApiUrl, getHeaders, getAuthHeaders } from "@/lib/api";
 import EmailVerification from "@/components/EmailVerification";
-import {
-  socialSignIn,
-  openGoogleOAuth,
-  openLinkedInOAuth,
-  linkedInRedirectUri,
-} from "@/lib/social-auth";
+import { beginSocialRedirect, type SocialProvider } from "@/lib/social-auth";
 
 /* ─── SVGs ─── */
 
@@ -255,66 +250,28 @@ export default function V1SigninFormContent({
     }
   };
 
-  const handleSocialSuccess = async (
-    provider: "google" | "linkedin",
-    code: string,
-  ) => {
+  /**
+   * Hands the whole tab to the provider. Everything after the consent screen —
+   * the code exchange, the session, the redirect onwards — happens on
+   * /auth/{provider}/callback, so nothing here needs to await a result.
+   */
+  const startSocialSignIn = (provider: SocialProvider) => {
     setSocialLoading(provider);
     try {
-      const result = await socialSignIn(provider, code);
-      localStorage.setItem("auth_token", result.token);
-      toast({
-        variant: "success",
-        title: "Welcome back!",
-        description: `Signed in as ${result.name}`,
-      });
-      handleAuthenticated(result.hasEnrollment);
+      beginSocialRedirect(provider, window.location.pathname + window.location.search);
     } catch (err: any) {
-      toast({
-        variant: "error",
-        title: "Social sign in failed",
-        description: err.message || `Failed to sign in with ${provider}`,
-      });
-    } finally {
       setSocialLoading(null);
-    }
-  };
-
-  const googleLogin = async () => {
-    const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-    if (!clientId) {
-      toast({
-        variant: "error",
-        title: "Not configured",
-        description: "Google sign in is not set up yet",
-      });
-      return;
-    }
-    try {
-      const code = await openGoogleOAuth(clientId);
-      await handleSocialSuccess("google", code);
-    } catch (err: any) {
       toast({
         variant: "error",
         title: "Error",
-        description: err.message || "Google sign in failed",
+        description: err.message || "Social sign in failed",
       });
     }
   };
 
-  const handleLinkedInSignIn = async () => {
-    const clientId = process.env.NEXT_PUBLIC_LINKEDIN_CLIENT_ID ?? "";
-    try {
-      const code = await openLinkedInOAuth(clientId, linkedInRedirectUri());
-      await handleSocialSuccess("linkedin", code);
-    } catch (err: any) {
-      toast({
-        variant: "error",
-        title: "Error",
-        description: err.message || "LinkedIn sign in failed",
-      });
-    }
-  };
+  const googleLogin = () => startSocialSignIn("google");
+
+  const handleLinkedInSignIn = () => startSocialSignIn("linkedin");
 
   const handleVerifyOtp = async (otpString: string) => {
     setVerifying(true);
