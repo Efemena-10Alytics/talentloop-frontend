@@ -7,6 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Navbar } from "@/components/navbar";
 import V1FooterSection from "@/components/v1-launch/v1-footer-section";
 import PaymentSelection, { PaymentOption } from "@/components/v1-launch/pricing-components/PaymentSelection";
+import { nextPaymentDateOf } from "@/lib/services/quote.service";
 import EnrollmentConfirmation from "@/components/v1-launch/pricing-components/EnrollmentConfirmation";
 import EditPersonalDataModal, { PersonalData } from "@/components/v1-launch/pricing-components/EditPersonalDataModal";
 import PersonalInfoModal from "@/components/auth/PersonalInfoModal";
@@ -356,7 +357,7 @@ export default function EnrollPage() {
                 paymentType: pendingPaymentOption?.type,
                 firstPayment: pendingPaymentOption?.installmentDetails?.first,
                 secondPayment: pendingPaymentOption?.installmentDetails?.second,
-                nextPaymentDate: "Jun 21, 2026",
+                nextPaymentDate: nextPaymentDateOf(pendingPaymentOption?.quote ?? null),
                 pricingPlanData: linkData.pricing,
               }}
               onEditData={() => setShowEditModal(true)}

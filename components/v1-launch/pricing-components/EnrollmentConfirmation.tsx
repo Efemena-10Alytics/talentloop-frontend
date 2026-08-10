@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import TermsConditionsModal from "./TermsConditionsModal";
+import { formatMoney, type PaymentQuote } from "@/lib/services/quote.service";
 
 interface EnrollmentConfirmationProps {
   personalData: {
@@ -20,6 +21,9 @@ interface EnrollmentConfirmationProps {
     secondPayment?: string;
     nextPaymentDate?: string;
     pricingPlanData?: any;
+    /** Server-priced schedule; carries the discount when a coupon is applied. */
+    quote?: PaymentQuote | null;
+    couponCode?: string;
   };
   onEditData: () => void;
   onProceed: () => void;
@@ -75,6 +79,11 @@ export default function EnrollmentConfirmation({
   const [confirmInfo, setConfirmInfo] = useState(false);
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
+
+  // Only treat the quote as a discount when it actually took something off —
+  // a plain quote (no coupon, or the enroll flow) leaves the summary untouched.
+  const discount =
+    paymentPlan.quote && paymentPlan.quote.discount_amount > 0 ? paymentPlan.quote : null;
 
   const steps = [
     { number: "1", label: "Checkout", completed: true },
@@ -261,16 +270,48 @@ export default function EnrollmentConfirmation({
                     </span>
                   </div>
 
-                  {/* Plan Amount */}
-                  {paymentPlan.pricingPlanData?.amount && (
-                    <div className="flex items-center justify-between">
-                      <span className="font-plus-jakarta text-sm" style={{ color: "#CCCCCC" }}>
-                        Amount
-                      </span>
-                      <span className="font-plus-jakarta text-sm font-medium" style={{ color: "#CCCCCC" }}>
-                        £{paymentPlan.pricingPlanData.amount}
-                      </span>
-                    </div>
+                  {/* Plan Amount — broken out into subtotal/discount/total once
+                      a coupon is in play, so the saving is visible on the last
+                      screen before payment. Without one, the single Amount row
+                      stays exactly as it was. */}
+                  {discount ? (
+                    <>
+                      <div className="flex items-center justify-between">
+                        <span className="font-plus-jakarta text-sm" style={{ color: "#CCCCCC" }}>
+                          Subtotal
+                        </span>
+                        <span className="font-plus-jakarta text-sm font-medium" style={{ color: "#CCCCCC" }}>
+                          {formatMoney(discount.original_total, { alwaysDecimals: true })}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="font-plus-jakarta text-sm" style={{ color: "#A2CE3A" }}>
+                          Coupon{paymentPlan.couponCode ? ` (${paymentPlan.couponCode.toUpperCase()})` : ""}
+                        </span>
+                        <span className="font-plus-jakarta text-sm font-medium" style={{ color: "#A2CE3A" }}>
+                          −{formatMoney(discount.discount_amount, { alwaysDecimals: true })}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="font-plus-jakarta text-sm" style={{ color: "#CCCCCC" }}>
+                          Total
+                        </span>
+                        <span className="font-plus-jakarta text-sm font-semibold text-white">
+                          {formatMoney(discount.total, { alwaysDecimals: true })}
+                        </span>
+                      </div>
+                    </>
+                  ) : (
+                    paymentPlan.pricingPlanData?.amount && (
+                      <div className="flex items-center justify-between">
+                        <span className="font-plus-jakarta text-sm" style={{ color: "#CCCCCC" }}>
+                          Amount
+                        </span>
+                        <span className="font-plus-jakarta text-sm font-medium" style={{ color: "#CCCCCC" }}>
+                          £{paymentPlan.pricingPlanData.amount}
+                        </span>
+                      </div>
+                    )
                   )}
 
                   {/* Plan Description */}
@@ -329,14 +370,18 @@ export default function EnrollmentConfirmation({
                           {paymentPlan.secondPayment}
                         </span>
                       </div>
-                      <div className="flex items-center justify-between">
-                        <span className="font-plus-jakarta text-sm" style={{ color: "#CCCCCC" }}>
-                          Next payment date
-                        </span>
-                        <span className="font-plus-jakarta text-sm font-medium" style={{ color: "#CCCCCC" }}>
-                          {paymentPlan.nextPaymentDate}
-                        </span>
-                      </div>
+                      {/* Only shown once the server has priced the schedule —
+                          better a missing row than a made-up date. */}
+                      {paymentPlan.nextPaymentDate && (
+                        <div className="flex items-center justify-between">
+                          <span className="font-plus-jakarta text-sm" style={{ color: "#CCCCCC" }}>
+                            Next payment date
+                          </span>
+                          <span className="font-plus-jakarta text-sm font-medium" style={{ color: "#CCCCCC" }}>
+                            {paymentPlan.nextPaymentDate}
+                          </span>
+                        </div>
+                      )}
                     </>
                   )}
                 </div>

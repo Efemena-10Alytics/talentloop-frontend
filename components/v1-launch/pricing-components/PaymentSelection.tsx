@@ -5,6 +5,12 @@ import { motion } from "framer-motion";
 import { useSession } from "next-auth/react";
 import SignupModal from "@/components/auth/SignupModal";
 import SigninModal from "@/components/auth/SigninModal";
+import {
+  fetchPaymentQuote,
+  formatMoney,
+  QuoteError,
+  type PaymentQuote,
+} from "@/lib/services/quote.service";
 
 interface PaymentSelectionProps {
   planId: string | number;
@@ -24,6 +30,40 @@ export interface PaymentOption {
     first: string;
     second: string;
   };
+  /** Code the user successfully applied, sent on to checkout. */
+  couponCode?: string;
+  /** Server-priced schedule backing the amounts above. */
+  quote?: PaymentQuote | null;
+}
+
+/**
+ * Fold a freshly fetched quote into a stored selection.
+ *
+ * Displayed amounts are only rewritten when the quote actually carries a
+ * discount — otherwise the existing strings are left alone, so a re-quote can
+ * refresh the due dates without reformatting "£350.00" into "£350".
+ */
+export function applyQuoteToPaymentOption(
+  option: PaymentOption,
+  quote: PaymentQuote,
+): PaymentOption {
+  if (quote.discount_amount <= 0) {
+    return { ...option, quote };
+  }
+
+  return {
+    ...option,
+    amount: formatMoney(quote.total),
+    ...(option.type === "installments" && quote.installments.length > 1
+      ? {
+          installmentDetails: {
+            first: formatMoney(quote.installments[0].amount),
+            second: formatMoney(quote.installments[1].amount),
+          },
+        }
+      : {}),
+    quote,
+  };
 }
 
 /**
@@ -37,6 +77,8 @@ const RESUME_KEY = "payment_selection_resume";
 
 interface ResumeState {
   selectedPayment: "full" | "installments";
+  /** Without this an applied coupon vanishes when the user signs in with Google. */
+  appliedCode?: string | null;
 }
 
 // Fallback payment plans (used if API data not provided)
@@ -63,6 +105,16 @@ export default function PaymentSelection({
   const [showSigninModal, setShowSigninModal] = useState(false);
   const [pendingPaymentAfterSignup, setPendingPaymentAfterSignup] = useState(false);
 
+  // --- Coupon / server-priced quote ---
+  const [couponInput, setCouponInput] = useState("");
+  const [appliedCode, setAppliedCode] = useState<string | null>(null);
+  const [quote, setQuote] = useState<PaymentQuote | null>(null);
+  const [couponError, setCouponError] = useState<string | null>(null);
+  const [applying, setApplying] = useState(false);
+
+  const pricingId = pricingPlanData?.id ?? planId;
+  const paymentOptionNumber = selectedPayment === "installments" ? 2 : 1;
+
   // Use API data if provided, otherwise fallback to hardcoded plans
   const planDetails = planAmount
     ? {
@@ -75,10 +127,99 @@ export default function PaymentSelection({
       }
     : (fallbackPaymentPlans[String(planId).toLowerCase() as keyof typeof fallbackPaymentPlans] || fallbackPaymentPlans.premium);
 
+  // Price the current selection server-side. Runs with or without a coupon, so
+  // the confirmation step also gets the real installment due dates. Re-runs when
+  // the option changes, because a coupon's split differs per schedule.
+  //
+  // Failure is silent by design: the fallback mock plans have no pricing row to
+  // quote against, and a pricing hiccup shouldn't block someone from checking
+  // out at the undiscounted price the card already shows.
+  useEffect(() => {
+    if (!pricingId) return;
+
+    let cancelled = false;
+
+    void (async () => {
+      try {
+        const result = await fetchPaymentQuote({
+          pricingId,
+          paymentOption: paymentOptionNumber,
+          couponCode: appliedCode ?? undefined,
+        });
+        if (!cancelled) setQuote(result);
+      } catch {
+        if (!cancelled) setQuote(null);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pricingId, paymentOptionNumber, appliedCode]);
+
+  const handleApplyCoupon = async () => {
+    const code = couponInput.trim();
+    if (!code) return;
+
+    setApplying(true);
+    setCouponError(null);
+
+    try {
+      const result = await fetchPaymentQuote({
+        pricingId,
+        paymentOption: paymentOptionNumber,
+        couponCode: code,
+      });
+      setQuote(result);
+      setAppliedCode(code);
+    } catch (err: unknown) {
+      setCouponError(
+        err instanceof QuoteError ? err.message : "Could not apply this code. Please try again.",
+      );
+    } finally {
+      setApplying(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCode(null);
+    setCouponInput("");
+    setCouponError(null);
+  };
+
+  // Prefer server-priced amounts once we have them, so what the user reads here
+  // is what Stripe will charge.
+  const discounted = quote && quote.discount_amount > 0 ? quote : null;
+  const displayTotal = discounted ? formatMoney(discounted.total) : planDetails.fullAmount;
+  const displayFirst = discounted?.installments[0]
+    ? formatMoney(discounted.installments[0].amount)
+    : "installment1" in planDetails
+      ? String(planDetails.installment1)
+      : "";
+  const displaySecond = discounted?.installments[1]
+    ? formatMoney(discounted.installments[1].amount)
+    : "installment2" in planDetails
+      ? String(planDetails.installment2)
+      : "";
 
   const handlePaymentChange = (type: "full" | "installments") => {
     setSelectedPayment(type);
   };
+
+  /**
+   * The selection handed to the host page. Built in one place so the coupon and
+   * the quoted amounts ride along on both routes out of this screen — the
+   * direct Proceed, and the auto-proceed after signing in.
+   */
+  const buildPaymentOption = (): PaymentOption => ({
+    type: selectedPayment,
+    amount: displayTotal,
+    ...(selectedPayment === "installments" && displayFirst && displaySecond && {
+      installmentDetails: { first: displayFirst, second: displaySecond },
+    }),
+    ...(appliedCode ? { couponCode: appliedCode } : {}),
+    quote,
+  });
 
   const handleProceed = () => {
     // Check if user is authenticated using NextAuth session
@@ -94,17 +235,7 @@ export default function PaymentSelection({
     }
 
     // User is authenticated, proceed with payment
-    const paymentOption: PaymentOption = {
-      type: selectedPayment,
-      amount: planDetails.fullAmount,
-      ...(selectedPayment === "installments" && "installment1" in planDetails && "installment2" in planDetails && {
-        installmentDetails: {
-          first: String(planDetails.installment1),
-          second: String(planDetails.installment2),
-        },
-      }),
-    };
-    onPaymentSelect(paymentOption);
+    onPaymentSelect(buildPaymentOption());
   };
 
   const handleSignupSuccess = () => {
@@ -128,9 +259,9 @@ export default function PaymentSelection({
   useEffect(() => {
     if (!showSignupModal && !showSigninModal) return;
 
-    const resume: ResumeState = { selectedPayment };
+    const resume: ResumeState = { selectedPayment, appliedCode };
     sessionStorage.setItem(RESUME_KEY, JSON.stringify(resume));
-  }, [showSignupModal, showSigninModal, selectedPayment]);
+  }, [showSignupModal, showSigninModal, selectedPayment, appliedCode]);
 
   // Coming back from a social sign-in: restore the choice and pick up where the
   // user left off, so they don't have to re-select the plan they already chose.
@@ -146,8 +277,11 @@ export default function PaymentSelection({
       const resume = JSON.parse(raw) as ResumeState;
       // Restoring from a browser-only store is only possible after mount.
       if (resume?.selectedPayment) {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         setSelectedPayment(resume.selectedPayment);
+      }
+      if (resume?.appliedCode) {
+        setAppliedCode(resume.appliedCode);
+        setCouponInput(resume.appliedCode);
       }
       setPendingPaymentAfterSignup(true);
     } catch {
@@ -169,17 +303,7 @@ export default function PaymentSelection({
   useEffect(() => {
     if (pendingPaymentAfterSignup && status === "authenticated") {
       setPendingPaymentAfterSignup(false);
-      const paymentOption: PaymentOption = {
-        type: selectedPayment,
-        amount: planDetails.fullAmount,
-        ...(selectedPayment === "installments" && "installment1" in planDetails && "installment2" in planDetails && {
-          installmentDetails: {
-            first: String(planDetails.installment1),
-            second: String(planDetails.installment2),
-          },
-        }),
-      };
-      onPaymentSelect(paymentOption);
+      onPaymentSelect(buildPaymentOption());
     }
   }, [pendingPaymentAfterSignup, status]);
 
@@ -255,7 +379,7 @@ export default function PaymentSelection({
                   </div>
                   <div className="flex items-center gap-2 lg:gap-4 w-[40%] lg:w-full">
                     <span className="text-white font-mona-sans font-bold text-lg lg:text-3xl">
-                      {planDetails.fullAmount}
+                      {displayTotal}
                     </span>
                     <div
                       className="w-4 lg:w-6 h-4 lg:h-6 rounded-full border-2 flex items-center justify-center"
@@ -297,7 +421,7 @@ export default function PaymentSelection({
                   </div>
                   <div className="flex items-center gap-2 lg:gap-4 w-[40%] lg:w-full">
                     <span className="text-white font-mona-sans font-bold text-lg lg:text-3xl">
-                      {planDetails.fullAmount}
+                      {displayTotal}
                     </span>
                     <div
                       className="w-4 lg:w-6 h-4 lg:h-6 rounded-full border-2 flex items-center justify-center"
@@ -356,7 +480,7 @@ export default function PaymentSelection({
             {/* Price Display */}
             <div className="mb-6">
               <div className="text-white font-mona-sans font-bold text-4xl lg:text-5xl mb-2">
-                {planDetails.price}
+                {displayTotal}
               </div>
             </div>
 
@@ -371,14 +495,66 @@ export default function PaymentSelection({
               >
                 <div className="flex items-center justify-between font-sora text-[12px] lg:text-sm" style={{ color: "#CCCCCC" }}>
                   <span>First installment-</span>
-                  <span className="font-semibold">{'installment1' in planDetails ? String(planDetails.installment1) : ''}</span>
+                  <span className="font-semibold">{displayFirst}</span>
                 </div>
                 <div className="flex items-center justify-between font-sora text-[12px] lg:text-sm" style={{ color: "#CCCCCC" }}>
                   <span>Second installment-</span>
-                  <span className="font-semibold">{'installment2' in planDetails ? String(planDetails.installment2) : ''}</span>
+                  <span className="font-semibold">{displaySecond}</span>
                 </div>
               </div>
             )}
+
+            {/* Coupon */}
+            <div className="mb-6">
+              {appliedCode && discounted ? (
+                <div
+                  className="flex items-center justify-between gap-3 p-4 rounded-[10px]"
+                  style={{ background: "#A2CE3A1A", border: "1px solid #A2CE3A33" }}
+                >
+                  <div className="font-sora text-[12px] lg:text-sm" style={{ color: "#CCCCCC" }}>
+                    <span className="font-semibold" style={{ color: "#A2CE3A" }}>
+                      {appliedCode.toUpperCase()}
+                    </span>{" "}
+                    applied — you save {formatMoney(discounted.discount_amount)}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleRemoveCoupon}
+                    className="font-sora text-[12px] lg:text-sm text-white/60 hover:text-white transition-colors shrink-0"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={couponInput}
+                    onChange={(e) => {
+                      setCouponInput(e.target.value);
+                      setCouponError(null);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleApplyCoupon();
+                    }}
+                    placeholder="Enter coupon code"
+                    className="flex-1 min-w-0 px-4 py-3 rounded-[10px] bg-[#7676801F] border border-[#FFFFFF1A] text-white font-sora text-[12px] lg:text-sm placeholder:text-white/40 focus:outline-none focus:border-[#A2CE3A] transition-colors"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleApplyCoupon}
+                    disabled={applying || !couponInput.trim()}
+                    className="px-4 py-3 rounded-[10px] font-mona-sans text-[12px] lg:text-sm font-semibold text-white border border-[#A2CE3A] hover:bg-[#A2CE3A1A] transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+                  >
+                    {applying ? "Checking..." : "Apply"}
+                  </button>
+                </div>
+              )}
+
+              {couponError && (
+                <p className="mt-2 font-sora text-[12px] text-red-400">{couponError}</p>
+              )}
+            </div>
 
             {/* Proceed Button */}
             <button

@@ -5,7 +5,10 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Navbar } from "@/components/navbar";
 import V1FooterSection from "@/components/v1-launch/v1-footer-section";
-import PaymentSelection, { PaymentOption } from "@/components/v1-launch/pricing-components/PaymentSelection";
+import PaymentSelection, {
+  applyQuoteToPaymentOption,
+  PaymentOption,
+} from "@/components/v1-launch/pricing-components/PaymentSelection";
 import EnrollmentConfirmation from "@/components/v1-launch/pricing-components/EnrollmentConfirmation";
 import EditPersonalDataModal, { PersonalData } from "@/components/v1-launch/pricing-components/EditPersonalDataModal";
 import PersonalInfoModal from "@/components/auth/PersonalInfoModal";
@@ -16,6 +19,7 @@ import CredentialsUploadSection from "@/components/v1-launch/pricing-components/
 import DisclaimerSection from "@/components/v1-launch/pricing-components/DisclaimerSection";
 import FinalOnboardingCompleteModal from "@/components/v1-launch/pricing-components/FinalOnboardingCompleteModal";
 import { getApiUrl, getAuthHeaders, getHeaders } from "@/lib/api";
+import { fetchPaymentQuote, nextPaymentDateOf } from "@/lib/services/quote.service";
 import { useToast } from "@/components/ui/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import { useProfile, useAuthMe } from "@/hooks/useUserData";
@@ -184,6 +188,38 @@ const CompleteYourPaymentContent = () => {
     }
   }, [cancelParam]);
 
+  // Re-price on entry to step 2. The stored selection can be minutes or days
+  // old — applied on the plan step, then personal details, then maybe tomorrow —
+  // so the summary is re-derived from the server rather than trusted from
+  // sessionStorage. A coupon that expired in the meantime surfaces here instead
+  // of as a 422 when they press Proceed. On failure the stored quote stands.
+  useEffect(() => {
+    if (currentStep !== 2 || !pricingPlan?.id || !paymentOption) return;
+
+    let cancelled = false;
+
+    void (async () => {
+      try {
+        const fresh = await fetchPaymentQuote({
+          pricingId: pricingPlan.id,
+          paymentOption: paymentOption.type === "installments" ? 2 : 1,
+          couponCode: paymentOption.couponCode,
+        });
+
+        if (!cancelled) savePaymentOption(applyQuoteToPaymentOption(paymentOption, fresh));
+      } catch {
+        // Keep what we have; the amounts are re-derived server-side at checkout.
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+    // paymentOption is deliberately keyed on its identity-defining fields, not
+    // the object, so writing the refreshed quote back doesn't re-trigger this.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentStep, pricingPlan?.id, paymentOption?.type, paymentOption?.couponCode]);
+
   // Auto-show PersonalInfoModal when an authenticated user has no profile data
   // on step 1.
   //
@@ -197,7 +233,6 @@ const CompleteYourPaymentContent = () => {
     if (!session || currentStep !== 1 || !profileLoaded) return;
 
     // Reacting to an async query result is exactly the case effects exist for.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setShowPersonalInfoModal(!hasProfileData);
   }, [session, currentStep, profileLoaded, hasProfileData]);
 
@@ -357,13 +392,20 @@ const CompleteYourPaymentContent = () => {
           payment_option: paymentOptionNumber,
           success_url: successUrl,
           cancel_url: cancelUrl,
+          ...(paymentOption?.couponCode ? { coupon_code: paymentOption.couponCode } : {}),
         }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        toast({ variant: "error", title: "Payment Error", description: data.message || "Failed to create payment plan" });
+        // Coupon rejections put the useful text in errors.coupon_code — the
+        // top-level message is just "Validation failed".
+        const detail =
+          data.errors?.coupon_code?.[0] ||
+          data.message ||
+          "Failed to create payment plan";
+        toast({ variant: "error", title: "Payment Error", description: detail });
         setSubmitting(false);
         return;
       }
@@ -416,7 +458,9 @@ const CompleteYourPaymentContent = () => {
                 paymentType: paymentOption?.type,
                 firstPayment: paymentOption?.installmentDetails?.first,
                 secondPayment: paymentOption?.installmentDetails?.second,
-                nextPaymentDate: "Jun 21, 2026",
+                nextPaymentDate: nextPaymentDateOf(paymentOption?.quote ?? null),
+                quote: paymentOption?.quote ?? null,
+                couponCode: paymentOption?.couponCode,
                 pricingPlanData: pricingPlan,
               }}
               onEditData={() => setShowEditModal(true)}
