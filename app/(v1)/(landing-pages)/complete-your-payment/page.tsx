@@ -60,7 +60,7 @@ const LoadingScreen = () => (
 const CompleteYourPaymentContent = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { data: session } = useSession();
+  const { data: session, status: sessionStatus } = useSession();
   const { toast } = useToast();
   const hasShownSuccessToast = useRef(false);
 
@@ -122,7 +122,11 @@ const CompleteYourPaymentContent = () => {
     isSuccess: profileLoaded,
   } = useProfile();
 
-  const { data: authMeData, refetch: refetchAuthMe } = useAuthMe();
+  const {
+    data: authMeData,
+    refetch: refetchAuthMe,
+    isSuccess: authMeLoaded,
+  } = useAuthMe();
 
   const { data: pricingPlan, isLoading: pricingLoading } = useQuery({
     queryKey: ["pricing", pId],
@@ -219,6 +223,45 @@ const CompleteYourPaymentContent = () => {
     // the object, so writing the refreshed quote back doesn't re-trigger this.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentStep, pricingPlan?.id, paymentOption?.type, paymentOption?.couponCode]);
+
+  // Guard: step 2 requires a payment option (e.g. someone typed the URL
+  // manually without going through step 1). Navigating here must happen in
+  // an effect, not during render — calling router.push synchronously while
+  // rendering crashes on the server ("location is not defined").
+  useEffect(() => {
+    if (currentStep === 2 && !paymentOption) {
+      goToStep(1);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentStep, paymentOption]);
+
+  // Guard: steps 3+ are the post-payment onboarding flow — they require a
+  // current enrollment. Someone typing this URL directly (without having
+  // paid) must be bounced back to step 1 rather than seeing the form.
+  const hasEnrollment = !!authMeData?.current_enrollment;
+  const enrollmentGateBlocking =
+    currentStep >= 3 && sessionStatus === "loading";
+
+  useEffect(() => {
+    if (currentStep < 3 || sessionStatus === "loading") return;
+
+    if (sessionStatus === "unauthenticated") {
+      goToStep(1);
+      return;
+    }
+
+    if (!authMeLoaded) return;
+
+    if (!hasEnrollment) {
+      toast({
+        variant: "error",
+        title: "Access denied",
+        description: "Please complete payment before continuing.",
+      });
+      goToStep(1);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentStep, sessionStatus, authMeLoaded, hasEnrollment]);
 
   // Auto-show PersonalInfoModal when an authenticated user has no profile data
   // on step 1.
@@ -364,7 +407,7 @@ const CompleteYourPaymentContent = () => {
 
     // If the user already has a Stripe customer ID, they've paid — skip checkout
     const { data: latestAuthMe } = await refetchAuthMe();
-    if (latestAuthMe?.user?.stripe_customer_id) {
+    if (latestAuthMe?.user?.stripe_customer_id && latestAuthMe?.current_enrollment) {
       goToStep(3);
       return;
     }
@@ -426,6 +469,15 @@ const CompleteYourPaymentContent = () => {
   // --- Render ---
   const renderStep = () => {
     if (initialLoading) return <LoadingScreen />;
+    if (
+      currentStep >= 3 &&
+      (enrollmentGateBlocking ||
+        sessionStatus !== "authenticated" ||
+        !authMeLoaded ||
+        !hasEnrollment)
+    ) {
+      return <LoadingScreen />;
+    }
 
     switch (currentStep) {
       case 1:
@@ -444,9 +496,9 @@ const CompleteYourPaymentContent = () => {
         );
 
       case 2:
-        // Guard: if no payment option (e.g. user typed URL manually), send back to step 1
+        // Guard: if no payment option (e.g. user typed URL manually), the
+        // effect above sends them back to step 1 — just show loading here.
         if (!paymentOption) {
-          goToStep(1);
           return <LoadingScreen />;
         }
         return (
@@ -481,7 +533,10 @@ const CompleteYourPaymentContent = () => {
           <StepWrapper>
             <CareerInfoSection
               onBack={() => goToStep(2)}
-              onProceed={() => goToStep(4)}
+              onProceed={async () => {
+                await refetchProfile();
+                goToStep(4);
+              }}
               initialData={profile}
             />
           </StepWrapper>
@@ -492,7 +547,10 @@ const CompleteYourPaymentContent = () => {
           <StepWrapper>
             <EducationalInfoSection
               onBack={() => goToStep(3)}
-              onProceed={() => goToStep(5)}
+              onProceed={async () => {
+                await refetchProfile();
+                goToStep(5);
+              }}
               initialData={profile}
             />
           </StepWrapper>
@@ -503,7 +561,10 @@ const CompleteYourPaymentContent = () => {
           <StepWrapper>
             <JobApplicationInfoSection
               onBack={() => goToStep(4)}
-              onProceed={() => goToStep(6)}
+              onProceed={async () => {
+                await refetchProfile();
+                goToStep(6);
+              }}
               initialData={profile}
             />
           </StepWrapper>
@@ -514,7 +575,8 @@ const CompleteYourPaymentContent = () => {
           <StepWrapper>
             <CredentialsUploadSection
               onBack={() => goToStep(5)}
-              onProceed={() => {
+              onProceed={async () => {
+                await refetchProfile();
                 clearPaymentOption();
                 goToStep(7);
               }}
@@ -528,7 +590,10 @@ const CompleteYourPaymentContent = () => {
           <StepWrapper>
             <DisclaimerSection
               onBack={() => goToStep(6)}
-              onProceed={() => goToStep(8)}
+              onProceed={async () => {
+                await refetchProfile();
+                goToStep(8);
+              }}
               initialData={profile}
             />
           </StepWrapper>
