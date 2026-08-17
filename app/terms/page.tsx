@@ -122,10 +122,10 @@ export default function TermsPage() {
                         basis. If ability to meet the agreed date is impaired, a
                         mail must be sent to{" "}
                         <a
-                          href="mailto:talentloop@amdari.io"
+                          href="mailto:Amdari@talentloop.app"
                           className="text-[#A2CE3A] underline"
                         >
-                          talentloop@amdari.io
+                          Amdari@talentloop.app
                         </a>{" "}
                         to agree on a compromise to payments. However, this mail
                         must be received before installment date in order to be
@@ -213,10 +213,10 @@ export default function TermsPage() {
                         this and requests for refunds must be submitted to
                         Talentloop via email at{" "}
                         <a
-                          href="mailto:talentloop@amdari.io"
+                          href="mailto:Amdari@talentloop.app"
                           className="text-[#A2CE3A] underline"
                         >
-                          talentloop@amdari.io
+                          Amdari@talentloop.app
                         </a>{" "}
                         and copy{" "}
                         <a
