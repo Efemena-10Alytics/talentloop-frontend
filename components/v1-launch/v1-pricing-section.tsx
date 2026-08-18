@@ -6,7 +6,7 @@ import { useActivePricingPlans } from "@/lib/hooks/usePricing";
 import type { PricingPlan } from "@/lib/services/pricing.service";
 
 interface V1PricingSectionProps {
-  onStartNow?: (planId: string) => void;
+  onStartNow?: (planId: string, planTitle?: string) => void;
 }
 
 const PCIcon = () => (
@@ -127,7 +127,7 @@ export default function V1PricingSection({ onStartNow }: V1PricingSectionProps) 
 
   const handleStartNow = () => {
     if (onStartNow && activePlan) {
-      onStartNow(String(activePlan.id));
+      onStartNow(String(activePlan.id), String(activePlan.name));
     }
   };
 

@@ -27,17 +27,24 @@ function HomeContent() {
       toast({
         variant: "error",
         title: "No active plan",
-        description: "You don't have an active plan. Choose a plan below to get started.",
+        description:
+          "You don't have an active plan. Choose a plan below to get started.",
       });
       setTimeout(() => {
-        document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" });
+        document
+          .getElementById("pricing")
+          ?.scrollIntoView({ behavior: "smooth" });
       }, 300);
       router.replace("/");
     }
   }, [searchParams, toast, router]);
 
-  const handleStartNow = (planId: string) => {
-    router.push(`/clarity-session?p-id=${planId}`);
+  const handleStartNow = (planId: string, planTitle?: string) => {
+    if (planTitle?.toLowerCase() == "basic") {
+      router.push(`/complete-your-payment?p-id=${planId}`);
+    } else {
+      router.push(`/clarity-session?p-id=${planId}`);
+    }
   };
 
   return (
