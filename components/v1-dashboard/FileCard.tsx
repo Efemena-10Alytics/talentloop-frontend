@@ -107,14 +107,14 @@ export default function FileCard({ document, onDeleted }: FileCardProps) {
               Download
             </a>
 
-            <button
+            {/* <button
               onClick={() => setShowConfirm(true)}
               className="w-full sm:w-9 h-10 sm:h-9 flex items-center justify-center rounded-lg transition-colors hover:bg-red-500/20 text-red-400"
               style={{ border: "1px solid rgba(255, 255, 255, 0.06)" }}
               title="Delete document"
             >
               <TrashIcon />
-            </button>
+            </button> */}
           </div>
         </div>
       </div>
