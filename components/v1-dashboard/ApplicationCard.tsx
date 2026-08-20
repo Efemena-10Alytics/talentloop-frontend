@@ -2,31 +2,63 @@ import { EnrollmentApplication } from "@/hooks/useEnrollmentData";
 
 type ApplicationCardProps = {
   application: EnrollmentApplication;
+  stage: "applied" | "interview" | "assessment" | "rejected" | "offer";
 };
 
-export default function ApplicationCard({ application }: ApplicationCardProps) {
+export default function ApplicationCard({
+  application,
+  stage,
+}: ApplicationCardProps) {
   const getStatusStyles = (status: string) => {
     const s = status?.toLowerCase() ?? "";
     if (s.includes("interview") || s.includes("sponsor"))
-      return { bg: "rgba(20, 174, 92, 0.1)", border: "1px solid rgba(255, 255, 255, 0.06)", color: "#34C759" };
+      return {
+        bg: "rgba(20, 174, 92, 0.1)",
+        border: "1px solid rgba(255, 255, 255, 0.06)",
+        color: "#34C759",
+      };
     if (s.includes("scheduled") || s.includes("assessment"))
-      return { bg: "rgba(255, 204, 0, 0.1)", border: "1px solid rgba(255, 255, 255, 0.06)", color: "#FFCC00" };
+      return {
+        bg: "rgba(255, 204, 0, 0.1)",
+        border: "1px solid rgba(255, 255, 255, 0.06)",
+        color: "#FFCC00",
+      };
     if (s.includes("reject"))
-      return { bg: "rgba(255, 59, 48, 0.1)", border: "1px solid rgba(255, 255, 255, 0.06)", color: "#FF3B30" };
+      return {
+        bg: "rgba(255, 59, 48, 0.1)",
+        border: "1px solid rgba(255, 255, 255, 0.06)",
+        color: "#FF3B30",
+      };
     if (s.includes("offer"))
-      return { bg: "rgba(162, 206, 58, 0.1)", border: "1px solid rgba(255, 255, 255, 0.06)", color: "#A2CE3A" };
-    return { bg: "rgba(60, 60, 67, 0.18)", border: "1px solid rgba(255, 255, 255, 0.06)", color: "#FFFFFF" };
+      return {
+        bg: "rgba(162, 206, 58, 0.1)",
+        border: "1px solid rgba(255, 255, 255, 0.06)",
+        color: "#A2CE3A",
+      };
+    return {
+      bg: "rgba(60, 60, 67, 0.18)",
+      border: "1px solid rgba(255, 255, 255, 0.06)",
+      color: "#FFFFFF",
+    };
   };
 
   const statusStyles = getStatusStyles(application.status);
 
   const formattedDate = application.date_applied
-    ? new Date(application.date_applied).toLocaleDateString("en-GB", { day: "numeric", month: "short" })
+    ? new Date(application.date_applied).toLocaleDateString("en-GB", {
+        day: "numeric",
+        month: "short",
+      })
     : "";
 
   return (
     <div
-      className="p-3 rounded-lg w-full"
+    onClick={() => {
+      if(stage == "applied") {
+        window.location.href = `/dashboard/application-tracker/${application.id}`
+      }
+    }}
+      className={`p-3 rounded-lg w-full ${stage == "applied" ? "cursor-pointer" : ""}`}
       style={{
         background: "rgba(21, 99, 116, 0.1)",
         border: "0.5px solid rgba(255, 255, 255, 0.1)",
@@ -35,17 +67,21 @@ export default function ApplicationCard({ application }: ApplicationCardProps) {
       <div className="w-full flex items-start justify-between mb-2">
         <div className="w-full flex flex-col gap-1">
           <div className="w-full flex gap-3">
-            <div className="w-[60%]">
+            <div className="w-[50%]">
               <h3 className="text-white font-mona-sans font-semibold text-[12px] 2xl:text-sm">
                 {application.company}
               </h3>
             </div>
-            <div className="w-[40%]">
+            <div className="w-[50%]">
               <span
-                className="w-fit text-[8px] font-jakarta-sans font-medium px-3 py-1 rounded-[100px]"
-                style={{ color: statusStyles.color, background: statusStyles.bg, border: statusStyles.border }}
+                className={`w-fit ${stage == "applied" ? "text-sm" :"text-[6px] 2xl:text-[7px]"} font-jakarta-sans font-medium capitalize px-3 py-1 rounded-[100px]`}
+                style={{
+                  color: statusStyles.color,
+                  background: statusStyles.bg,
+                  border: statusStyles.border,
+                }}
               >
-                {application.status}
+                {stage == "applied" ? "Open" : application.status}
               </span>
             </div>
           </div>

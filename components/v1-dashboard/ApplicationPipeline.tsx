@@ -160,7 +160,7 @@ export default function ApplicationPipeline() {
                     </p>
                   ) : (
                     stageApps.map((app) => (
-                      <ApplicationCard key={app.id} application={app} />
+                      <ApplicationCard key={app.id} application={app} stage={stage} />
                     ))
                   )}
                 </div>
