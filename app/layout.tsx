@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { SessionProvider } from "@/components/providers/SessionProvider";
 import { QueryProvider } from "@/components/providers/QueryProvider";
 import { SITE_URL, SITE_NAME, SITE_DESCRIPTION } from "@/lib/seo";
+import MetaPixel from "@/components/MetaPixel";
 
 const monaSans = localFont({
   src: [
@@ -127,6 +128,7 @@ export default function RootLayout({
         className={`${monaSans.variable} ${sora.variable} ${jakartaSans.variable} antialiased`}
         suppressHydrationWarning
       >
+        <MetaPixel />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
