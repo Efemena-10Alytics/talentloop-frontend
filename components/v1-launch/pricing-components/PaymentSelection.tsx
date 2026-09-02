@@ -21,6 +21,11 @@ interface PaymentSelectionProps {
   pricingPlanData?: any;
   onPaymentSelect: (paymentOption: PaymentOption) => void;
   onBack?: () => void;
+  /**
+   * When set, only this payment option is shown/selectable — the other
+   * option's card is hidden entirely rather than just disabled.
+   */
+  forcedPaymentOption?: "full" | "installments";
 }
 
 export interface PaymentOption {
@@ -98,9 +103,12 @@ export default function PaymentSelection({
   pricingPlanData,
   onPaymentSelect,
   onBack,
+  forcedPaymentOption,
 }: PaymentSelectionProps) {
   const { data: session, status } = useSession();
-  const [selectedPayment, setSelectedPayment] = useState<"full" | "installments">("full");
+  const [selectedPayment, setSelectedPayment] = useState<"full" | "installments">(
+    forcedPaymentOption ?? "full",
+  );
   const [showSignupModal, setShowSignupModal] = useState(false);
   const [showSigninModal, setShowSigninModal] = useState(false);
   const [pendingPaymentAfterSignup, setPendingPaymentAfterSignup] = useState(false);
@@ -356,6 +364,7 @@ export default function PaymentSelection({
 
             <div className="space-y-4">
               {/* Full Payment Option */}
+              {forcedPaymentOption !== "installments" && (
               <button
                 onClick={() => handlePaymentChange("full")}
                 className="w-full rounded-[12px] lg:rounded-[24px] p-4 lg:p-6 transition-all duration-300"
@@ -395,9 +404,10 @@ export default function PaymentSelection({
                   </div>
                 </div>
               </button>
+              )}
 
               {/* 2 Installments Option - Only show if installments are available */}
-              {"installment1" in planDetails && "installment2" in planDetails && (
+              {forcedPaymentOption !== "full" && "installment1" in planDetails && "installment2" in planDetails && (
               <button
                 onClick={() => handlePaymentChange("installments")}
                 className="w-full rounded-[12px] lg:rounded-[24px] p-4 lg:p-6 transition-all duration-300"

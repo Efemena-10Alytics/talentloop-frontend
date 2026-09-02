@@ -67,13 +67,22 @@ const CompleteYourPaymentContent = () => {
   // --- URL params (source of truth) ---
   const pId = searchParams.get("p-id");
   const cancelParam = searchParams.get("cancel");
+  const typeParam = searchParams.get("type");
+
+  // This page always forces a single payment option: installments when
+  // ?type=installment is present, full payment otherwise.
+  const forcedPaymentOption: "full" | "installments" =
+    typeParam === "installment" ? "installments" : "full";
 
   // currentStep is derived directly from URL — no useState, no flicker
   const currentStep: Step = parseStep(searchParams.get("step"));
 
-  // Navigate to a step — pushes URL so browser back/forward works
+  // Navigate to a step — pushes URL so browser back/forward works.
+  // `type` is carried along so the forced payment option survives navigation.
   const goToStep = (step: Step) => {
-    router.push(`/complete-your-payment?p-id=${pId}&step=${step}`);
+    const query = new URLSearchParams({ "p-id": pId ?? "", step: String(step) });
+    if (typeParam) query.set("type", typeParam);
+    router.push(`/complete-your-payment?${query.toString()}`);
   };
 
   // --- Payment option: persisted in sessionStorage so it survives step navigation ---
@@ -421,8 +430,9 @@ const CompleteYourPaymentContent = () => {
         : process.env.NEXT_PUBLIC_WEBAPP_URL || "https://www.talentloop.app";
 
       // Stripe success/cancel URLs — step=3 lands on Career Info, step=1 with cancel=true shows toast
-      const successUrl = `${baseUrl}/complete-your-payment?p-id=${pId}&step=3`;
-      const cancelUrl  = `${baseUrl}/complete-your-payment?p-id=${pId}&step=1&cancel=true`;
+      const typeQuery = typeParam ? `&type=${typeParam}` : "";
+      const successUrl = `${baseUrl}/complete-your-payment?p-id=${pId}&step=3${typeQuery}`;
+      const cancelUrl  = `${baseUrl}/complete-your-payment?p-id=${pId}&step=1&cancel=true${typeQuery}`;
 
       const paymentOptionNumber = paymentOption?.type === "installments" ? 2 : 1;
 
@@ -491,6 +501,7 @@ const CompleteYourPaymentContent = () => {
               planInstallments={pricingPlan?.installments || null}
               pricingPlanData={pricingPlan}
               onPaymentSelect={handlePaymentSelect}
+              forcedPaymentOption={forcedPaymentOption}
             />
           </StepWrapper>
         );

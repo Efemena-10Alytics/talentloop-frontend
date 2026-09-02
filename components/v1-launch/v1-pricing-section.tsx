@@ -7,6 +7,7 @@ import type { PricingPlan } from "@/lib/services/pricing.service";
 
 interface V1PricingSectionProps {
   onStartNow?: (planId: string, planTitle?: string) => void;
+  excludeBasicPlan?: boolean;
 }
 
 const PCIcon = () => (
@@ -93,7 +94,7 @@ const mockPricingPlans = [
   }
 ];
 
-export default function V1PricingSection({ onStartNow }: V1PricingSectionProps) {
+export default function V1PricingSection({ onStartNow, excludeBasicPlan }: V1PricingSectionProps) {
   // null means "the user hasn't picked yet" — the default is derived below from
   // whichever plans are actually on screen, so it can never name a plan that
   // isn't in the list.
@@ -104,7 +105,7 @@ export default function V1PricingSection({ onStartNow }: V1PricingSectionProps) 
   const { data: apiPlans, isLoading, isError } = useActivePricingPlans();
 
   // Transform API plans to match component structure
-  const pricingPlans = apiPlans && apiPlans.length > 0
+  const allPricingPlans = apiPlans && apiPlans.length > 0
     ? apiPlans.map((plan: PricingPlan) => ({
         id: plan.id,
         name: plan.title,
@@ -115,6 +116,10 @@ export default function V1PricingSection({ onStartNow }: V1PricingSectionProps) 
         installments: plan.installments,
       }))
     : mockPricingPlans;
+
+  const pricingPlans = excludeBasicPlan
+    ? allPricingPlans.filter((plan) => plan.name.toLowerCase() !== "basic")
+    : allPricingPlans;
 
   // Resolve the selection against the plans actually on screen: the user's
   // explicit pick if it still exists, else the popular one, else the first.
