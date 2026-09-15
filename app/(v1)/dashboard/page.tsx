@@ -35,29 +35,39 @@ export default function V1DashboardPage() {
 
   const deliveryDate = formatDeliveryDate(dashboard?.welcome?.delivery_date);
 
+  const currentEnrollment = (authData as any)?.current_enrollment;
+  const startDate = currentEnrollment?.assigned_at
+    ? new Date(currentEnrollment.assigned_at).toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" })
+    : null;
+
   return (
     <div className="min-h-screen p-4 lg:p-6">
       {/* Navbar */}
-      <DashboardNavbar 
-        pageTitle="Dashboard" 
-        pageIcon={<DashboardIcon />} 
+      <DashboardNavbar
+        pageTitle="Dashboard"
+        pageIcon={<DashboardIcon />}
       />
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-4 mb-8">
-        <StatCard 
-          title="Applications Sent" 
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <StatCard
+          title="Applications Sent"
           value={isLoading ? "—" : String(dashboard?.applications_sent ?? 0)}
           isLoading={isLoading}
         />
-        <StatCard 
-          title="Interviews Secured" 
+        <StatCard
+          title="Interviews Secured"
           value={isLoading ? "—" : String(dashboard?.interviews_secured ?? 0)}
           isLoading={isLoading}
         />
-        <StatCard 
-          title="Days Active" 
+        <StatCard
+          title="Days Active"
           value={isLoading ? "—" : `${dashboard?.days_active ?? 0} Days`}
+          isLoading={isLoading}
+        />
+        <StatCard
+          title="Start Date"
+          value={isLoading ? "—" : startDate ?? "N/A"}
           isLoading={isLoading}
         />
       </div>

@@ -33,6 +33,8 @@ export default function ProfileTab() {
     countryNameOf(apiProfile?.country),
   );
   const [selectedSource, setSelectedSource] = useState(apiProfile?.referral_source ?? "");
+  const [workEmail, setWorkEmail] = useState(apiProfile?.work_email ?? "");
+  const [workEmailPassword, setWorkEmailPassword] = useState(apiProfile?.work_email_password ?? "");
 
   const displayAvatar = preview ?? avatarUrl ?? apiProfile?.avatar ?? null;
 
@@ -217,6 +219,30 @@ export default function ProfileTab() {
                   { value: "facebook_ads", label: "Facebook Ads" },
                   { value: "other", label: "Other" },
                 ]}
+              />
+            </div>
+
+            {/* Work Email */}
+            <div>
+              <label className="block text-white text-sm font-mona-sans mb-2">Work Email</label>
+              <input
+                type="email"
+                value={workEmail}
+                onChange={(e) => setWorkEmail(e.target.value)}
+                placeholder="Work Email"
+                className="w-full h-14 rounded-[40px] border border-[#FFFFFF1A] bg-transparent px-4 text-white placeholder:text-white/60 font-jakarta-sans focus:outline-none focus:border-[#A2CE3A] transition-colors"
+              />
+            </div>
+
+            {/* Work Email Password */}
+            <div>
+              <label className="block text-white text-sm font-mona-sans mb-2">Work Email Password</label>
+              <input
+                type="password"
+                value={workEmailPassword}
+                onChange={(e) => setWorkEmailPassword(e.target.value)}
+                placeholder="Work Email Password"
+                className="w-full h-14 rounded-[40px] border border-[#FFFFFF1A] bg-transparent px-4 text-white placeholder:text-white/60 font-jakarta-sans focus:outline-none focus:border-[#A2CE3A] transition-colors"
               />
             </div>
 
