@@ -4,11 +4,18 @@ import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import ReactPlayer from "react-player";
+import { useSession } from "next-auth/react";
 import ClaritySessionModal from "./ClaritySessionModal";
+import { useAuthMe } from "@/hooks/useUserData";
 
 export default function V1HeroSection() {
   const [currentImage, setCurrentImage] = useState(0);
   const [showBookingModal, setShowBookingModal] = useState(false);
+
+  const { status: sessionStatus } = useSession();
+  const { data: authData } = useAuthMe();
+  const hasActivePlan =
+    sessionStatus === "authenticated" && !!authData?.current_enrollment?.id;
 
   // Video player state
   const playerRef = useRef<HTMLVideoElement & { api?: any }>(null);
@@ -132,29 +139,44 @@ export default function V1HeroSection() {
           transition={{ duration: 0.8, delay: 0.4 }}
           className="flex flex-col lg:flex-row justify-center gap-4 mb-10 lg:mb-16"
         >
-          <button
-            onClick={() =>
-              document
-                .getElementById("pricing")
-                ?.scrollIntoView({ behavior: "smooth" })
-            }
-            className="px-3 lg:px-8 py-4 text-center rounded-[30px] text-[#090B0E] font-mona-sans text-[11px] lg:text-base font-semibold hover:opacity-90 transition-opacity"
-            style={{
-              background:
-                "linear-gradient(88.9deg, #A2CE3A 24.91%, #52681D 92.25%)",
-            }}
-          >
-            Start My Career Upgrade
-          </button>
-          <Link
-            href="/clarity-session"
-            className="px-3 lg:px-8 py-4 text-center rounded-[30px] text-white font-mona-sans text-[11px] lg:text-base font-semibold hover:opacity-90 transition-opacity"
-            style={{
-              background: "linear-gradient(180deg, #0E0912 0%, #22162B 100%)",
-            }}
-          >
-            Book a Clarity Session
-          </Link>
+          {hasActivePlan ? (
+            <Link
+              href="/dashboard"
+              className="px-3 lg:px-8 py-4 text-center rounded-[30px] text-[#090B0E] font-mona-sans text-[11px] lg:text-base font-semibold hover:opacity-90 transition-opacity"
+              style={{
+                background:
+                  "linear-gradient(88.9deg, #A2CE3A 24.91%, #52681D 92.25%)",
+              }}
+            >
+              Go To Dashboard
+            </Link>
+          ) : (
+            <>
+              <button
+                onClick={() =>
+                  document
+                    .getElementById("pricing")
+                    ?.scrollIntoView({ behavior: "smooth" })
+                }
+                className="px-3 lg:px-8 py-4 text-center rounded-[30px] text-[#090B0E] font-mona-sans text-[11px] lg:text-base font-semibold hover:opacity-90 transition-opacity"
+                style={{
+                  background:
+                    "linear-gradient(88.9deg, #A2CE3A 24.91%, #52681D 92.25%)",
+                }}
+              >
+                Start My Career Upgrade
+              </button>
+              <Link
+                href="/clarity-session"
+                className="px-3 lg:px-8 py-4 text-center rounded-[30px] text-white font-mona-sans text-[11px] lg:text-base font-semibold hover:opacity-90 transition-opacity"
+                style={{
+                  background: "linear-gradient(180deg, #0E0912 0%, #22162B 100%)",
+                }}
+              >
+                Book a Clarity Session
+              </Link>
+            </>
+          )}
         </motion.div>
 
         {/* Video Component Container */}
