@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import PhoneInput, { type Country } from "react-phone-number-input";
 import "react-phone-number-input/style.css";
 import { COUNTRY_OPTIONS, countryCodeOf, countryNameOf } from "@/lib/countries";
@@ -8,6 +8,7 @@ import { useAvatar } from "@/context/AvatarContext";
 import { useAuthMe } from "@/hooks/useUserData";
 import { useToast } from "@/components/ui/use-toast";
 import { Select } from "@/components/ui/Select";
+import { getApiUrl, getAuthHeaders } from "@/lib/api";
 
 const UploadIcon = () => (
   <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -26,6 +27,12 @@ export default function ProfileTab() {
   const [preview, setPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
 
+  const [firstName, setFirstName] = useState(
+    apiProfile?.first_name ?? authData?.user?.name?.split(" ")[0] ?? "",
+  );
+  const [lastName, setLastName] = useState(
+    apiProfile?.last_name ?? authData?.user?.name?.split(" ").slice(-1)[0] ?? "",
+  );
   const [phoneNumber, setPhoneNumber] = useState(apiProfile?.phone ?? "");
   // Normalised on read: this tab used to store ISO codes while the payment
   // modals stored names, so saved values come in both shapes.
@@ -33,14 +40,96 @@ export default function ProfileTab() {
     countryNameOf(apiProfile?.country),
   );
   const [selectedSource, setSelectedSource] = useState(apiProfile?.referral_source ?? "");
-  const [workEmail, setWorkEmail] = useState(apiProfile?.work_email ?? "");
-  const [workEmailPassword, setWorkEmailPassword] = useState(apiProfile?.work_email_password ?? "");
+  const [workEmail, setWorkEmail] = useState(apiProfile?.linkedin_email ?? "");
+  const [workEmailPassword, setWorkEmailPassword] = useState(apiProfile?.linkedin_password ?? "");
+  const [saving, setSaving] = useState(false);
+
+  // apiProfile loads asynchronously after mount, so the initial useState calls
+  // above run before it exists. Fill fields once it arrives, but never clobber
+  // something the user already typed.
+  useEffect(() => {
+    if (!apiProfile) return;
+    setFirstName((prev: string) => prev || apiProfile.first_name || "");
+    setLastName((prev: string) => prev || apiProfile.last_name || "");
+    setPhoneNumber((prev: string) => prev || apiProfile.phone || "");
+    setSelectedCountry((prev: string) => prev || countryNameOf(apiProfile.country) || "");
+    setSelectedSource((prev: string) => prev || apiProfile.referral_source || "");
+    setWorkEmail((prev: string) => prev || apiProfile.linkedin_email || "");
+    setWorkEmailPassword((prev: string) => prev || apiProfile.linkedin_password || "");
+  }, [apiProfile]);
 
   const displayAvatar = preview ?? avatarUrl ?? apiProfile?.avatar ?? null;
 
-  const firstName: string = apiProfile?.first_name ?? authData?.user?.name?.split(" ")[0] ?? "";
-  const lastName: string = apiProfile?.last_name ?? authData?.user?.name?.split(" ").slice(-1)[0] ?? "";
   const email: string = authData?.user?.email ?? "";
+
+  const handleCancel = () => {
+    setFirstName(apiProfile?.first_name ?? authData?.user?.name?.split(" ")[0] ?? "");
+    setLastName(apiProfile?.last_name ?? authData?.user?.name?.split(" ").slice(-1)[0] ?? "");
+    setPhoneNumber(apiProfile?.phone ?? "");
+    setSelectedCountry(countryNameOf(apiProfile?.country) ?? "");
+    setSelectedSource(apiProfile?.referral_source ?? "");
+    setWorkEmail(apiProfile?.linkedin_email ?? "");
+    setWorkEmailPassword(apiProfile?.linkedin_password ?? "");
+  };
+
+  const handleSaveProfile = async () => {
+    if (!firstName.trim() || !lastName.trim()) {
+      toast({
+        variant: "error",
+        title: "Missing fields",
+        description: "First name and last name are required",
+      });
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch(`${getApiUrl()}/api/v1/profile/personal-info`, {
+        method: "PATCH",
+        headers,
+        body: JSON.stringify({
+          first_name: firstName,
+          last_name: lastName,
+          country: selectedCountry,
+          phone: phoneNumber,
+          referral_source: selectedSource,
+          linkedin_email: workEmail,
+          linkedin_password: workEmailPassword,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        const firstErrorField = data.errors ? Object.keys(data.errors)[0] : null;
+        const firstErrorMessage = firstErrorField ? data.errors[firstErrorField][0] : null;
+        toast({
+          variant: "error",
+          title: "Failed to update profile",
+          description: firstErrorMessage || data.message || "An error occurred",
+        });
+        return;
+      }
+
+      toast({
+        variant: "success",
+        title: "Profile updated!",
+        description: "Your information has been saved successfully",
+      });
+
+      // Dispatch event so Navbar and other components using useUserData refresh immediately
+      window.dispatchEvent(new Event("profile-updated"));
+    } catch {
+      toast({
+        variant: "error",
+        title: "Failed to update profile",
+        description: "An error occurred",
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -149,7 +238,8 @@ export default function ProfileTab() {
                 <label className="block text-white text-sm font-mona-sans mb-2">First Name</label>
                 <input
                   type="text"
-                  defaultValue={firstName}
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
                   placeholder="First Name"
                   className="w-full h-14 rounded-[40px] border border-[#FFFFFF1A] bg-transparent px-4 text-white placeholder:text-white/60 font-jakarta-sans focus:outline-none focus:border-[#A2CE3A] transition-colors"
                 />
@@ -158,7 +248,8 @@ export default function ProfileTab() {
                 <label className="block text-white text-sm font-mona-sans mb-2">Last Name</label>
                 <input
                   type="text"
-                  defaultValue={lastName}
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
                   placeholder="Last Name"
                   className="w-full h-14 rounded-[40px] border border-[#FFFFFF1A] bg-transparent px-4 text-white placeholder:text-white/60 font-jakarta-sans focus:outline-none focus:border-[#A2CE3A] transition-colors"
                 />
@@ -222,26 +313,26 @@ export default function ProfileTab() {
               />
             </div>
 
-            {/* Work Email */}
+            {/* LinkedIn Email */}
             <div>
-              <label className="block text-white text-sm font-mona-sans mb-2">Work Email</label>
+              <label className="block text-white text-sm font-mona-sans mb-2">LinkedIn Email</label>
               <input
                 type="email"
                 value={workEmail}
                 onChange={(e) => setWorkEmail(e.target.value)}
-                placeholder="Work Email"
+                placeholder="LinkedIn Email"
                 className="w-full h-14 rounded-[40px] border border-[#FFFFFF1A] bg-transparent px-4 text-white placeholder:text-white/60 font-jakarta-sans focus:outline-none focus:border-[#A2CE3A] transition-colors"
               />
             </div>
 
-            {/* Work Email Password */}
+            {/* LinkedIn Password */}
             <div>
-              <label className="block text-white text-sm font-mona-sans mb-2">Work Email Password</label>
+              <label className="block text-white text-sm font-mona-sans mb-2">LinkedIn Password</label>
               <input
                 type="password"
                 value={workEmailPassword}
                 onChange={(e) => setWorkEmailPassword(e.target.value)}
-                placeholder="Work Email Password"
+                placeholder="LinkedIn Password"
                 className="w-full h-14 rounded-[40px] border border-[#FFFFFF1A] bg-transparent px-4 text-white placeholder:text-white/60 font-jakarta-sans focus:outline-none focus:border-[#A2CE3A] transition-colors"
               />
             </div>
@@ -249,7 +340,9 @@ export default function ProfileTab() {
             {/* Action Buttons */}
             <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-3 sm:gap-4 pt-4">
               <button
-                className="px-6 sm:px-8 py-2.5 sm:py-3 rounded-[10px] font-mona-sans font-medium text-xs sm:text-sm transition-opacity hover:opacity-80 h-10 sm:h-12"
+                onClick={handleCancel}
+                disabled={saving}
+                className="px-6 sm:px-8 py-2.5 sm:py-3 rounded-[10px] font-mona-sans font-medium text-xs sm:text-sm transition-opacity hover:opacity-80 disabled:opacity-50 h-10 sm:h-12"
                 style={{
                   background: "rgba(118, 118, 128, 0.12)",
                   border: "1.5px solid rgba(255, 255, 255, 0.1)",
@@ -259,10 +352,12 @@ export default function ProfileTab() {
                 Cancel
               </button>
               <button
-                className="px-6 sm:px-8 py-2.5 sm:py-3 rounded-[10px] font-mona-sans font-semibold text-xs sm:text-sm transition-opacity hover:opacity-90 h-10 sm:h-12"
+                onClick={handleSaveProfile}
+                disabled={saving}
+                className="px-6 sm:px-8 py-2.5 sm:py-3 rounded-[10px] font-mona-sans font-semibold text-xs sm:text-sm transition-opacity hover:opacity-90 disabled:opacity-50 h-10 sm:h-12"
                 style={{ background: "#A2CE3A", color: "#121212" }}
               >
-                Save
+                {saving ? "Saving..." : "Save"}
               </button>
             </div>
           </div>
