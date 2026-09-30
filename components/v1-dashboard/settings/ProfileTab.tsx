@@ -16,12 +16,28 @@ const UploadIcon = () => (
   </svg>
 );
 
+const EyeIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.5" />
+  </svg>
+);
+
+const EyeOffIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M17.94 17.94A10.94 10.94 0 0 1 12 19c-7 0-11-7-11-7a20.3 20.3 0 0 1 4.22-5.06M9.9 4.24A10.4 10.4 0 0 1 12 5c7 0 11 7 11 7a20.3 20.3 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"
+      stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M1 1l22 22" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
 export default function ProfileTab() {
   const { toast } = useToast();
   const { avatarUrl, setAvatarUrl } = useAvatar();
   const { data: authData } = useAuthMe();
 
   const apiProfile = (authData as any)?.user?.profile;
+  const linkedin = (authData as any)?.current_enrollment?.linkedin;
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | null>(null);
@@ -40,13 +56,20 @@ export default function ProfileTab() {
     countryNameOf(apiProfile?.country),
   );
   const [selectedSource, setSelectedSource] = useState(apiProfile?.referral_source ?? "");
-  const [workEmail, setWorkEmail] = useState(apiProfile?.linkedin_email ?? "");
-  const [workEmailPassword, setWorkEmailPassword] = useState(apiProfile?.linkedin_password ?? "");
+  const [workEmail, setWorkEmail] = useState(linkedin?.email ?? "");
+  // The backend only ever returns a masked placeholder (e.g. "********") for
+  // an existing password, never the real value.
+  const [workEmailPassword, setWorkEmailPassword] = useState(linkedin?.password ?? "");
+  // True once the user actually edits the password field — distinguishes a
+  // real new password from the untouched masked placeholder, so Save never
+  // overwrites the stored password with asterisks.
+  const [linkedinPasswordDirty, setLinkedinPasswordDirty] = useState(false);
+  const [showLinkedinPassword, setShowLinkedinPassword] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // apiProfile loads asynchronously after mount, so the initial useState calls
-  // above run before it exists. Fill fields once it arrives, but never clobber
-  // something the user already typed.
+  // apiProfile/linkedin load asynchronously after mount, so the initial
+  // useState calls above run before they exist. Fill fields once they arrive,
+  // but never clobber something the user already typed.
   useEffect(() => {
     if (!apiProfile) return;
     setFirstName((prev: string) => prev || apiProfile.first_name || "");
@@ -54,9 +77,14 @@ export default function ProfileTab() {
     setPhoneNumber((prev: string) => prev || apiProfile.phone || "");
     setSelectedCountry((prev: string) => prev || countryNameOf(apiProfile.country) || "");
     setSelectedSource((prev: string) => prev || apiProfile.referral_source || "");
-    setWorkEmail((prev: string) => prev || apiProfile.linkedin_email || "");
-    setWorkEmailPassword((prev: string) => prev || apiProfile.linkedin_password || "");
   }, [apiProfile]);
+
+  useEffect(() => {
+    if (!linkedin) return;
+    setWorkEmail((prev: string) => prev || linkedin.email || "");
+    setWorkEmailPassword((prev: string) => (linkedinPasswordDirty ? prev : linkedin.password || ""));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [linkedin]);
 
   const displayAvatar = preview ?? avatarUrl ?? apiProfile?.avatar ?? null;
 
@@ -68,8 +96,19 @@ export default function ProfileTab() {
     setPhoneNumber(apiProfile?.phone ?? "");
     setSelectedCountry(countryNameOf(apiProfile?.country) ?? "");
     setSelectedSource(apiProfile?.referral_source ?? "");
-    setWorkEmail(apiProfile?.linkedin_email ?? "");
-    setWorkEmailPassword(apiProfile?.linkedin_password ?? "");
+    setWorkEmail(linkedin?.email ?? "");
+    setWorkEmailPassword(linkedin?.password ?? "");
+    setLinkedinPasswordDirty(false);
+    setShowLinkedinPassword(false);
+  };
+
+  const handleToggleShowPassword = () => {
+    // TODO: once a "reveal LinkedIn password" endpoint exists, call it here
+    // (when !linkedinPasswordDirty) and setWorkEmailPassword with the real
+    // value before revealing. For now this only toggles the field's own
+    // value, which is the backend's masked placeholder until the user types
+    // a new password.
+    setShowLinkedinPassword((prev) => !prev);
   };
 
   const handleSaveProfile = async () => {
@@ -95,7 +134,10 @@ export default function ProfileTab() {
           phone: phoneNumber,
           referral_source: selectedSource,
           linkedin_email: workEmail,
-          linkedin_password: workEmailPassword,
+          // Only send a password when the user actually typed one — the
+          // field otherwise just holds the backend's masked placeholder,
+          // and sending that back would overwrite the real stored password.
+          ...(linkedinPasswordDirty ? { linkedin_password: workEmailPassword } : {}),
         }),
       });
 
@@ -117,6 +159,9 @@ export default function ProfileTab() {
         title: "Profile updated!",
         description: "Your information has been saved successfully",
       });
+
+      setLinkedinPasswordDirty(false);
+      setShowLinkedinPassword(false);
 
       // Dispatch event so Navbar and other components using useUserData refresh immediately
       window.dispatchEvent(new Event("profile-updated"));
@@ -328,13 +373,26 @@ export default function ProfileTab() {
             {/* LinkedIn Password */}
             <div>
               <label className="block text-white text-sm font-mona-sans mb-2">LinkedIn Password</label>
-              <input
-                type="password"
-                value={workEmailPassword}
-                onChange={(e) => setWorkEmailPassword(e.target.value)}
-                placeholder="LinkedIn Password"
-                className="w-full h-14 rounded-[40px] border border-[#FFFFFF1A] bg-transparent px-4 text-white placeholder:text-white/60 font-jakarta-sans focus:outline-none focus:border-[#A2CE3A] transition-colors"
-              />
+              <div className="relative">
+                <input
+                  type={showLinkedinPassword ? "text" : "password"}
+                  value={workEmailPassword}
+                  onChange={(e) => {
+                    setLinkedinPasswordDirty(true);
+                    setWorkEmailPassword(e.target.value);
+                  }}
+                  placeholder="LinkedIn Password"
+                  className="w-full h-14 rounded-[40px] border border-[#FFFFFF1A] bg-transparent pl-4 pr-12 text-white placeholder:text-white/60 font-jakarta-sans focus:outline-none focus:border-[#A2CE3A] transition-colors"
+                />
+                <button
+                  type="button"
+                  onClick={handleToggleShowPassword}
+                  aria-label={showLinkedinPassword ? "Hide password" : "Show password"}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-white/60 hover:text-white transition-colors"
+                >
+                  {showLinkedinPassword ? <EyeOffIcon /> : <EyeIcon />}
+                </button>
+              </div>
             </div>
 
             {/* Action Buttons */}
