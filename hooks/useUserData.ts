@@ -36,6 +36,15 @@ interface ProfileSummary {
   assessment_passed: string;
 }
 
+interface EnrollmentLinkedin {
+  email: string | null;
+  // Masked by the backend (e.g. "********") whenever a password is set —
+  // never the real value. Fetch the real one via a dedicated endpoint.
+  password: string | null;
+  password_set: boolean;
+  profile_url?: string | null;
+}
+
 interface CurrentEnrollment {
   id: number;
   status: string;
@@ -43,6 +52,7 @@ interface CurrentEnrollment {
   end_date: string | null;
   assigned_at: string | null;
   completed_at: string | null;
+  linkedin?: EnrollmentLinkedin | null;
 }
 
 interface UserDataResponse {

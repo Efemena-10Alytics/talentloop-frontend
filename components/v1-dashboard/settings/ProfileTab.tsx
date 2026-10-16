@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import PhoneInput, { type Country } from "react-phone-number-input";
 import "react-phone-number-input/style.css";
 import { COUNTRY_OPTIONS, countryCodeOf, countryNameOf } from "@/lib/countries";
@@ -8,10 +8,26 @@ import { useAvatar } from "@/context/AvatarContext";
 import { useAuthMe } from "@/hooks/useUserData";
 import { useToast } from "@/components/ui/use-toast";
 import { Select } from "@/components/ui/Select";
+import { getApiUrl, getAuthHeaders } from "@/lib/api";
 
 const UploadIcon = () => (
   <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path d="M12 4v12M8 8l4-4 4 4M4 20h16" stroke="#67777E" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+
+const EyeIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.5" />
+  </svg>
+);
+
+const EyeOffIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M17.94 17.94A10.94 10.94 0 0 1 12 19c-7 0-11-7-11-7a20.3 20.3 0 0 1 4.22-5.06M9.9 4.24A10.4 10.4 0 0 1 12 5c7 0 11 7 11 7a20.3 20.3 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"
+      stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M1 1l22 22" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
 
@@ -21,11 +37,18 @@ export default function ProfileTab() {
   const { data: authData } = useAuthMe();
 
   const apiProfile = (authData as any)?.user?.profile;
+  const linkedin = (authData as any)?.current_enrollment?.linkedin;
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
 
+  const [firstName, setFirstName] = useState(
+    apiProfile?.first_name ?? authData?.user?.name?.split(" ")[0] ?? "",
+  );
+  const [lastName, setLastName] = useState(
+    apiProfile?.last_name ?? authData?.user?.name?.split(" ").slice(-1)[0] ?? "",
+  );
   const [phoneNumber, setPhoneNumber] = useState(apiProfile?.phone ?? "");
   // Normalised on read: this tab used to store ISO codes while the payment
   // modals stored names, so saved values come in both shapes.
@@ -33,14 +56,125 @@ export default function ProfileTab() {
     countryNameOf(apiProfile?.country),
   );
   const [selectedSource, setSelectedSource] = useState(apiProfile?.referral_source ?? "");
-  const [workEmail, setWorkEmail] = useState(apiProfile?.work_email ?? "");
-  const [workEmailPassword, setWorkEmailPassword] = useState(apiProfile?.work_email_password ?? "");
+  const [workEmail, setWorkEmail] = useState(linkedin?.email ?? "");
+  // The backend only ever returns a masked placeholder (e.g. "********") for
+  // an existing password, never the real value.
+  const [workEmailPassword, setWorkEmailPassword] = useState(linkedin?.password ?? "");
+  // True once the user actually edits the password field — distinguishes a
+  // real new password from the untouched masked placeholder, so Save never
+  // overwrites the stored password with asterisks.
+  const [linkedinPasswordDirty, setLinkedinPasswordDirty] = useState(false);
+  const [showLinkedinPassword, setShowLinkedinPassword] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  // apiProfile/linkedin load asynchronously after mount, so the initial
+  // useState calls above run before they exist. Fill fields once they arrive,
+  // but never clobber something the user already typed.
+  useEffect(() => {
+    if (!apiProfile) return;
+    setFirstName((prev: string) => prev || apiProfile.first_name || "");
+    setLastName((prev: string) => prev || apiProfile.last_name || "");
+    setPhoneNumber((prev: string) => prev || apiProfile.phone || "");
+    setSelectedCountry((prev: string) => prev || countryNameOf(apiProfile.country) || "");
+    setSelectedSource((prev: string) => prev || apiProfile.referral_source || "");
+  }, [apiProfile]);
+
+  useEffect(() => {
+    if (!linkedin) return;
+    setWorkEmail((prev: string) => prev || linkedin.email || "");
+    setWorkEmailPassword((prev: string) => (linkedinPasswordDirty ? prev : linkedin.password || ""));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [linkedin]);
 
   const displayAvatar = preview ?? avatarUrl ?? apiProfile?.avatar ?? null;
 
-  const firstName: string = apiProfile?.first_name ?? authData?.user?.name?.split(" ")[0] ?? "";
-  const lastName: string = apiProfile?.last_name ?? authData?.user?.name?.split(" ").slice(-1)[0] ?? "";
   const email: string = authData?.user?.email ?? "";
+
+  const handleCancel = () => {
+    setFirstName(apiProfile?.first_name ?? authData?.user?.name?.split(" ")[0] ?? "");
+    setLastName(apiProfile?.last_name ?? authData?.user?.name?.split(" ").slice(-1)[0] ?? "");
+    setPhoneNumber(apiProfile?.phone ?? "");
+    setSelectedCountry(countryNameOf(apiProfile?.country) ?? "");
+    setSelectedSource(apiProfile?.referral_source ?? "");
+    setWorkEmail(linkedin?.email ?? "");
+    setWorkEmailPassword(linkedin?.password ?? "");
+    setLinkedinPasswordDirty(false);
+    setShowLinkedinPassword(false);
+  };
+
+  const handleToggleShowPassword = () => {
+    // TODO: once a "reveal LinkedIn password" endpoint exists, call it here
+    // (when !linkedinPasswordDirty) and setWorkEmailPassword with the real
+    // value before revealing. For now this only toggles the field's own
+    // value, which is the backend's masked placeholder until the user types
+    // a new password.
+    setShowLinkedinPassword((prev) => !prev);
+  };
+
+  const handleSaveProfile = async () => {
+    if (!firstName.trim() || !lastName.trim()) {
+      toast({
+        variant: "error",
+        title: "Missing fields",
+        description: "First name and last name are required",
+      });
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch(`${getApiUrl()}/api/v1/profile/personal-info`, {
+        method: "PATCH",
+        headers,
+        body: JSON.stringify({
+          first_name: firstName,
+          last_name: lastName,
+          country: selectedCountry,
+          phone: phoneNumber,
+          referral_source: selectedSource,
+          linkedin_email: workEmail,
+          // Only send a password when the user actually typed one — the
+          // field otherwise just holds the backend's masked placeholder,
+          // and sending that back would overwrite the real stored password.
+          ...(linkedinPasswordDirty ? { linkedin_password: workEmailPassword } : {}),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        const firstErrorField = data.errors ? Object.keys(data.errors)[0] : null;
+        const firstErrorMessage = firstErrorField ? data.errors[firstErrorField][0] : null;
+        toast({
+          variant: "error",
+          title: "Failed to update profile",
+          description: firstErrorMessage || data.message || "An error occurred",
+        });
+        return;
+      }
+
+      toast({
+        variant: "success",
+        title: "Profile updated!",
+        description: "Your information has been saved successfully",
+      });
+
+      setLinkedinPasswordDirty(false);
+      setShowLinkedinPassword(false);
+
+      // Dispatch event so Navbar and other components using useUserData refresh immediately
+      window.dispatchEvent(new Event("profile-updated"));
+    } catch {
+      toast({
+        variant: "error",
+        title: "Failed to update profile",
+        description: "An error occurred",
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -149,7 +283,8 @@ export default function ProfileTab() {
                 <label className="block text-white text-sm font-mona-sans mb-2">First Name</label>
                 <input
                   type="text"
-                  defaultValue={firstName}
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
                   placeholder="First Name"
                   className="w-full h-14 rounded-[40px] border border-[#FFFFFF1A] bg-transparent px-4 text-white placeholder:text-white/60 font-jakarta-sans focus:outline-none focus:border-[#A2CE3A] transition-colors"
                 />
@@ -158,7 +293,8 @@ export default function ProfileTab() {
                 <label className="block text-white text-sm font-mona-sans mb-2">Last Name</label>
                 <input
                   type="text"
-                  defaultValue={lastName}
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
                   placeholder="Last Name"
                   className="w-full h-14 rounded-[40px] border border-[#FFFFFF1A] bg-transparent px-4 text-white placeholder:text-white/60 font-jakarta-sans focus:outline-none focus:border-[#A2CE3A] transition-colors"
                 />
@@ -222,34 +358,49 @@ export default function ProfileTab() {
               />
             </div>
 
-            {/* Work Email */}
+            {/* LinkedIn Email */}
             <div>
-              <label className="block text-white text-sm font-mona-sans mb-2">Work Email</label>
+              <label className="block text-white text-sm font-mona-sans mb-2">LinkedIn Email</label>
               <input
                 type="email"
                 value={workEmail}
                 onChange={(e) => setWorkEmail(e.target.value)}
-                placeholder="Work Email"
+                placeholder="LinkedIn Email"
                 className="w-full h-14 rounded-[40px] border border-[#FFFFFF1A] bg-transparent px-4 text-white placeholder:text-white/60 font-jakarta-sans focus:outline-none focus:border-[#A2CE3A] transition-colors"
               />
             </div>
 
-            {/* Work Email Password */}
+            {/* LinkedIn Password */}
             <div>
-              <label className="block text-white text-sm font-mona-sans mb-2">Work Email Password</label>
-              <input
-                type="password"
-                value={workEmailPassword}
-                onChange={(e) => setWorkEmailPassword(e.target.value)}
-                placeholder="Work Email Password"
-                className="w-full h-14 rounded-[40px] border border-[#FFFFFF1A] bg-transparent px-4 text-white placeholder:text-white/60 font-jakarta-sans focus:outline-none focus:border-[#A2CE3A] transition-colors"
-              />
+              <label className="block text-white text-sm font-mona-sans mb-2">LinkedIn Password</label>
+              <div className="relative">
+                <input
+                  type={showLinkedinPassword ? "text" : "password"}
+                  value={workEmailPassword}
+                  onChange={(e) => {
+                    setLinkedinPasswordDirty(true);
+                    setWorkEmailPassword(e.target.value);
+                  }}
+                  placeholder="LinkedIn Password"
+                  className="w-full h-14 rounded-[40px] border border-[#FFFFFF1A] bg-transparent pl-4 pr-12 text-white placeholder:text-white/60 font-jakarta-sans focus:outline-none focus:border-[#A2CE3A] transition-colors"
+                />
+                <button
+                  type="button"
+                  onClick={handleToggleShowPassword}
+                  aria-label={showLinkedinPassword ? "Hide password" : "Show password"}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-white/60 hover:text-white transition-colors"
+                >
+                  {showLinkedinPassword ? <EyeOffIcon /> : <EyeIcon />}
+                </button>
+              </div>
             </div>
 
             {/* Action Buttons */}
             <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-3 sm:gap-4 pt-4">
               <button
-                className="px-6 sm:px-8 py-2.5 sm:py-3 rounded-[10px] font-mona-sans font-medium text-xs sm:text-sm transition-opacity hover:opacity-80 h-10 sm:h-12"
+                onClick={handleCancel}
+                disabled={saving}
+                className="px-6 sm:px-8 py-2.5 sm:py-3 rounded-[10px] font-mona-sans font-medium text-xs sm:text-sm transition-opacity hover:opacity-80 disabled:opacity-50 h-10 sm:h-12"
                 style={{
                   background: "rgba(118, 118, 128, 0.12)",
                   border: "1.5px solid rgba(255, 255, 255, 0.1)",
@@ -259,10 +410,12 @@ export default function ProfileTab() {
                 Cancel
               </button>
               <button
-                className="px-6 sm:px-8 py-2.5 sm:py-3 rounded-[10px] font-mona-sans font-semibold text-xs sm:text-sm transition-opacity hover:opacity-90 h-10 sm:h-12"
+                onClick={handleSaveProfile}
+                disabled={saving}
+                className="px-6 sm:px-8 py-2.5 sm:py-3 rounded-[10px] font-mona-sans font-semibold text-xs sm:text-sm transition-opacity hover:opacity-90 disabled:opacity-50 h-10 sm:h-12"
                 style={{ background: "#A2CE3A", color: "#121212" }}
               >
-                Save
+                {saving ? "Saving..." : "Save"}
               </button>
             </div>
           </div>

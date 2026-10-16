@@ -54,11 +54,11 @@ export default function ApplicationCard({
   return (
     <div
     onClick={() => {
-      if(stage == "applied") {
-        window.location.href = `/dashboard/application-tracker/${application.id}`
+      if (stage == "applied" && application.job_url) {
+        window.open(application.job_url, "_blank", "noopener,noreferrer");
       }
     }}
-      className={`p-3 rounded-lg w-full ${stage == "applied" ? "cursor-pointer" : ""}`}
+      className={`p-3 rounded-lg w-full ${stage == "applied" && application.job_url ? "cursor-pointer" : ""}`}
       style={{
         background: "rgba(21, 99, 116, 0.1)",
         border: "0.5px solid rgba(255, 255, 255, 0.1)",
