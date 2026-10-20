@@ -1,16 +1,23 @@
 "use client";
 
+import { useState } from "react";
 import DashboardNavbar from "@/components/v1-dashboard/DashboardNavbar";
 import StatCard from "@/components/v1-dashboard/StatCard";
+import { useToast } from "@/components/ui/use-toast";
+import { useMinLoadingTime } from "@/hooks/useMinLoadingTime";
+import {
+  useBilling,
+  useBillingSchedules,
+  ScheduleStatusFilter,
+} from "@/hooks/useBilling";
+import { payInvoice, downloadReceipt, formatMoney } from "@/lib/services/billing.service";
 import PaymentScheduleTable, {
   PaymentScheduleRow,
 } from "@/components/v1-dashboard/billings/PaymentScheduleTable";
 import CurrentPlanCard, {
   CurrentPlanDetails,
 } from "@/components/v1-dashboard/billings/CurrentPlanCard";
-import PaymentSummaryCard, {
-  PaymentSummaryDetails,
-} from "@/components/v1-dashboard/billings/PaymentSummaryCard";
+import PaymentSummaryCard from "@/components/v1-dashboard/billings/PaymentSummaryCard";
 
 const BillingIcon = () => (
   <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -51,94 +58,227 @@ const PayNowIcon = () => (
   </svg>
 );
 
-// Mock billing data until the backend exposes a billing/installments endpoint.
-const scheduleRows: PaymentScheduleRow[] = [
-  { id: 1, dueDate: "18 Jul, 2026", description: "Installment 1", amount: "£250", status: "paid" },
-  { id: 2, dueDate: "15 Aug, 2026", description: "Installment 2", amount: "£100", status: "comprehensive" },
-  { id: 3, dueDate: "15 Aug, 2026", description: "Installment 2", amount: "£100", status: "overdue" },
-  { id: 4, dueDate: "22 Aug, 2026", description: "Installment 2", amount: "£100", status: "upcoming" },
-];
-
-const currentPlan: CurrentPlanDetails = {
-  planLabel: "2 Installments Plan",
-  statusLabel: "Owing",
-  planAmount: "£350",
-  installments: 2,
-  installmentAmount: "£250",
-  startDate: "18 Oct, 2026",
-  nextDueDate: "15 Oct, 2026",
-  paymentMethod: "Stripe",
-};
-
-const paymentSummary: PaymentSummaryDetails = {
-  percentPaid: 70,
-  paidAmount: "£250",
-  remainingAmount: "£100",
-  totalAmount: "£350",
-};
-
 export default function BillingsPage() {
+  const { toast } = useToast();
+
+  const { data: billing, isLoading: isBillingLoading } = useBilling();
+  const [statusFilter, setStatusFilter] = useState<ScheduleStatusFilter>("all");
+  const [page, setPage] = useState(1);
+  const { data: schedules, isLoading: isSchedulesLoading } = useBillingSchedules({
+    page,
+    status: statusFilter,
+  });
+
+  const [payingId, setPayingId] = useState<number | null>(null);
+  const [downloadingId, setDownloadingId] = useState<number | null>(null);
+  const [payingBanner, setPayingBanner] = useState(false);
+
+  const isLoading = useMinLoadingTime(isBillingLoading, 1500);
+  const isScheduleLoading = useMinLoadingTime(isSchedulesLoading, 1500);
+
+  const symbol = billing?.currency_symbol ?? "£";
+
+  const handlePay = async (invoiceId: number, payUrl: string | null) => {
+    if (payUrl) {
+      window.location.href = payUrl;
+      return;
+    }
+
+    setPayingId(invoiceId);
+    try {
+      const checkoutUrl = await payInvoice(invoiceId);
+      window.location.href = checkoutUrl;
+    } catch (error) {
+      toast({
+        variant: "error",
+        title: "Payment failed",
+        description: error instanceof Error ? error.message : "An error occurred",
+      });
+      setPayingId(null);
+    }
+  };
+
+  const handleBannerPay = () => {
+    if (!billing?.banner.invoice_id) return;
+    setPayingBanner(true);
+    handlePay(billing.banner.invoice_id, billing.banner.pay_url).finally(() => setPayingBanner(false));
+  };
+
+  const handleViewReceipt = async (row: PaymentScheduleRow) => {
+    setDownloadingId(row.id);
+    try {
+      await downloadReceipt(row.id);
+    } catch (error) {
+      toast({
+        variant: "error",
+        title: "Download failed",
+        description: error instanceof Error ? error.message : "An error occurred",
+      });
+    } finally {
+      setDownloadingId(null);
+    }
+  };
+
+  const scheduleRows: PaymentScheduleRow[] = (schedules?.data ?? []).map((item) => ({
+    id: item.id,
+    sequence: item.sequence,
+    dueDate: item.formatted_due_date ?? "—",
+    description: item.description,
+    amount: formatMoney(item.amount, symbol),
+    status: item.status,
+    statusLabel: item.status_label,
+    payUrl: item.pay_url,
+    hasReceipt: !!item.receipt_url,
+  }));
+
+  const currentPlan: CurrentPlanDetails | null = billing
+    ? {
+        planLabel: billing.current_plan.installments_badge,
+        status: billing.current_plan.status,
+        statusLabel: billing.current_plan.status_label,
+        planAmount: formatMoney(billing.current_plan.plan_amount, symbol),
+        installments: billing.current_plan.installments_count,
+        installmentAmount: formatMoney(billing.current_plan.installment_amount, symbol),
+        startDate: billing.current_plan.start_date ?? "—",
+        nextDueDate: billing.current_plan.next_due_date ?? "—",
+        paymentMethod: "Stripe",
+      }
+    : null;
+
+  const percentPaid =
+    billing && billing.metrics.total_plan_amount > 0
+      ? Math.round((billing.metrics.total_paid / billing.metrics.total_plan_amount) * 100)
+      : 0;
+
   return (
     <div className="min-h-screen p-4 lg:p-6">
       <DashboardNavbar pageTitle="Billings" pageIcon={<BillingIcon />} />
 
       {/* Next Payment banner */}
-      <div
-        className="rounded-2xl p-5 mb-6 flex items-center justify-between flex-wrap gap-4"
-        style={{ background: "#1563741A", border: "0.5px solid #FFFFFF1A" }}
-      >
-        <div className="flex items-center gap-4">
-          <div className="flex-shrink-0">
-            <CalendarBadgeIcon />
-          </div>
-          <div>
-            <p className="text-[#95ACCB] text-xs font-mona-sans mb-1">Next Payment Date</p>
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-white font-mona-sans font-bold text-lg lg:text-xl">
-                Oct 15, 2026
-              </span>
-              <span
-                className="px-3 py-1 rounded-full text-xs font-jakarta-sans font-medium"
-                style={{ color: "#A2CE3A", background: "rgba(162, 206, 58, 0.15)" }}
-              >
-                In 7 days
-              </span>
+      {isLoading ? (
+        <div
+          className="rounded-2xl p-5 mb-6 h-[84px]"
+          style={{ background: "#1563741A", border: "0.5px solid #FFFFFF1A" }}
+        />
+      ) : billing?.banner.has_next_payment ? (
+        <div
+          className="rounded-2xl p-5 mb-6 flex items-center justify-between flex-wrap gap-4"
+          style={{ background: "#1563741A", border: "0.5px solid #FFFFFF1A" }}
+        >
+          <div className="flex items-center gap-4">
+            <div className="flex-shrink-0">
+              <CalendarBadgeIcon />
+            </div>
+            <div>
+              <p className="text-[#95ACCB] text-xs font-mona-sans mb-1">Next Payment Date</p>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-white font-mona-sans font-bold text-lg lg:text-xl">
+                  {billing.banner.formatted_date}
+                </span>
+                {billing.banner.due_label && (
+                  <span
+                    className="px-3 py-1 rounded-full text-xs font-jakarta-sans font-medium"
+                    style={{
+                      color: billing.banner.is_overdue ? "#FF383C" : "#A2CE3A",
+                      background: billing.banner.is_overdue
+                        ? "rgba(255, 56, 60, 0.15)"
+                        : "rgba(162, 206, 58, 0.15)",
+                    }}
+                  >
+                    {billing.banner.due_label}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="flex items-center gap-6 sm:gap-10 flex-wrap">
-          <div>
-            <p className="text-[#95ACCB] text-xs font-mona-sans mb-1">Installment 1 of 2!</p>
-            <p className="text-white font-mona-sans font-bold text-lg lg:text-xl">£350</p>
+          <div className="flex items-center gap-6 sm:gap-10 flex-wrap">
+            <div>
+              <p className="text-[#95ACCB] text-xs font-mona-sans mb-1">{billing.banner.installment_label}</p>
+              <p className="text-white font-mona-sans font-bold text-lg lg:text-xl">
+                {formatMoney(billing.banner.amount, symbol)}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleBannerPay}
+              disabled={payingBanner}
+              className="flex items-center gap-2 px-6 py-3 rounded-[10px] font-mona-sans font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
+              style={{ background: "#A2CE3A", color: "#0B0F10" }}
+            >
+              <PayNowIcon /> {payingBanner ? "Redirecting..." : "Pay Now"}
+            </button>
           </div>
-          <button
-            type="button"
-            className="flex items-center gap-2 px-6 py-3 rounded-[10px] font-mona-sans font-semibold text-sm hover:opacity-90 transition-opacity"
-            style={{ background: "#A2CE3A", color: "#0B0F10" }}
-          >
-            <PayNowIcon /> Pay Now
-          </button>
         </div>
-      </div>
+      ) : (
+        <div
+          className="rounded-2xl p-5 mb-6"
+          style={{ background: "#1563741A", border: "0.5px solid #FFFFFF1A" }}
+        >
+          <p className="text-white font-mona-sans font-semibold text-sm">
+            No upcoming payments — you&apos;re all caught up.
+          </p>
+        </div>
+      )}
 
       {/* Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <StatCard title="TOTAL PLAN AMOUNT" value="£350" />
-        <StatCard title="TOTAL PAID" value="£250" />
-        <StatCard title="REMAINING BALANCE" value="£100" />
-        <StatCard title="PAYMENT STATUS" value="Owing" />
+        <StatCard
+          title="TOTAL PLAN AMOUNT"
+          value={isLoading ? "—" : formatMoney(billing?.metrics.total_plan_amount ?? 0, symbol)}
+          isLoading={isLoading}
+        />
+        <StatCard
+          title="TOTAL PAID"
+          value={isLoading ? "—" : formatMoney(billing?.metrics.total_paid ?? 0, symbol)}
+          isLoading={isLoading}
+        />
+        <StatCard
+          title="REMAINING BALANCE"
+          value={isLoading ? "—" : formatMoney(billing?.metrics.remaining_balance ?? 0, symbol)}
+          isLoading={isLoading}
+        />
+        <StatCard
+          title="PAYMENT STATUS"
+          value={isLoading ? "—" : billing?.metrics.status_label ?? "—"}
+          isLoading={isLoading}
+        />
       </div>
 
       {/* Payment Schedule + Current Plan / Payment Summary */}
       <div className="flex flex-col lg:flex-row gap-5">
         <div className="lg:w-[68%]">
-          <PaymentScheduleTable installmentsLabel="2 Installments plan" rows={scheduleRows} />
+          <PaymentScheduleTable
+            installmentsLabel={billing?.current_plan.installments_badge ?? ""}
+            rows={scheduleRows}
+            isLoading={isScheduleLoading}
+            statusFilter={statusFilter}
+            onStatusFilterChange={(status) => {
+              setStatusFilter(status);
+              setPage(1);
+            }}
+            page={schedules?.meta?.current_page ?? page}
+            lastPage={schedules?.meta?.last_page ?? 1}
+            onPageChange={setPage}
+            onPay={(row) => handlePay(row.id, row.payUrl)}
+            onViewReceipt={handleViewReceipt}
+            payingId={payingId}
+            downloadingId={downloadingId}
+          />
         </div>
 
         <div className="lg:w-[32%] flex flex-col gap-5">
-          <CurrentPlanCard plan={currentPlan} />
-          <PaymentSummaryCard summary={paymentSummary} />
+          {currentPlan && !isLoading && <CurrentPlanCard plan={currentPlan} />}
+          {!isLoading && billing && (
+            <PaymentSummaryCard
+              summary={{
+                percentPaid,
+                paidAmount: formatMoney(billing.metrics.total_paid, symbol),
+                remainingAmount: formatMoney(billing.metrics.remaining_balance, symbol),
+                totalAmount: formatMoney(billing.metrics.total_plan_amount, symbol),
+              }}
+            />
+          )}
         </div>
       </div>
     </div>

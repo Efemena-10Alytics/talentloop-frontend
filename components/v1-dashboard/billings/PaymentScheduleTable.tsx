@@ -1,17 +1,46 @@
-export type InstallmentStatus = "paid" | "comprehensive" | "overdue" | "upcoming";
+"use client";
+
+import { Select } from "@/components/ui/Select";
+import Skeleton from "@/components/ui/Skeleton";
+
+export type InstallmentStatus = "paid" | "overdue" | "upcoming" | "processing";
+export type ScheduleStatusFilter = "all" | InstallmentStatus;
 
 export interface PaymentScheduleRow {
+  /** Invoice id — used for the Pay Now / View Receipt actions. */
   id: number;
+  sequence: number;
   dueDate: string;
   description: string;
   amount: string;
   status: InstallmentStatus;
+  statusLabel: string;
+  payUrl: string | null;
+  hasReceipt: boolean;
 }
 
 interface PaymentScheduleTableProps {
   installmentsLabel: string;
   rows: PaymentScheduleRow[];
+  isLoading?: boolean;
+  statusFilter: ScheduleStatusFilter;
+  onStatusFilterChange: (status: ScheduleStatusFilter) => void;
+  page: number;
+  lastPage: number;
+  onPageChange: (page: number) => void;
+  onPay: (row: PaymentScheduleRow) => void;
+  onViewReceipt: (row: PaymentScheduleRow) => void;
+  payingId?: number | null;
+  downloadingId?: number | null;
 }
+
+const STATUS_FILTER_OPTIONS = [
+  { value: "all", label: "All" },
+  { value: "paid", label: "Paid" },
+  { value: "overdue", label: "Overdue" },
+  { value: "upcoming", label: "Upcoming" },
+  { value: "processing", label: "Processing" },
+];
 
 const CheckCircleIcon = () => (
   <svg width="11" height="11" viewBox="0 0 11 11" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -40,12 +69,6 @@ const UpcomingCalendarIcon = () => (
   </svg>
 );
 
-const ChevronDownIcon = () => (
-  <svg width="12" height="7" viewBox="0 0 12 7" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M1 1L6 6L11 1" stroke="#95ACCB" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
-
 const ReceiptIcon = () => (
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
     <rect x="0.333333" y="0.333333" width="23.3333" height="23.3333" rx="11.6667" fill="#C2D8FC" />
@@ -67,27 +90,42 @@ const PayNowIcon = () => (
   </svg>
 );
 
-const STATUS_STYLES: Record<InstallmentStatus, { label: string; color: string; bg: string; icon: React.ReactNode }> = {
-  paid: { label: "Paid", color: "#359E5B", bg: "rgba(53, 158, 91, 0.1)", icon: <CheckCircleIcon /> },
-  comprehensive: { label: "Comprehensive", color: "#FF8D28", bg: "rgba(255, 141, 40, 0.1)", icon: <StopwatchIcon /> },
-  overdue: { label: "Overdue", color: "#FF383C", bg: "rgba(255, 56, 60, 0.1)", icon: <StopwatchIcon /> },
-  upcoming: { label: "Upcoming", color: "#0088FF", bg: "rgba(0, 136, 255, 0.1)", icon: <UpcomingCalendarIcon /> },
+const STATUS_STYLES: Record<InstallmentStatus, { color: string; bg: string; icon: React.ReactNode }> = {
+  paid: { color: "#359E5B", bg: "rgba(53, 158, 91, 0.1)", icon: <CheckCircleIcon /> },
+  processing: { color: "#FF8D28", bg: "rgba(255, 141, 40, 0.1)", icon: <StopwatchIcon /> },
+  overdue: { color: "#FF383C", bg: "rgba(255, 56, 60, 0.1)", icon: <StopwatchIcon /> },
+  upcoming: { color: "#0088FF", bg: "rgba(0, 136, 255, 0.1)", icon: <UpcomingCalendarIcon /> },
 };
 
-function StatusBadge({ status }: { status: InstallmentStatus }) {
-  const s = STATUS_STYLES[status];
+const DEFAULT_STATUS_STYLE = { color: "#95ACCB", bg: "rgba(149, 172, 203, 0.1)", icon: null as React.ReactNode };
+
+function StatusBadge({ status, label }: { status: InstallmentStatus; label: string }) {
+  const s = STATUS_STYLES[status] ?? DEFAULT_STATUS_STYLE;
   return (
     <span
       className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-jakarta-sans font-medium"
       style={{ color: s.color, background: s.bg }}
     >
       {s.icon}
-      {s.label}
+      {label}
     </span>
   );
 }
 
-export default function PaymentScheduleTable({ installmentsLabel, rows }: PaymentScheduleTableProps) {
+export default function PaymentScheduleTable({
+  installmentsLabel,
+  rows,
+  isLoading,
+  statusFilter,
+  onStatusFilterChange,
+  page,
+  lastPage,
+  onPageChange,
+  onPay,
+  onViewReceipt,
+  payingId,
+  downloadingId,
+}: PaymentScheduleTableProps) {
   return (
     <div
       className="rounded-2xl p-5"
@@ -99,21 +137,13 @@ export default function PaymentScheduleTable({ installmentsLabel, rows }: Paymen
           <h3 className="text-white font-mona-sans font-semibold text-base">Payment Schedule</h3>
           <p className="text-[#95ACCB] text-xs font-mona-sans mt-1">{installmentsLabel}</p>
         </div>
-        <button
-          type="button"
-          className="flex items-center gap-2"
-          style={{
-            background: "transparent",
-            border: "0.5px solid #FFFFFF1A",
-            borderRadius: "10px",
-            padding: "8px 16px",
-            color: "#E8EFF1",
-            fontWeight: 500,
-            fontSize: "13px",
-          }}
-        >
-          Today <ChevronDownIcon />
-        </button>
+        <div className="w-[150px]">
+          <Select
+            value={statusFilter}
+            onChange={(value) => onStatusFilterChange(value as ScheduleStatusFilter)}
+            options={STATUS_FILTER_OPTIONS}
+          />
+        </div>
       </div>
 
       {/* Table */}
@@ -133,39 +163,90 @@ export default function PaymentScheduleTable({ installmentsLabel, rows }: Paymen
             </tr>
           </thead>
           <tbody>
-            {rows.map((row, i) => (
-              <tr key={row.id} style={{ borderBottom: "1px solid #FFFFFF06" }}>
-                <td className="py-4 pr-3 text-[#95ACCB] font-mona-sans text-sm">{i + 1}</td>
-                <td className="py-4 pr-3 text-[#E8EFF1] font-mona-sans text-sm whitespace-nowrap">{row.dueDate}</td>
-                <td className="py-4 pr-3 text-[#E8EFF1] font-mona-sans text-sm">{row.description}</td>
-                <td className="py-4 pr-3 text-[#E8EFF1] font-mona-sans text-sm">{row.amount}</td>
-                <td className="py-4 pr-3">
-                  <StatusBadge status={row.status} />
-                </td>
-                <td className="py-4 pr-3">
-                  {row.status === "paid" ? (
-                    <button
-                      type="button"
-                      className="flex items-center gap-2 text-sm font-jakarta-sans font-medium hover:opacity-80 transition-opacity"
-                      style={{ color: "#3B82F6" }}
-                    >
-                      <ReceiptIcon /> View Receipt
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      className="flex items-center gap-1.5 px-4 py-2 rounded-[10px] text-sm font-mona-sans font-semibold hover:opacity-90 transition-opacity"
-                      style={{ background: "#A2CE3A", color: "#0B0F10" }}
-                    >
-                      <PayNowIcon /> Pay Now
-                    </button>
-                  )}
+            {isLoading ? (
+              Array.from({ length: 4 }).map((_, i) => (
+                <tr key={i} style={{ borderBottom: "1px solid #FFFFFF06" }}>
+                  {Array.from({ length: 6 }).map((__, j) => (
+                    <td key={j} className="py-4 pr-3">
+                      <Skeleton className="h-5 w-16" />
+                    </td>
+                  ))}
+                </tr>
+              ))
+            ) : rows.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="py-10 text-center text-[#657997] font-mona-sans text-sm">
+                  No installments found.
                 </td>
               </tr>
-            ))}
+            ) : (
+              rows.map((row) => (
+                <tr key={row.id} style={{ borderBottom: "1px solid #FFFFFF06" }}>
+                  <td className="py-4 pr-3 text-[#95ACCB] font-mona-sans text-sm">{row.sequence}</td>
+                  <td className="py-4 pr-3 text-[#E8EFF1] font-mona-sans text-sm whitespace-nowrap">{row.dueDate}</td>
+                  <td className="py-4 pr-3 text-[#E8EFF1] font-mona-sans text-sm">{row.description}</td>
+                  <td className="py-4 pr-3 text-[#E8EFF1] font-mona-sans text-sm">{row.amount}</td>
+                  <td className="py-4 pr-3">
+                    <StatusBadge status={row.status} label={row.statusLabel} />
+                  </td>
+                  <td className="py-4 pr-3">
+                    {row.status === "paid" ? (
+                      row.hasReceipt && (
+                        <button
+                          type="button"
+                          onClick={() => onViewReceipt(row)}
+                          disabled={downloadingId === row.id}
+                          className="flex items-center gap-2 text-sm font-jakarta-sans font-medium hover:opacity-80 transition-opacity disabled:opacity-50"
+                          style={{ color: "#3B82F6" }}
+                        >
+                          <ReceiptIcon /> {downloadingId === row.id ? "Downloading..." : "View Receipt"}
+                        </button>
+                      )
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => onPay(row)}
+                        disabled={payingId === row.id}
+                        className="flex items-center gap-1.5 px-4 py-2 rounded-[10px] text-sm font-mona-sans font-semibold hover:opacity-90 transition-opacity disabled:opacity-50"
+                        style={{ background: "#A2CE3A", color: "#0B0F10" }}
+                      >
+                        <PayNowIcon /> {payingId === row.id ? "Redirecting..." : "Pay Now"}
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
+
+      {/* Pagination */}
+      {!isLoading && lastPage > 1 && (
+        <div className="flex items-center justify-end gap-3 mt-4">
+          <button
+            type="button"
+            onClick={() => onPageChange(page - 1)}
+            disabled={page <= 1}
+            className="px-3 py-1.5 rounded-lg text-xs font-mona-sans font-medium disabled:opacity-40 hover:opacity-80 transition-opacity"
+            style={{ border: "0.5px solid #FFFFFF1A", color: "#E8EFF1" }}
+          >
+            Previous
+          </button>
+          <span className="text-[#95ACCB] text-xs font-mona-sans">
+            Page {page} of {lastPage}
+          </span>
+          <button
+            type="button"
+            onClick={() => onPageChange(page + 1)}
+            disabled={page >= lastPage}
+            className="px-3 py-1.5 rounded-lg text-xs font-mona-sans font-medium disabled:opacity-40 hover:opacity-80 transition-opacity"
+            style={{ border: "0.5px solid #FFFFFF1A", color: "#E8EFF1" }}
+          >
+            Next
+          </button>
+        </div>
+      )}
     </div>
   );
 }

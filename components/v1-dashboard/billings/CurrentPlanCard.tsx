@@ -1,5 +1,8 @@
+export type CurrentPlanStatus = "awaiting_payment" | "ongoing" | "owing" | "completed";
+
 export interface CurrentPlanDetails {
   planLabel: string;
+  status: CurrentPlanStatus;
   statusLabel: string;
   planAmount: string;
   installments: number;
@@ -8,6 +11,15 @@ export interface CurrentPlanDetails {
   nextDueDate: string;
   paymentMethod: string;
 }
+
+const STATUS_COLORS: Record<CurrentPlanStatus, { color: string; bg: string }> = {
+  owing: { color: "#FF8D28", bg: "rgba(255, 141, 40, 0.1)" },
+  awaiting_payment: { color: "#0088FF", bg: "rgba(0, 136, 255, 0.1)" },
+  ongoing: { color: "#0088FF", bg: "rgba(0, 136, 255, 0.1)" },
+  completed: { color: "#359E5B", bg: "rgba(53, 158, 91, 0.1)" },
+};
+
+const DEFAULT_STATUS_COLOR = { color: "#95ACCB", bg: "rgba(149, 172, 203, 0.1)" };
 
 const PlanIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -26,6 +38,8 @@ function Row({ label, value }: { label: string; value: string }) {
 }
 
 export default function CurrentPlanCard({ plan }: { plan: CurrentPlanDetails }) {
+  const statusColor = STATUS_COLORS[plan.status] ?? DEFAULT_STATUS_COLOR;
+
   return (
     <div
       className="rounded-2xl p-5"
@@ -45,7 +59,7 @@ export default function CurrentPlanCard({ plan }: { plan: CurrentPlanDetails }) 
         </div>
         <span
           className="px-3 py-1 rounded-full text-xs font-jakarta-sans font-medium"
-          style={{ color: "#FF8D28", background: "rgba(255, 141, 40, 0.1)" }}
+          style={{ color: statusColor.color, background: statusColor.bg }}
         >
           {plan.statusLabel}
         </span>
