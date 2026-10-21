@@ -81,7 +81,7 @@ export default function BillingsPage() {
     setPayingId(invoiceId);
     try {
       const checkoutUrl = await payInvoice(invoiceId, {
-        successUrl: `${window.location.origin}/billing`,
+        successUrl: `${window.location.origin}/billings`,
       });
       window.location.href = checkoutUrl;
     } catch (error) {

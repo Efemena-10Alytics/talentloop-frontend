@@ -247,7 +247,7 @@ const mainNavLinks: NavLink[] = [
     icon: <ApplicationTrackerIcon />,
   },
   { name: "Documents", href: "/dashboard/documents", icon: <DocumentIcon /> },
-  { name: "Billings", href: "/billing", icon: <BillingsIcon /> },
+  { name: "Billings", href: "/billings", icon: <BillingsIcon /> },
 ];
 
 const accountNavLinks: NavLink[] = [
