@@ -80,7 +80,9 @@ export default function BillingsPage() {
   const handlePay = async (invoiceId: number) => {
     setPayingId(invoiceId);
     try {
-      const checkoutUrl = await payInvoice(invoiceId);
+      const checkoutUrl = await payInvoice(invoiceId, {
+        successUrl: `${window.location.origin}/billing`,
+      });
       window.location.href = checkoutUrl;
     } catch (error) {
       toast({
@@ -217,7 +219,7 @@ export default function BillingsPage() {
           style={{ background: "#1563741A", border: "0.5px solid #FFFFFF1A" }}
         >
           <p className="text-white font-mona-sans font-semibold text-sm">
-            No upcoming payments — you&apos;re all caught up.
+            No upcoming payments — your payment has been completed
           </p>
         </div>
       )}
