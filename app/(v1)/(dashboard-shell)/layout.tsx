@@ -272,7 +272,11 @@ export default function V1DashboardLayout({
 
   useEffect(() => {
     if (sessionStatus === "unauthenticated") {
-      router.replace(`/signin?callbackUrl=${encodeURIComponent(pathname)}`);
+      // Full path + query (not just pathname) so an email link like
+      // /billings?status=success still lands back on the right view,
+      // status param included, once the user signs in.
+      const fullPath = `${pathname}${window.location.search}`;
+      router.replace(`/signin?callbackUrl=${encodeURIComponent(fullPath)}`);
     }
   }, [sessionStatus, pathname, router]);
 

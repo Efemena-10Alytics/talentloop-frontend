@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import DashboardNavbar from "@/components/v1-dashboard/DashboardNavbar";
 import StatCard from "@/components/v1-dashboard/StatCard";
 import { useToast } from "@/components/ui/use-toast";
@@ -57,8 +59,11 @@ const PayNowIcon = () => (
   </svg>
 );
 
-export default function BillingsPage() {
+function BillingsPageContent() {
   const { toast } = useToast();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const queryClient = useQueryClient();
 
   const { data: billing, isLoading: isBillingLoading } = useBilling();
   const [statusFilter, setStatusFilter] = useState<ScheduleStatusFilter>("all");
@@ -75,14 +80,50 @@ export default function BillingsPage() {
   const isLoading = useMinLoadingTime(isBillingLoading, 1500);
   const isScheduleLoading = useMinLoadingTime(isSchedulesLoading, 1500);
 
+  // Returning from Stripe Checkout: show the outcome, refresh billing data
+  // (once now, once more after the webhook has had time to land), then
+  // drop ?status= from the URL.
+  useEffect(() => {
+    const status = searchParams.get("status");
+    if (!status) return;
+
+    if (status === "success") {
+      toast({
+        variant: "success",
+        title: "Payment received",
+        description: "Your payment has been processed.",
+      });
+    } else if (status === "cancelled") {
+      toast({
+        variant: "error",
+        title: "Payment cancelled",
+        description: "Your payment was not completed.",
+      });
+    }
+
+    const refresh = () => {
+      queryClient.invalidateQueries({ queryKey: ["billing"] });
+      queryClient.invalidateQueries({ queryKey: ["billing-schedules"] });
+    };
+
+    refresh();
+    const timer = setTimeout(refresh, 4000);
+
+    router.replace("/billings");
+
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
   const symbol = billing?.currency_symbol ?? "£";
 
   const handlePay = async (invoiceId: number) => {
     setPayingId(invoiceId);
     try {
-      const checkoutUrl = await payInvoice(invoiceId, {
-        successUrl: `${window.location.origin}/billings`,
-      });
+      // No successUrl/cancelUrl here — the backend's own default now returns
+      // to /billings with ?status=success|cancelled already attached.
+      // Passing our own would override that and drop the status param.
+      const checkoutUrl = await payInvoice(invoiceId);
       window.location.href = checkoutUrl;
     } catch (error) {
       toast({
@@ -275,5 +316,13 @@ export default function BillingsPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function BillingsPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#01090B]" />}>
+      <BillingsPageContent />
+    </Suspense>
   );
 }

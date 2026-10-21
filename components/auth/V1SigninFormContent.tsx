@@ -146,11 +146,21 @@ export default function V1SigninFormContent({
   const handleAuthenticated = (hasEnrollment?: boolean) => {
     if (isModal && onSuccess) {
       onSuccess();
-    } else if (hasEnrollment) {
-      router.push("/dashboard");
-    } else {
-      router.push("/");
+      return;
     }
+
+    // Read directly from the URL rather than useSearchParams so this
+    // component doesn't need its own Suspense boundary — it's also used
+    // inside SigninModal, which isn't wrapped in one.
+    const callbackUrl = new URLSearchParams(window.location.search).get("callbackUrl");
+    // Only ever follow an internal path — never an absolute or
+    // protocol-relative URL, which would be an open-redirect vector.
+    if (callbackUrl && callbackUrl.startsWith("/") && !callbackUrl.startsWith("//")) {
+      router.push(callbackUrl);
+      return;
+    }
+
+    router.push(hasEnrollment ? "/dashboard" : "/");
   };
 
   const handleCredentialSignIn = async () => {
