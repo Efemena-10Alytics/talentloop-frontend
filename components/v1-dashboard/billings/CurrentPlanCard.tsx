@@ -9,7 +9,6 @@ export interface CurrentPlanDetails {
   installmentAmount: string;
   startDate: string;
   nextDueDate: string;
-  paymentMethod: string;
 }
 
 const STATUS_COLORS: Record<CurrentPlanStatus, { color: string; bg: string }> = {
@@ -71,7 +70,6 @@ export default function CurrentPlanCard({ plan }: { plan: CurrentPlanDetails }) 
         <Row label="Installment Amount" value={plan.installmentAmount} />
         <Row label="Start Date" value={plan.startDate} />
         <Row label="Next Due Date" value={plan.nextDueDate} />
-        <Row label="Payment Method" value={plan.paymentMethod} />
       </div>
     </div>
   );

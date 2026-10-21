@@ -17,7 +17,6 @@ import PaymentScheduleTable, {
 import CurrentPlanCard, {
   CurrentPlanDetails,
 } from "@/components/v1-dashboard/billings/CurrentPlanCard";
-import PaymentSummaryCard from "@/components/v1-dashboard/billings/PaymentSummaryCard";
 
 const BillingIcon = () => (
   <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -133,7 +132,7 @@ export default function BillingsPage() {
 
   const currentPlan: CurrentPlanDetails | null = billing
     ? {
-        planLabel: billing.current_plan.installments_badge,
+        planLabel: billing.current_plan.plan_title,
         status: billing.current_plan.status,
         statusLabel: billing.current_plan.status_label,
         planAmount: formatMoney(billing.current_plan.plan_amount, symbol),
@@ -141,18 +140,25 @@ export default function BillingsPage() {
         installmentAmount: formatMoney(billing.current_plan.installment_amount, symbol),
         startDate: billing.current_plan.start_date ?? "—",
         nextDueDate: billing.current_plan.next_due_date ?? "—",
-        paymentMethod: "Stripe",
       }
     : null;
 
-  const percentPaid =
-    billing && billing.metrics.total_plan_amount > 0
-      ? Math.round((billing.metrics.total_paid / billing.metrics.total_plan_amount) * 100)
-      : 0;
-
   return (
     <div className="min-h-screen p-4 lg:p-6">
-      <DashboardNavbar pageTitle="Billings" pageIcon={<BillingIcon />} />
+      <DashboardNavbar
+        pageTitle="Billings"
+        pageIcon={<BillingIcon />}
+        actionSlot={
+          billing?.pricing_title ? (
+            <span
+              className="px-4 py-1.5 rounded-full text-xs font-mona-sans font-semibold whitespace-nowrap"
+              style={{ color: "#C084FC", background: "rgba(168, 85, 247, 0.15)" }}
+            >
+              {billing.pricing_title}
+            </span>
+          ) : undefined
+        }
+      />
 
       {/* Next Payment banner */}
       {isLoading ? (
@@ -245,7 +251,7 @@ export default function BillingsPage() {
         />
       </div>
 
-      {/* Payment Schedule + Current Plan / Payment Summary */}
+      {/* Payment Schedule + Current Plan */}
       <div className="flex flex-col lg:flex-row gap-5">
         <div className="lg:w-[68%]">
           <PaymentScheduleTable
@@ -269,16 +275,6 @@ export default function BillingsPage() {
 
         <div className="lg:w-[32%] flex flex-col gap-5">
           {currentPlan && !isLoading && <CurrentPlanCard plan={currentPlan} />}
-          {!isLoading && billing && (
-            <PaymentSummaryCard
-              summary={{
-                percentPaid,
-                paidAmount: formatMoney(billing.metrics.total_paid, symbol),
-                remainingAmount: formatMoney(billing.metrics.remaining_balance, symbol),
-                totalAmount: formatMoney(billing.metrics.total_plan_amount, symbol),
-              }}
-            />
-          )}
         </div>
       </div>
     </div>
