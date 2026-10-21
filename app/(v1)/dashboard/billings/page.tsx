@@ -77,12 +77,7 @@ export default function BillingsPage() {
 
   const symbol = billing?.currency_symbol ?? "£";
 
-  const handlePay = async (invoiceId: number, payUrl: string | null) => {
-    if (payUrl) {
-      window.location.href = payUrl;
-      return;
-    }
-
+  const handlePay = async (invoiceId: number) => {
     setPayingId(invoiceId);
     try {
       const checkoutUrl = await payInvoice(invoiceId);
@@ -100,7 +95,7 @@ export default function BillingsPage() {
   const handleBannerPay = () => {
     if (!billing?.banner.invoice_id) return;
     setPayingBanner(true);
-    handlePay(billing.banner.invoice_id, billing.banner.pay_url).finally(() => setPayingBanner(false));
+    handlePay(billing.banner.invoice_id).finally(() => setPayingBanner(false));
   };
 
   const handleViewReceipt = async (row: PaymentScheduleRow) => {
@@ -266,7 +261,7 @@ export default function BillingsPage() {
             page={schedules?.meta?.current_page ?? page}
             lastPage={schedules?.meta?.last_page ?? 1}
             onPageChange={setPage}
-            onPay={(row) => handlePay(row.id, row.payUrl)}
+            onPay={(row) => handlePay(row.id)}
             onViewReceipt={handleViewReceipt}
             payingId={payingId}
             downloadingId={downloadingId}
