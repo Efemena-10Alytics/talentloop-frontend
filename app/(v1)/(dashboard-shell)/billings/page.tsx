@@ -75,7 +75,6 @@ function BillingsPageContent() {
     status: statusFilter,
   });
 
-  const [payingId, setPayingId] = useState<number | null>(null);
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
   const [payingBanner, setPayingBanner] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -114,7 +113,6 @@ function BillingsPageContent() {
   const symbol = billing?.currency_symbol ?? "£";
 
   const handlePay = async (invoiceId: number) => {
-    setPayingId(invoiceId);
     try {
       // No successUrl/cancelUrl here — the backend's own default now returns
       // to /billings with ?status=success|cancelled already attached.
@@ -127,7 +125,6 @@ function BillingsPageContent() {
         title: "Payment failed",
         description: error instanceof Error ? error.message : "An error occurred",
       });
-      setPayingId(null);
     }
   };
 
@@ -160,7 +157,6 @@ function BillingsPageContent() {
     amount: formatMoney(item.amount, symbol),
     status: item.status,
     statusLabel: item.status_label,
-    payUrl: item.pay_url,
     hasReceipt: !!item.receipt_url,
   }));
 
@@ -300,9 +296,7 @@ function BillingsPageContent() {
             page={schedules?.meta?.current_page ?? page}
             lastPage={schedules?.meta?.last_page ?? 1}
             onPageChange={setPage}
-            onPay={(row) => handlePay(row.id)}
             onViewReceipt={handleViewReceipt}
-            payingId={payingId}
             downloadingId={downloadingId}
           />
         </div>
