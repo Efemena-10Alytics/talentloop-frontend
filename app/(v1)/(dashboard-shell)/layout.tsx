@@ -247,7 +247,7 @@ const mainNavLinks: NavLink[] = [
     icon: <ApplicationTrackerIcon />,
   },
   { name: "Documents", href: "/dashboard/documents", icon: <DocumentIcon /> },
-  // { name: "Billings", href: "/dashboard/billings", icon: <BillingsIcon /> },
+  { name: "Billings", href: "/billings", icon: <BillingsIcon /> },
 ];
 
 const accountNavLinks: NavLink[] = [
@@ -272,7 +272,11 @@ export default function V1DashboardLayout({
 
   useEffect(() => {
     if (sessionStatus === "unauthenticated") {
-      router.replace(`/signin?callbackUrl=${encodeURIComponent(pathname)}`);
+      // Full path + query (not just pathname) so an email link like
+      // /billings?status=success still lands back on the right view,
+      // status param included, once the user signs in.
+      const fullPath = `${pathname}${window.location.search}`;
+      router.replace(`/signin?callbackUrl=${encodeURIComponent(fullPath)}`);
     }
   }, [sessionStatus, pathname, router]);
 

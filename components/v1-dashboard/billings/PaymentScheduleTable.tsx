@@ -1,17 +1,43 @@
-export type InstallmentStatus = "paid" | "comprehensive" | "overdue" | "upcoming";
+"use client";
+
+import { Select } from "@/components/ui/Select";
+import Skeleton from "@/components/ui/Skeleton";
+
+export type InstallmentStatus = "paid" | "overdue" | "upcoming" | "processing";
+export type ScheduleStatusFilter = "all" | InstallmentStatus;
 
 export interface PaymentScheduleRow {
+  /** Invoice id — used for the View Receipt action. */
   id: number;
+  sequence: number;
   dueDate: string;
   description: string;
   amount: string;
   status: InstallmentStatus;
+  statusLabel: string;
+  hasReceipt: boolean;
 }
 
 interface PaymentScheduleTableProps {
   installmentsLabel: string;
   rows: PaymentScheduleRow[];
+  isLoading?: boolean;
+  statusFilter: ScheduleStatusFilter;
+  onStatusFilterChange: (status: ScheduleStatusFilter) => void;
+  page: number;
+  lastPage: number;
+  onPageChange: (page: number) => void;
+  onViewReceipt: (row: PaymentScheduleRow) => void;
+  downloadingId?: number | null;
 }
+
+const STATUS_FILTER_OPTIONS = [
+  { value: "all", label: "All" },
+  { value: "paid", label: "Paid" },
+  { value: "overdue", label: "Overdue" },
+  { value: "upcoming", label: "Upcoming" },
+  { value: "processing", label: "Processing" },
+];
 
 const CheckCircleIcon = () => (
   <svg width="11" height="11" viewBox="0 0 11 11" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -40,12 +66,6 @@ const UpcomingCalendarIcon = () => (
   </svg>
 );
 
-const ChevronDownIcon = () => (
-  <svg width="12" height="7" viewBox="0 0 12 7" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M1 1L6 6L11 1" stroke="#95ACCB" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
-
 const ReceiptIcon = () => (
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
     <rect x="0.333333" y="0.333333" width="23.3333" height="23.3333" rx="11.6667" fill="#C2D8FC" />
@@ -58,36 +78,40 @@ const ReceiptIcon = () => (
   </svg>
 );
 
-const PayNowIcon = () => (
-  <svg width="16" height="11" viewBox="0 0 23 15" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path
-      d="M22.1475 1.12878C22.0395 1.06139 21.9162 1.02259 21.7891 1.01603C21.662 1.00947 21.5353 1.03536 21.4209 1.09128C17.3962 3.06003 14.5219 2.13753 11.4834 1.1644C8.29594 0.143465 4.99125 -0.911222 0.425625 1.31815C0.29806 1.37934 0.190404 1.47537 0.115091 1.59514C0.0397771 1.71491 -0.000122227 1.85354 2.81267e-07 1.99503V13.2385C-1.76404e-05 13.3657 0.0323425 13.4909 0.0940354 13.6022C0.155728 13.7135 0.244725 13.8072 0.35265 13.8747C0.460575 13.9421 0.583879 13.9809 0.710959 13.9876C0.838038 13.9942 0.964713 13.9684 1.07906 13.9125C5.10375 11.9438 7.97812 12.8663 11.0212 13.8394C12.825 14.416 14.6625 15.0038 16.74 15.0038C18.3422 15.0038 20.0897 14.655 22.0753 13.6857C22.2014 13.6241 22.3077 13.5283 22.3822 13.4094C22.4566 13.2904 22.4961 13.1529 22.4963 13.0125V1.76909C22.4974 1.64151 22.4659 1.51575 22.4049 1.4037C22.3439 1.29166 22.2553 1.19703 22.1475 1.12878ZM21 12.5353C17.1938 14.2388 14.4141 13.35 11.4788 12.4116C9.675 11.835 7.8375 11.2472 5.76 11.2472C4.30041 11.2543 2.85567 11.5407 1.50375 12.091V2.47222C5.31 0.768778 8.08969 1.65753 11.025 2.59597C13.9603 3.5344 16.9819 4.50378 21 2.91846V12.5353ZM11.25 4.50378C10.6567 4.50378 10.0766 4.67973 9.58329 5.00937C9.08994 5.33901 8.70542 5.80755 8.47836 6.35573C8.2513 6.90391 8.19189 7.50711 8.30764 8.08905C8.4234 8.67099 8.70912 9.20554 9.12868 9.6251C9.54824 10.0447 10.0828 10.3304 10.6647 10.4461C11.2467 10.5619 11.8499 10.5025 12.3981 10.2754C12.9462 10.0484 13.4148 9.66384 13.7444 9.17049C14.0741 8.67714 14.25 8.09712 14.25 7.50378C14.25 6.70813 13.9339 5.94507 13.3713 5.38246C12.8087 4.81985 12.0456 4.50378 11.25 4.50378ZM11.25 9.00378C10.9533 9.00378 10.6633 8.9158 10.4166 8.75098C10.17 8.58616 9.97771 8.35189 9.86418 8.0778C9.75065 7.80371 9.72094 7.50211 9.77882 7.21114C9.8367 6.92017 9.97956 6.6529 10.1893 6.44312C10.3991 6.23334 10.6664 6.09048 10.9574 6.0326C11.2483 5.97472 11.5499 6.00443 11.824 6.11796C12.0981 6.23149 12.3324 6.42375 12.4972 6.67042C12.662 6.9171 12.75 7.20711 12.75 7.50378C12.75 7.9016 12.592 8.28313 12.3107 8.56444C12.0294 8.84574 11.6478 9.00378 11.25 9.00378ZM4.5 4.50378V9.00378C4.5 9.20269 4.42098 9.39346 4.28033 9.53411C4.13968 9.67476 3.94891 9.75378 3.75 9.75378C3.55109 9.75378 3.36032 9.67476 3.21967 9.53411C3.07902 9.39346 3 9.20269 3 9.00378V4.50378C3 4.30487 3.07902 4.1141 3.21967 3.97345C3.36032 3.8328 3.55109 3.75378 3.75 3.75378C3.94891 3.75378 4.13968 3.8328 4.28033 3.97345C4.42098 4.1141 4.5 4.30487 4.5 4.50378ZM18 10.5038V6.00378C18 5.80487 18.079 5.6141 18.2197 5.47345C18.3603 5.3328 18.5511 5.25378 18.75 5.25378C18.9489 5.25378 19.1397 5.3328 19.2803 5.47345C19.421 5.6141 19.5 5.80487 19.5 6.00378V10.5038C19.5 10.7027 19.421 10.8935 19.2803 11.0341C19.1397 11.1748 18.9489 11.2538 18.75 11.2538C18.5511 11.2538 18.3603 11.1748 18.2197 11.0341C18.079 10.8935 18 10.7027 18 10.5038Z"
-      fill="#394814"
-    />
-  </svg>
-);
-
-const STATUS_STYLES: Record<InstallmentStatus, { label: string; color: string; bg: string; icon: React.ReactNode }> = {
-  paid: { label: "Paid", color: "#359E5B", bg: "rgba(53, 158, 91, 0.1)", icon: <CheckCircleIcon /> },
-  comprehensive: { label: "Comprehensive", color: "#FF8D28", bg: "rgba(255, 141, 40, 0.1)", icon: <StopwatchIcon /> },
-  overdue: { label: "Overdue", color: "#FF383C", bg: "rgba(255, 56, 60, 0.1)", icon: <StopwatchIcon /> },
-  upcoming: { label: "Upcoming", color: "#0088FF", bg: "rgba(0, 136, 255, 0.1)", icon: <UpcomingCalendarIcon /> },
+const STATUS_STYLES: Record<InstallmentStatus, { color: string; bg: string; icon: React.ReactNode }> = {
+  paid: { color: "#359E5B", bg: "rgba(53, 158, 91, 0.1)", icon: <CheckCircleIcon /> },
+  processing: { color: "#FF8D28", bg: "rgba(255, 141, 40, 0.1)", icon: <StopwatchIcon /> },
+  overdue: { color: "#FF383C", bg: "rgba(255, 56, 60, 0.1)", icon: <StopwatchIcon /> },
+  upcoming: { color: "#0088FF", bg: "rgba(0, 136, 255, 0.1)", icon: <UpcomingCalendarIcon /> },
 };
 
-function StatusBadge({ status }: { status: InstallmentStatus }) {
-  const s = STATUS_STYLES[status];
+const DEFAULT_STATUS_STYLE = { color: "#95ACCB", bg: "rgba(149, 172, 203, 0.1)", icon: null as React.ReactNode };
+
+function StatusBadge({ status, label }: { status: InstallmentStatus; label: string }) {
+  const s = STATUS_STYLES[status] ?? DEFAULT_STATUS_STYLE;
   return (
     <span
       className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-jakarta-sans font-medium"
       style={{ color: s.color, background: s.bg }}
     >
       {s.icon}
-      {s.label}
+      {label}
     </span>
   );
 }
 
-export default function PaymentScheduleTable({ installmentsLabel, rows }: PaymentScheduleTableProps) {
+export default function PaymentScheduleTable({
+  installmentsLabel,
+  rows,
+  isLoading,
+  statusFilter,
+  onStatusFilterChange,
+  page,
+  lastPage,
+  onPageChange,
+  onViewReceipt,
+  downloadingId,
+}: PaymentScheduleTableProps) {
   return (
     <div
       className="rounded-2xl p-5"
@@ -99,21 +123,13 @@ export default function PaymentScheduleTable({ installmentsLabel, rows }: Paymen
           <h3 className="text-white font-mona-sans font-semibold text-base">Payment Schedule</h3>
           <p className="text-[#95ACCB] text-xs font-mona-sans mt-1">{installmentsLabel}</p>
         </div>
-        <button
-          type="button"
-          className="flex items-center gap-2"
-          style={{
-            background: "transparent",
-            border: "0.5px solid #FFFFFF1A",
-            borderRadius: "10px",
-            padding: "8px 16px",
-            color: "#E8EFF1",
-            fontWeight: 500,
-            fontSize: "13px",
-          }}
-        >
-          Today <ChevronDownIcon />
-        </button>
+        <div className="w-[150px]">
+          <Select
+            value={statusFilter}
+            onChange={(value) => onStatusFilterChange(value as ScheduleStatusFilter)}
+            options={STATUS_FILTER_OPTIONS}
+          />
+        </div>
       </div>
 
       {/* Table */}
@@ -133,39 +149,78 @@ export default function PaymentScheduleTable({ installmentsLabel, rows }: Paymen
             </tr>
           </thead>
           <tbody>
-            {rows.map((row, i) => (
-              <tr key={row.id} style={{ borderBottom: "1px solid #FFFFFF06" }}>
-                <td className="py-4 pr-3 text-[#95ACCB] font-mona-sans text-sm">{i + 1}</td>
-                <td className="py-4 pr-3 text-[#E8EFF1] font-mona-sans text-sm whitespace-nowrap">{row.dueDate}</td>
-                <td className="py-4 pr-3 text-[#E8EFF1] font-mona-sans text-sm">{row.description}</td>
-                <td className="py-4 pr-3 text-[#E8EFF1] font-mona-sans text-sm">{row.amount}</td>
-                <td className="py-4 pr-3">
-                  <StatusBadge status={row.status} />
-                </td>
-                <td className="py-4 pr-3">
-                  {row.status === "paid" ? (
-                    <button
-                      type="button"
-                      className="flex items-center gap-2 text-sm font-jakarta-sans font-medium hover:opacity-80 transition-opacity"
-                      style={{ color: "#3B82F6" }}
-                    >
-                      <ReceiptIcon /> View Receipt
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      className="flex items-center gap-1.5 px-4 py-2 rounded-[10px] text-sm font-mona-sans font-semibold hover:opacity-90 transition-opacity"
-                      style={{ background: "#A2CE3A", color: "#0B0F10" }}
-                    >
-                      <PayNowIcon /> Pay Now
-                    </button>
-                  )}
+            {isLoading ? (
+              Array.from({ length: 4 }).map((_, i) => (
+                <tr key={i} style={{ borderBottom: "1px solid #FFFFFF06" }}>
+                  {Array.from({ length: 6 }).map((__, j) => (
+                    <td key={j} className="py-4 pr-3">
+                      <Skeleton className="h-5 w-16" />
+                    </td>
+                  ))}
+                </tr>
+              ))
+            ) : rows.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="py-10 text-center text-[#657997] font-mona-sans text-sm">
+                  No installments found.
                 </td>
               </tr>
-            ))}
+            ) : (
+              rows.map((row) => (
+                <tr key={row.id} style={{ borderBottom: "1px solid #FFFFFF06" }}>
+                  <td className="py-4 pr-3 text-[#95ACCB] font-mona-sans text-sm">{row.sequence}</td>
+                  <td className="py-4 pr-3 text-[#E8EFF1] font-mona-sans text-sm whitespace-nowrap">{row.dueDate}</td>
+                  <td className="py-4 pr-3 text-[#E8EFF1] font-mona-sans text-sm">{row.description}</td>
+                  <td className="py-4 pr-3 text-[#E8EFF1] font-mona-sans text-sm">{row.amount}</td>
+                  <td className="py-4 pr-3">
+                    <StatusBadge status={row.status} label={row.statusLabel} />
+                  </td>
+                  <td className="py-4 pr-3">
+                    {row.status === "paid" && row.hasReceipt && (
+                      <button
+                        type="button"
+                        onClick={() => onViewReceipt(row)}
+                        disabled={downloadingId === row.id}
+                        className="flex items-center gap-2 text-sm font-jakarta-sans font-medium hover:opacity-80 transition-opacity disabled:opacity-50"
+                        style={{ color: "#3B82F6" }}
+                      >
+                        <ReceiptIcon /> {downloadingId === row.id ? "Downloading..." : "View Receipt"}
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
+
+      {/* Pagination */}
+      {!isLoading && lastPage > 1 && (
+        <div className="flex items-center justify-end gap-3 mt-4">
+          <button
+            type="button"
+            onClick={() => onPageChange(page - 1)}
+            disabled={page <= 1}
+            className="px-3 py-1.5 rounded-lg text-xs font-mona-sans font-medium disabled:opacity-40 hover:opacity-80 transition-opacity"
+            style={{ border: "0.5px solid #FFFFFF1A", color: "#E8EFF1" }}
+          >
+            Previous
+          </button>
+          <span className="text-[#95ACCB] text-xs font-mona-sans">
+            Page {page} of {lastPage}
+          </span>
+          <button
+            type="button"
+            onClick={() => onPageChange(page + 1)}
+            disabled={page >= lastPage}
+            className="px-3 py-1.5 rounded-lg text-xs font-mona-sans font-medium disabled:opacity-40 hover:opacity-80 transition-opacity"
+            style={{ border: "0.5px solid #FFFFFF1A", color: "#E8EFF1" }}
+          >
+            Next
+          </button>
+        </div>
+      )}
     </div>
   );
 }
