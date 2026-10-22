@@ -19,6 +19,8 @@ import PaymentScheduleTable, {
 import CurrentPlanCard, {
   CurrentPlanDetails,
 } from "@/components/v1-dashboard/billings/CurrentPlanCard";
+import PaymentSuccessModal from "@/components/v1-dashboard/billings/PaymentSuccessModal";
+import PaymentCancelledModal from "@/components/v1-dashboard/billings/PaymentCancelledModal";
 
 const BillingIcon = () => (
   <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -76,6 +78,8 @@ function BillingsPageContent() {
   const [payingId, setPayingId] = useState<number | null>(null);
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
   const [payingBanner, setPayingBanner] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showCancelledModal, setShowCancelledModal] = useState(false);
 
   const isLoading = useMinLoadingTime(isBillingLoading, 1500);
   const isScheduleLoading = useMinLoadingTime(isSchedulesLoading, 1500);
@@ -88,17 +92,9 @@ function BillingsPageContent() {
     if (!status) return;
 
     if (status === "success") {
-      toast({
-        variant: "success",
-        title: "Payment received",
-        description: "Your payment has been processed.",
-      });
+      setShowSuccessModal(true);
     } else if (status === "cancelled") {
-      toast({
-        variant: "error",
-        title: "Payment cancelled",
-        description: "Your payment was not completed.",
-      });
+      setShowCancelledModal(true);
     }
 
     const refresh = () => {
@@ -315,6 +311,9 @@ function BillingsPageContent() {
           {currentPlan && !isLoading && <CurrentPlanCard plan={currentPlan} />}
         </div>
       </div>
+
+      <PaymentSuccessModal isOpen={showSuccessModal} onClose={() => setShowSuccessModal(false)} />
+      <PaymentCancelledModal isOpen={showCancelledModal} onClose={() => setShowCancelledModal(false)} />
     </div>
   );
 }
