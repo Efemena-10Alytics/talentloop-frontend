@@ -448,6 +448,28 @@ export function Navbar({ v1Launch }: { v1Launch?: boolean }) {
                       {link.text}
                     </Link>
                   ))}
+
+              {/* Desktop-only "More" dropdown (Contact Us, Terms & Conditions)
+                  has no mobile equivalent — surface those links as plain
+                  items here instead of a nested dropdown. */}
+              {v1Launch && (
+                <>
+                  <Link
+                    href="/contact"
+                    onClick={() => setShowMobileSidebar(false)}
+                    className="block rounded-lg bg-[#FFFFFF26] px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#FFFFFF33] font-mona-sans"
+                  >
+                    Contact Us
+                  </Link>
+                  <Link
+                    href="/terms"
+                    onClick={() => setShowMobileSidebar(false)}
+                    className="block rounded-lg bg-[#FFFFFF26] px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#FFFFFF33] font-mona-sans"
+                  >
+                    Terms &amp; Conditions
+                  </Link>
+                </>
+              )}
             </nav>
 
             {session ? (
