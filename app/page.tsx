@@ -62,7 +62,7 @@ function HomeContent() {
         </div>
         <V1VideoTestimonialSection />
         <V1TestimonialsSection />
-        <div id="pricing">
+        <div id="pricing" className="scroll-mt-[210px]">
           <V1PricingSection onStartNow={handleStartNow} />
         </div>
         <V1WhoIsForSection />
