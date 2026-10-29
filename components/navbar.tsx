@@ -5,7 +5,7 @@ import { useState, useEffect, useRef } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { clearAuthStorage } from "@/lib/auth";
 import { useUserData } from "@/hooks/useUserData";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useToast } from "@/components/ui/use-toast";
 
 const navLinks = [
@@ -25,6 +25,8 @@ export function Navbar({ v1Launch }: { v1Launch?: boolean }) {
   const { data: session } = useSession();
   const { userData } = useUserData();
   const router = useRouter();
+  const pathname = usePathname();
+  const isHomePage = pathname === "/";
   const { toast } = useToast();
   const [isScrolled, setIsScrolled] = useState(false);
   const [showSignUpDropdown, setShowSignUpDropdown] = useState(false);
@@ -99,6 +101,11 @@ export function Navbar({ v1Launch }: { v1Launch?: boolean }) {
     e: React.MouseEvent<HTMLAnchorElement>,
     link: string,
   ) => {
+    // Off the home page these sections don't exist on the current DOM, so
+    // let the browser actually navigate to "/#section" instead of trying
+    // (and failing) to scroll an element that isn't there.
+    if (!isHomePage) return;
+
     e.preventDefault();
     const targetId = link.replace("#", "");
     const targetElement = document.getElementById(targetId);
@@ -145,7 +152,7 @@ export function Navbar({ v1Launch }: { v1Launch?: boolean }) {
                 const isActive = activeSection === link.link;
                 return (
                   <a
-                    href={link.link}
+                    href={isHomePage ? link.link : `/${link.link}`}
                     key={link.text}
                     onClick={(e) => handleNavClick(e, link.link)}
                     className={`text-sm font-normal transition-colors px-5 py-2 font-mona-sans cursor-pointer ${
@@ -423,7 +430,7 @@ export function Navbar({ v1Launch }: { v1Launch?: boolean }) {
                     return (
                       <a
                         key={link.text}
-                        href={link.link}
+                        href={isHomePage ? link.link : `/${link.link}`}
                         onClick={(e) => {
                           handleNavClick(e, link.link);
                           setShowMobileSidebar(false);

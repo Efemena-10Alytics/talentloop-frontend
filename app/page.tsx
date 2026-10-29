@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import { Navbar } from "@/components/navbar";
+import V1PromoBanner from "@/components/v1-launch/v1-promo-banner";
 import V1CareerSection from "@/components/v1-launch/v1-career-section";
 import V1CTASection from "@/components/v1-launch/v1-cta-section";
 import V1ExpertsSection from "@/components/v1-launch/v1-experts-section";
@@ -51,6 +52,7 @@ function HomeContent() {
     <div className="bg-[#01090B] min-h-screen">
       <div className="p-3">
         <Navbar v1Launch />
+        <V1PromoBanner />
         <V1HeroSection />
         <div id="how-it-works">
           <V1CareerSection />
