@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { useActivePricingPlans } from "@/lib/hooks/usePricing";
 import type { PricingPlan } from "@/lib/services/pricing.service";
+import { formatMoney } from "@/lib/services/quote.service";
 
 interface V1PricingSectionProps {
   onStartNow?: (planId: string, planTitle?: string) => void;
@@ -38,6 +39,28 @@ const CheckmarkIcon = () => (
     <path d="M14.5 7.48633L9 12.9863L6.5 10.4863" stroke="white" strokeOpacity="0.6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
   </svg>
 );
+
+/** Old price struck through in red, current price in the normal bold style. */
+function PriceDisplay({
+  price,
+  oldPrice,
+  className,
+}: {
+  price: string;
+  oldPrice?: string | null;
+  className: string;
+}) {
+  return (
+    <span className="inline-flex items-baseline gap-2">
+      {oldPrice && oldPrice !== price && (
+        <span className="line-through font-mona-sans text-[0.6em]" style={{ color: "#FF383C" }}>
+          {oldPrice}
+        </span>
+      )}
+      <span className={className}>{price}</span>
+    </span>
+  );
+}
 
 // Mock pricing plans (keeping as fallback)
 const mockPricingPlans = [
@@ -109,13 +132,14 @@ export default function V1PricingSection({ onStartNow, excludeBasicPlan }: V1Pri
     ? apiPlans.map((plan: PricingPlan) => ({
         id: plan.id,
         name: plan.title,
-        price: `£${plan.amount}`,
+        price: formatMoney(parseFloat(plan.amount)),
+        oldPrice: plan.old_amount ? formatMoney(parseFloat(plan.old_amount)) : null,
         description: plan.description,
         features: plan.tags || [],
         isMostPopular: plan.is_popular,
         installments: plan.installments,
       }))
-    : mockPricingPlans;
+    : mockPricingPlans.map((plan) => ({ ...plan, oldPrice: null as string | null }));
 
   const pricingPlans = excludeBasicPlan
     ? allPricingPlans.filter((plan) => plan.name.toLowerCase() !== "basic")
@@ -227,10 +251,12 @@ export default function V1PricingSection({ onStartNow, excludeBasicPlan }: V1Pri
                         </div>
                       )}
                       <div className="flex items-center gap-4">
-                        <span className="text-white font-mona-sans text-lg lg:text-3xl font-bold">
-                          {plan.price}
-                        </span>
-                        
+                        <PriceDisplay
+                          price={plan.price}
+                          oldPrice={plan.oldPrice}
+                          className="text-white font-mona-sans text-lg lg:text-3xl font-bold"
+                        />
+
                         {/* Radio Input */}
                         <div 
                           className="w-5 lg:w-10 h-5 lg:h-10 rounded-full border flex items-center justify-center transition-all duration-300"
@@ -269,9 +295,13 @@ export default function V1PricingSection({ onStartNow, excludeBasicPlan }: V1Pri
                 <h3 className="text-white font-mona-sans text-xl font-bold mb-2">
                   {activePlan.name}
                 </h3>
-                <p className="text-[22px] font-mona-sans font-bold text-white mb-4">
-                  {activePlan.price}
-                </p>
+                <div className="mb-4">
+                  <PriceDisplay
+                    price={activePlan.price}
+                    oldPrice={activePlan.oldPrice}
+                    className="text-[22px] font-mona-sans font-bold text-white"
+                  />
+                </div>
               </div>
 
               {/* Features List */}
