@@ -478,9 +478,7 @@ export default function DashboardNavbar({
                     </span>
                   )}
                 </div>
-                <div className="hidden lg:block">
-                  <DropdownArrow />
-                </div>
+                <DropdownArrow />
               </button>
 
               {/* Dropdown Menu */}
