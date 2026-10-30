@@ -12,6 +12,28 @@ import {
   type PaymentQuote,
 } from "@/lib/services/quote.service";
 
+/** Pre-discount price struck through in red, current price in the normal style. */
+function PriceWithDiscount({
+  price,
+  oldPrice,
+  className,
+}: {
+  price: string;
+  oldPrice?: string | null;
+  className: string;
+}) {
+  return (
+    <span className="inline-flex items-baseline gap-2">
+      {oldPrice && oldPrice !== price && (
+        <span className="line-through font-mona-sans text-[0.75em]" style={{ color: "#FF383C" }}>
+          {oldPrice}
+        </span>
+      )}
+      <span className={className}>{price}</span>
+    </span>
+  );
+}
+
 interface PaymentSelectionProps {
   planId: string | number;
   planType: string;
@@ -199,6 +221,9 @@ export default function PaymentSelection({
   // is what Stripe will charge.
   const discounted = quote && quote.discount_amount > 0 ? quote : null;
   const displayTotal = discounted ? formatMoney(discounted.total) : planDetails.fullAmount;
+  const oldAmountDisplay = pricingPlanData?.old_amount
+    ? formatMoney(parseFloat(pricingPlanData.old_amount))
+    : null;
   const displayFirst = discounted?.installments[0]
     ? formatMoney(discounted.installments[0].amount)
     : "installment1" in planDetails
@@ -387,9 +412,11 @@ export default function PaymentSelection({
                     </p>
                   </div>
                   <div className="flex items-center gap-2 lg:gap-4 w-[40%] lg:w-full">
-                    <span className="text-white font-mona-sans font-bold text-lg lg:text-3xl">
-                      {displayTotal}
-                    </span>
+                    <PriceWithDiscount
+                      price={displayTotal}
+                      oldPrice={oldAmountDisplay}
+                      className="text-white font-mona-sans font-bold text-lg lg:text-3xl"
+                    />
                     <div
                       className="w-4 lg:w-6 h-4 lg:h-6 rounded-full border-2 flex items-center justify-center"
                       style={{
@@ -430,9 +457,11 @@ export default function PaymentSelection({
                     </p>
                   </div>
                   <div className="flex items-center gap-2 lg:gap-4 w-[40%] lg:w-full">
-                    <span className="text-white font-mona-sans font-bold text-lg lg:text-3xl">
-                      {displayTotal}
-                    </span>
+                    <PriceWithDiscount
+                      price={displayTotal}
+                      oldPrice={oldAmountDisplay}
+                      className="text-white font-mona-sans font-bold text-lg lg:text-3xl"
+                    />
                     <div
                       className="w-4 lg:w-6 h-4 lg:h-6 rounded-full border-2 flex items-center justify-center"
                       style={{
@@ -489,9 +518,11 @@ export default function PaymentSelection({
 
             {/* Price Display */}
             <div className="mb-6">
-              <div className="text-white font-mona-sans font-bold text-4xl lg:text-5xl mb-2">
-                {displayTotal}
-              </div>
+              <PriceWithDiscount
+                price={displayTotal}
+                oldPrice={oldAmountDisplay}
+                className="text-white font-mona-sans font-bold text-4xl lg:text-5xl mb-2"
+              />
             </div>
 
             {/* Installment Breakdown */}

@@ -53,7 +53,7 @@ function PriceDisplay({
   return (
     <span className="inline-flex items-baseline gap-2">
       {oldPrice && oldPrice !== price && (
-        <span className="line-through font-mona-sans text-[0.6em]" style={{ color: "#FF383C" }}>
+        <span className="line-through font-mona-sans text-[0.75em]" style={{ color: "#FF383C" }}>
           {oldPrice}
         </span>
       )}
