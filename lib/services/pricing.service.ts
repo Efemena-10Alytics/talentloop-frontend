@@ -6,6 +6,8 @@ export interface PricingPlan {
   title: string;
   description: string;
   amount: string;
+  /** Pre-discount price, when a discount is running. Null otherwise. */
+  old_amount: string | null;
   tags: string[];
   status: string;
   sort_order: number;
