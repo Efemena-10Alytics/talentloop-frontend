@@ -26,6 +26,7 @@
     "next-auth": "^4.24.13",
     "react": "19.2.3",
     "react-awesome-reveal": "^4.3.1",
+    "react-calendly": "^4.4.0",
     "react-dom": "19.2.3",
     "react-phone-number-input": "^3.4.16",
     "react-player": "^3.4.0",
