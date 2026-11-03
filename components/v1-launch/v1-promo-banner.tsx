@@ -42,32 +42,11 @@ interface TimeLeft {
   seconds: number;
 }
 
-/** The nth weekday (0=Sun..6=Sat) of a given month/year, 1-indexed occurrence. */
-function nthWeekdayOfMonth(year: number, monthIndex: number, weekday: number, n: number): Date {
-  const d = new Date(year, monthIndex, 1);
-  let count = 0;
-  while (true) {
-    if (d.getDay() === weekday) {
-      count++;
-      if (count === n) return new Date(d);
-    }
-    d.setDate(d.getDate() + 1);
-  }
-}
-
-/** Black Friday: the day after Thanksgiving (4th Thursday) in November. */
-function blackFridayOf(year: number): Date {
-  const thanksgiving = nthWeekdayOfMonth(year, 10, 4, 4);
-  const friday = new Date(thanksgiving);
-  friday.setDate(friday.getDate() + 1);
-  friday.setHours(0, 0, 0, 0);
-  return friday;
-}
-
-/** This year's Black Friday, or next year's once this year's has passed. */
-function nextBlackFriday(now: Date): Date {
-  const candidate = blackFridayOf(now.getFullYear());
-  return candidate.getTime() > now.getTime() ? candidate : blackFridayOf(now.getFullYear() + 1);
+/** The promo deadline: November 16th, this year or next once this year's has passed. */
+function nextPromoDeadline(now: Date): Date {
+  const target = new Date(now.getFullYear(), 10, 16, 0, 0, 0, 0);
+  if (target.getTime() > now.getTime()) return target;
+  return new Date(now.getFullYear() + 1, 10, 16, 0, 0, 0, 0);
 }
 
 function getTimeLeft(target: Date): TimeLeft {
@@ -90,10 +69,10 @@ const TIMER_UNITS: { key: keyof TimeLeft; label: string }[] = [
 ];
 
 /**
- * Fixed promo bar for the Black Friday countdown — sits directly below the
- * (also fixed) site Navbar, so together they form a persistent floating
- * header. Home page only; rendered as a plain sibling of <Navbar/>, never
- * wired into the shared Navbar component itself.
+ * Fixed promo bar counting down to the Nov 16 discount deadline — sits
+ * directly below the (also fixed) site Navbar, so together they form a
+ * persistent floating header. Home page only; rendered as a plain sibling
+ * of <Navbar/>, never wired into the shared Navbar component itself.
  */
 export default function V1PromoBanner() {
   const [timeLeft, setTimeLeft] = useState<TimeLeft | null>(null);
@@ -101,7 +80,7 @@ export default function V1PromoBanner() {
   const barRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const tick = () => setTimeLeft(getTimeLeft(nextBlackFriday(new Date())));
+    const tick = () => setTimeLeft(getTimeLeft(nextPromoDeadline(new Date())));
     tick();
     const interval = setInterval(tick, 1000);
     return () => clearInterval(interval);
@@ -124,67 +103,67 @@ export default function V1PromoBanner() {
 
   return (
     <>
-      <div className="fixed top-[97px] inset-x-0 z-40" style={{ background: "#A2CE3A" }}>
+      <div className="fixed top-[57px] sm:top-[73px] inset-x-0 z-40" style={{ background: "#A2CE3A" }}>
         <div
           ref={barRef}
-          className="max-w-[1400px] mx-auto px-4 lg:px-6 py-3 sm:py-4 flex flex-wrap items-center justify-center sm:justify-between gap-3 sm:gap-4"
+          className="max-w-[1400px] mx-auto px-4 lg:px-6 py-1.5 sm:py-2.5 flex flex-wrap items-center justify-center sm:justify-between gap-1.5 sm:gap-4"
         >
           {/* Left: clock + headline + discount pill */}
-          <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-            <div className="flex-shrink-0 scale-75 sm:scale-100">
+          <div className="flex items-center gap-1.5 sm:gap-2.5 flex-shrink-0">
+            <div className="flex-shrink-0 scale-50 sm:scale-[0.7]">
               <ClockIcon />
             </div>
             <span
-              className="font-mona-sans font-bold text-base sm:text-xl lg:text-[32px] leading-none whitespace-nowrap"
+              className="font-mona-sans font-bold text-sm sm:text-base lg:text-lg leading-none whitespace-nowrap"
               style={{ color: "#000000" }}
             >
               Start 2027 hired
             </span>
             <span
-              className="rounded-[10px] bg-white px-3 py-1.5 font-mona-sans font-black text-[11px] sm:text-sm lg:text-base leading-none whitespace-nowrap"
+              className="rounded-[10px] bg-white px-3 py-1.5 font-mona-sans font-black text-[10px] sm:text-xs lg:text-sm leading-none whitespace-nowrap"
               style={{ color: "#000000" }}
             >
               20% off all our packages
             </span>
           </div>
 
-          {/* Right: countdown + CTA, one continuous black pill */}
-          <div
-            className="flex items-center gap-1 sm:gap-1.5 rounded-xl p-1.5 sm:p-2 flex-shrink-0"
-            style={{ background: "#01090B" }}
-          >
-            {TIMER_UNITS.map((unit, i) => (
-              <div key={unit.key} className="flex items-center gap-1 sm:gap-1.5">
-                <div
-                  className="flex flex-col items-center justify-center rounded-[10px] w-11 sm:w-14 py-1 sm:py-1.5"
-                  style={{ background: "#A2CE3A33" }}
-                >
-                  <span
-                    className="font-mona-sans font-bold leading-[150%]"
-                    style={{ fontSize: "22.99px", color: "#A2CE3A" }}
-                  >
-                    {timeLeft ? pad(timeLeft[unit.key]) : "--"}
-                  </span>
-                  <span
-                    className="font-mona-sans font-normal leading-[150%] text-center"
-                    style={{ fontSize: "8.62px", color: "#A2CE3A", opacity: 0.6 }}
-                  >
-                    {unit.label}
-                  </span>
+          {/* Right: plain countdown digits on the green bg + dark CTA pill */}
+          <div className="flex items-center gap-1.5 sm:gap-4 flex-shrink-0">
+            <div className="flex items-center gap-0.5 sm:gap-1.5">
+              {TIMER_UNITS.map((unit, i) => (
+                <div key={unit.key} className="flex items-center gap-0.5 sm:gap-1.5">
+                  <div className="flex flex-col items-center justify-center">
+                    <span
+                      className="font-mona-sans font-bold leading-none text-xs sm:text-base"
+                      style={{ color: "#01090B" }}
+                    >
+                      {timeLeft ? pad(timeLeft[unit.key]) : "--"}
+                    </span>
+                    <span
+                      className="font-mona-sans font-normal leading-none text-center text-[6px] sm:text-[7.5px]"
+                      style={{ color: "#01090B", opacity: 0.6 }}
+                    >
+                      {unit.label}
+                    </span>
+                  </div>
+                  {i < TIMER_UNITS.length - 1 && (
+                    <span
+                      className="font-bold text-xs sm:text-sm px-0.5"
+                      style={{ color: "#01090B", opacity: 0.4 }}
+                    >
+                      :
+                    </span>
+                  )}
                 </div>
-                {i < TIMER_UNITS.length - 1 && (
-                  <span className="text-white/50 font-bold text-sm px-0.5">:</span>
-                )}
-              </div>
-            ))}
+              ))}
+            </div>
 
             <button
               type="button"
               onClick={handleClaim}
-              className="ml-1.5 sm:ml-2 rounded-full px-4 sm:px-6 py-2 sm:py-2.5 font-mona-sans font-bold text-xs sm:text-sm whitespace-nowrap hover:opacity-90 transition-opacity"
+              className="rounded-full px-3 sm:px-6 py-1.5 sm:py-2.5 font-mona-sans font-bold text-[10px] sm:text-sm text-white whitespace-nowrap hover:opacity-90 transition-opacity"
               style={{
-                background: "linear-gradient(88.9deg, #A2CE3A 24.91%, #52681D 92.25%)",
-                color: "#090B0E",
+                background: "linear-gradient(180deg, #0E0912 0%, #22162B 100%)",
               }}
             >
               Claim the discount
