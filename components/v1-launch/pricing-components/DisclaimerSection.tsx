@@ -380,7 +380,7 @@ export default function DisclaimerSection({
                     <span className="text-sm font-plus-jakarta" style={{ color: "#8E8E93" }}>
                       I Have Read and Accept the{" "}
                       <a
-                        href="/terms-and-conditions"
+                        href="/terms"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="underline hover:opacity-80 transition-opacity"

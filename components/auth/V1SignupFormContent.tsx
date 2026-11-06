@@ -658,7 +658,7 @@ export default function V1SignupFormContent({
                   Terms of Service
                 </Link>{" "}
                 and{" "}
-                <Link href="/privacy" className="text-[#A2CE3A] underline">
+                <Link href="/terms" className="text-[#A2CE3A] underline">
                   Privacy Policy
                 </Link>
               </p>
