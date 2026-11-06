@@ -39,7 +39,7 @@ export default function DiamondNavbar() {
       <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-4">
         {/* Logo & Diamond Badge */}
         <div className="flex items-center gap-3">
-          <Link href="/" className="inline-flex items-center">
+          <Link href="#" className="inline-flex items-center">
             <img
               src="/logo.svg"
               alt="TalentLoop"
