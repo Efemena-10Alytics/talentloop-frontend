@@ -46,8 +46,8 @@ export default function DiamondHero() {
     variantParam === "b"
       ? heroContent.b
       : variantParam === "c"
-      ? heroContent.c
-      : heroContent.a;
+        ? heroContent.c
+        : heroContent.a;
 
   const scrollTo = (id: string) => {
     const el = document.getElementById(id);
@@ -126,43 +126,12 @@ export default function DiamondHero() {
           {/* Right Column: Video Intro Card */}
           <div className="lg:col-span-5">
             <div className="relative rounded-[24px] overflow-hidden border border-white/15 bg-[#0F1416] shadow-2xl aspect-[16/10] sm:aspect-video flex items-center justify-center group">
-              {isPlaying ? (
-                <ReactPlayer
-                  src="https://www.youtube.com/watch?v=8Q3-A2CZx-c"
-                  playing
-                  controls
-                  width="100%"
-                  height="100%"
-                />
-              ) : (
-                <div
-                  onClick={() => setIsPlaying(true)}
-                  className="relative w-full h-full cursor-pointer flex flex-col items-center justify-center p-6 text-center text-white bg-gradient-to-tr from-[#01090B] via-[#0F1416] to-[#151019]"
-                >
-                  <img
-                    src="/homepage/1.png"
-                    alt="Founder Intro"
-                    className="absolute inset-0 w-full h-full object-cover opacity-25 group-hover:opacity-35 transition-opacity"
-                  />
-                  <div className="relative z-10 w-16 h-16 rounded-full bg-[#A2CE3A] text-[#090B0E] flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform mb-3">
-                    <svg
-                      width="26"
-                      height="26"
-                      viewBox="0 0 24 24"
-                      fill="currentColor"
-                      className="ml-1"
-                    >
-                      <path d="M8 5v14l11-7z" />
-                    </svg>
-                  </div>
-                  <span className="relative z-10 font-mona-sans font-bold text-base sm:text-lg">
-                    Watch Founder Intro (Adeiza)
-                  </span>
-                  <span className="relative z-10 text-xs font-sora text-[#CCCCCC] mt-1">
-                    60–90s overview of the Diamond Package
-                  </span>
-                </div>
-              )}
+              <ReactPlayer
+                src="https://www.youtube.com/watch?v=8Q3-A2CZx-c"
+                controls
+                width="100%"
+                height="100%"
+              />
             </div>
           </div>
         </div>

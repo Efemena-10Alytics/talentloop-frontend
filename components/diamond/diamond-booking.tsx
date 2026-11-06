@@ -12,7 +12,7 @@ import { InlineWidget } from "react-calendly";
  */
 export const DEFAULT_DIAMOND_CALENDLY_URL =
   process.env.NEXT_PUBLIC_DIAMOND_CALENDLY_URL ||
-  "https://calendly.com/your-calendly-link";
+  "https://calendly.com/amdari-support/diamond-package-clarity-session";
 
 export default function DiamondBooking({
   calendlyUrl = DEFAULT_DIAMOND_CALENDLY_URL,
@@ -25,8 +25,11 @@ export default function DiamondBooking({
     setMounted(true);
   }, []);
 
-  const isPlaceholderUrl =
-    calendlyUrl === "https://calendly.com/your-calendly-link";
+  const normalizedUrl = calendlyUrl.startsWith("http")
+    ? calendlyUrl
+    : `https://${calendlyUrl}`;
+
+  const isPlaceholderUrl = normalizedUrl.includes("your-calendly-link");
 
   return (
     <section
@@ -60,7 +63,8 @@ export default function DiamondBooking({
             Book your free clarity call
           </h2>
           <p className="text-base sm:text-lg font-sora text-[#CCCCCC] max-w-xl">
-            30 minutes to review your profile, agree target markets, and verify mutual fit. Only 9 Diamond slots available per cohort.
+            30 minutes to review your profile, agree target markets, and verify
+            mutual fit. Only 9 Diamond slots available per cohort.
           </p>
         </div>
 
@@ -73,7 +77,15 @@ export default function DiamondBooking({
                 <span className="w-2.5 h-2.5 rounded-full bg-[#A2CE3A] animate-pulse shrink-0" />
                 <span>
                   <strong className="text-white">Calendly link ready:</strong>{" "}
-                  Replace <code className="text-[#A2CE3A] bg-black/40 px-1.5 py-0.5 rounded">DEFAULT_DIAMOND_CALENDLY_URL</code> in <code className="text-white">components/diamond/diamond-booking.tsx</code> with your live Calendly link.
+                  Replace{" "}
+                  <code className="text-[#A2CE3A] bg-black/40 px-1.5 py-0.5 rounded">
+                    DEFAULT_DIAMOND_CALENDLY_URL
+                  </code>{" "}
+                  in{" "}
+                  <code className="text-white">
+                    components/diamond/diamond-booking.tsx
+                  </code>{" "}
+                  with your live Calendly link.
                 </span>
               </div>
             </div>
@@ -83,7 +95,7 @@ export default function DiamondBooking({
           <div className="w-full min-h-[700px] rounded-[24px] overflow-hidden bg-[#0F1416]">
             {mounted ? (
               <InlineWidget
-                url={calendlyUrl}
+                url={normalizedUrl}
                 styles={{ height: "700px", width: "100%" }}
                 pageSettings={{
                   backgroundColor: "0f1416",

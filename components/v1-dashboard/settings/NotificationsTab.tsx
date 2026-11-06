@@ -73,8 +73,16 @@ export default function NotificationsTab() {
       .finally(() => setLoading(false));
   }, [status]);
 
-  const toggle = (key: keyof Prefs) =>
-    setPrefs((prev) => ({ ...prev, [key]: !prev[key] }));
+  const toggle = (key: keyof Prefs, title: string) => {
+    setPrefs((prev) => {
+      const next = { ...prev, [key]: !prev[key] };
+      toast({
+        variant: "success",
+        title: `${title} ${next[key] ? "enabled" : "disabled"}`,
+      });
+      return next;
+    });
+  };
 
   const handleCancel = () => setPrefs(original);
 
@@ -146,7 +154,7 @@ export default function NotificationsTab() {
                 </div>
 
                 <button
-                  onClick={() => toggle(item.key)}
+                  onClick={() => toggle(item.key, item.title)}
                   className="flex-shrink-0 transition-opacity hover:opacity-80"
                 >
                   {prefs[item.key] ? <ToggleActive /> : <ToggleInactive />}
