@@ -540,7 +540,7 @@ export default function ForgotPasswordPage() {
                       </Link>{" "}
                       and{" "}
                       <Link
-                        href="/privacy"
+                        href="/terms"
                         className="text-[#A2CE3A] underline"
                       >
                         Privacy Policy

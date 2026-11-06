@@ -394,7 +394,7 @@ export default function DashboardNavbar({
               </>
             )}
 
-            {/* Notification */}
+            {/* Notification
             <div
               className="relative"
               ref={notifRef}
@@ -408,7 +408,6 @@ export default function DashboardNavbar({
                 <NotificationIcon />
               </button>
 
-              {/* Notification Modal */}
               {isNotifOpen && (
                 <div
                   className="absolute right-0 mt-3 w-[359px] rounded-[24px] z-50 overflow-hidden"
@@ -418,7 +417,6 @@ export default function DashboardNavbar({
                     boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
                   }}
                 >
-                  {/* Header */}
                   <div className="flex items-center justify-between px-5 pt-5 pb-3">
                     <h3 className="text-white font-mona-sans font-bold text-lg">
                       Notification
@@ -428,7 +426,6 @@ export default function DashboardNavbar({
                     </button>
                   </div>
 
-                  {/* Notification List */}
                   <div className="overflow-y-auto max-h-[490px] px-3 pb-4 flex flex-col gap-1">
                     {notificationItems.map((item, i) => (
                       <div
@@ -458,6 +455,7 @@ export default function DashboardNavbar({
                 </div>
               )}
             </div>
+            */}
 
             {/* Profile Dropdown */}
             <div className="relative">
