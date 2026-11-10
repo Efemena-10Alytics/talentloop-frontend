@@ -46,6 +46,19 @@ const faqs = [
   },
 ];
 
+const faqJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: faqs.map((faq) => ({
+    "@type": "Question",
+    name: faq.question,
+    acceptedAnswer: {
+      "@type": "Answer",
+      text: faq.answer,
+    },
+  })),
+};
+
 export default function V1Faqs() {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
@@ -55,6 +68,10 @@ export default function V1Faqs() {
 
   return (
     <section className="relative py-14 lg:py-20">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+      />
       <div className="max-w-[1400px] mx-auto px-3 lg:px-6">
         {/* Section Heading */}
         <motion.div
@@ -79,23 +96,29 @@ export default function V1Faqs() {
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: index * 0.05 }}
               viewport={{ once: true }}
-              className="rounded-[16px] overflow-hidden"
+              className="rounded-[20px] overflow-hidden transition-all duration-300"
               style={{
-                background: "rgba(255, 255, 255, 0.03)",
-                border: "1px solid rgba(255, 255, 255, 0.06)",
+                background: "#0E0C15",
+                border: "1px solid rgba(255, 255, 255, 0.08)",
               }}
             >
               <button
                 onClick={() => toggleFaq(index)}
-                className="w-full flex items-center justify-between p-6 text-left transition-colors hover:bg-white/5"
+                className="w-full p-6 text-left flex items-center justify-between gap-4 transition-colors hover:bg-white/[0.02]"
               >
-                <span className="text-white font-mona-sans text-base lg:text-lg font-semibold pr-4">
+                <span className="font-mona-sans text-lg lg:text-xl font-semibold text-white">
                   {faq.question}
                 </span>
-                <div className="flex-shrink-0">
+                <div
+                  className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-transform duration-300"
+                  style={{
+                    background: "rgba(162, 206, 58, 0.1)",
+                    border: "1px solid rgba(162, 206, 58, 0.2)",
+                  }}
+                >
                   <svg
-                    width="24"
-                    height="24"
+                    width="14"
+                    height="14"
                     viewBox="0 0 24 24"
                     fill="none"
                     xmlns="http://www.w3.org/2000/svg"

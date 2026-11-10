@@ -76,9 +76,6 @@ export const metadata: Metadata = {
     "AI job search",
     "job application service",
   ],
-  alternates: {
-    canonical: "/",
-  },
   robots: {
     index: true,
     follow: true,
@@ -106,12 +103,28 @@ const jsonLd = {
       name: SITE_NAME,
       url: SITE_URL,
       logo: `${SITE_URL}/logo.svg`,
+      description: SITE_DESCRIPTION,
+      sameAs: [
+        "https://www.linkedin.com/company/talentloop-io/",
+        "https://www.facebook.com/share/183wJNuVeL/?mibextid=wwXIfr",
+        "https://www.tiktok.com/@talentloop.inc",
+        "https://youtube.com/@talentloop",
+      ],
+      contactPoint: [
+        {
+          "@type": "ContactPoint",
+          email: "Amdari@talentloop.app",
+          contactType: "customer support",
+          availableLanguage: ["English"],
+        },
+      ],
     },
     {
       "@type": "WebSite",
       "@id": `${SITE_URL}/#website`,
       url: SITE_URL,
       name: SITE_NAME,
+      description: SITE_DESCRIPTION,
       publisher: { "@id": `${SITE_URL}/#organization` },
     },
   ],
