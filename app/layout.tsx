@@ -80,6 +80,11 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
+  verification: {
+    other: {
+      "msvalidate.01": "613B322B36331EAC8E14F1E081941455",
+    },
+  },
   openGraph: {
     type: "website",
     url: SITE_URL,
